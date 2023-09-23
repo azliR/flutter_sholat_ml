@@ -1,37 +1,41 @@
-part of 'auth_device_cubit.dart';
+part of 'auth_device_notifier.dart';
 
 @immutable
 class AuthDeviceState extends Equatable {
   const AuthDeviceState({
     required this.isInitialised,
-    required this.authKey,
+    required this.savedDevices,
     required this.presentationState,
   });
 
   factory AuthDeviceState.initial() => const AuthDeviceState(
         isInitialised: false,
-        authKey: '',
+        savedDevices: [],
         presentationState: AuthDeviceInitialState(),
       );
 
   final bool isInitialised;
-  final String authKey;
+  final List<Device> savedDevices;
   final AuthDevicePresentationState presentationState;
 
   AuthDeviceState copyWith({
     bool? isInitialised,
-    String? authKey,
+    List<Device>? savedDevices,
     AuthDevicePresentationState? presentationState,
   }) {
     return AuthDeviceState(
       isInitialised: isInitialised ?? this.isInitialised,
-      authKey: authKey ?? this.authKey,
+      savedDevices: savedDevices ?? this.savedDevices,
       presentationState: presentationState ?? this.presentationState,
     );
   }
 
   @override
-  List<Object?> get props => [isInitialised, authKey, presentationState];
+  List<Object?> get props => [
+        isInitialised,
+        savedDevices,
+        presentationState,
+      ];
 }
 
 @immutable

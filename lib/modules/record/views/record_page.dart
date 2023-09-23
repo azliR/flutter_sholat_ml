@@ -3,8 +3,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/modules/home/blocs/record/record_notifier.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/modules/record/blocs/record/record_notifier.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -23,15 +23,16 @@ class RecordPage extends ConsumerStatefulWidget {
 
 class _RecordPageState extends ConsumerState<RecordPage>
     with WidgetsBindingObserver {
-  late final RecordNotifier notifier;
+  late final RecordNotifier _notifier;
+
   CameraController? _cameraController;
 
   @override
   void initState() {
-    notifier = ref.read(recordProvider.notifier);
+    _notifier = ref.read(recordProvider.notifier);
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      await notifier.initialise(
+      await _notifier.initialise(
         widget.device,
         widget.services,
       );
@@ -52,7 +53,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
     if (state == AppLifecycleState.inactive) {
       cameraController.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      notifier
+      _notifier
           .initialiseCamera(cameraController.description)
           .then((controller) {
         _cameraController = controller;
@@ -85,7 +86,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
             showErrorSnackbar(context, 'Failed recording');
           case RecordSuccessState():
             showSnackbar(context, 'Success recording');
-          default:
+          case RecordInitialState():
             break;
         }
       } else if (previous?.isCameraPermissionGranted !=
@@ -126,7 +127,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.videocam_off_rounded,
+                      Symbols.videocam_off_rounded,
                       size: 64,
                       color: colorScheme.primary,
                     ),
@@ -198,7 +199,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
 }
 
 class _AccelerometerChart extends StatelessWidget {
-  const _AccelerometerChart({required this.accelerometerDatasets, super.key});
+  const _AccelerometerChart({required this.accelerometerDatasets});
 
   final List<Dataset> accelerometerDatasets;
 
@@ -238,7 +239,6 @@ class _RecordButton extends StatefulWidget {
     required this.cameraState,
     required this.cameraController,
     required this.onRecordPressed,
-    super.key,
   });
 
   final CameraState cameraState;

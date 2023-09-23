@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-class DeviceTile extends StatelessWidget {
-  const DeviceTile({
-    required this.title,
-    required this.subtitle,
-    required this.leading,
-    required this.trailing,
-    required this.onTap,
+class RoundedListTile extends StatelessWidget {
+  const RoundedListTile({
+    this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.tileColor,
+    this.padding,
+    this.onTap,
     super.key,
   });
 
@@ -14,6 +16,8 @@ class DeviceTile extends StatelessWidget {
   final Widget? subtitle;
   final Widget? leading;
   final Widget? trailing;
+  final Color? tileColor;
+  final EdgeInsetsGeometry? padding;
   final void Function()? onTap;
 
   @override
@@ -21,9 +25,10 @@ class DeviceTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding:
+          padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
-        tileColor: colorScheme.surfaceVariant,
+        tileColor: tileColor ?? colorScheme.surfaceVariant,
         title: title,
         subtitle: subtitle,
         leading: leading,

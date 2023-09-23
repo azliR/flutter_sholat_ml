@@ -71,9 +71,7 @@ final class RecordInitialState extends RecordPresentationState {
 }
 
 final class RecordSuccessState extends RecordPresentationState {
-  const RecordSuccessState(this.savedPath);
-
-  final String savedPath;
+  const RecordSuccessState();
 }
 
 final class RecordFailureState extends RecordPresentationState {

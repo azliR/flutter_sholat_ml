@@ -66,6 +66,7 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
       );
       return;
     }
+    if (!mounted) return;
     state = state.copyWith(isScanning: false);
   }
 

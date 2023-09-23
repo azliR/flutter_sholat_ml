@@ -4,9 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
-import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_cubit.dart';
+import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/ui/dialogs.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
 class AuthDevicePage extends ConsumerStatefulWidget {
@@ -24,9 +25,9 @@ class AuthDevicePage extends ConsumerStatefulWidget {
 }
 
 class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
-  final _authController = TextEditingController();
+  late final AuthDeviceNotifier _notifier;
 
-  late final AuthDeviceNotifier notifier;
+  final _authController = TextEditingController();
 
   Future<void> _showClipboardDialog() async {
     final clipboardData = await Clipboard.getData('text/plain');
@@ -50,7 +51,6 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
           FilledButton(
             onPressed: () {
               _authController.text = clipboardData!.text!;
-              notifier.onAuthKeyChanged(clipboardData.text!);
               Navigator.of(context).pop();
             },
             child: const Text('Paste'),
@@ -62,11 +62,7 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
 
   @override
   void initState() {
-    notifier = ref.read(authDeviceProvider.notifier);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifier.initialise(widget.device, widget.services);
-    });
+    _notifier = ref.read(authDeviceProvider.notifier);
     super.initState();
   }
 
@@ -89,16 +85,13 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
             showLoadingDialog(context);
           case AuthDeviceSuccessState():
             Navigator.pop(context);
-            context.router.push(
-              RecordRoute(
-                device: widget.device,
-                services: widget.services,
-              ),
-            );
+            context.router
+                .pushAndPopUntil(const HomeRoute(), predicate: (_) => false);
           case AuthDeviceResponseFailureState():
             Navigator.pop(context);
             showErrorSnackbar(context, 'Failed authenticating device');
           case AuthDeviceInitialState():
+            break;
         }
       }
     });
@@ -115,7 +108,6 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
               child: TextFormField(
                 autofocus: true,
                 controller: _authController,
-                onChanged: notifier.onAuthKeyChanged,
                 maxLength: 32,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: (value) => value?.length != 32
@@ -123,10 +115,10 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
                     : null,
                 decoration: InputDecoration(
                   labelText: 'Auth key',
-                  prefixIcon: const Icon(Icons.key_rounded),
+                  prefixIcon: const Icon(Symbols.key_rounded),
                   suffixIcon: IconButton(
                     onPressed: _showClipboardDialog,
-                    icon: const Icon(Icons.paste_rounded),
+                    icon: const Icon(Symbols.content_paste_rounded),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -141,7 +133,11 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: FilledButton(
-                  onPressed: notifier.auth,
+                  onPressed: () => _notifier.auth(
+                    _authController.text,
+                    widget.device,
+                    widget.services,
+                  ),
                   child: const Text('Submit'),
                 ),
               ),

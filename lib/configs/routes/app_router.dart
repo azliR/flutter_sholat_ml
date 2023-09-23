@@ -8,6 +8,7 @@ class AppRouter extends $AppRouter {
         AutoRoute(page: SplashRoute.page, initial: true),
         AutoRoute(page: DeviceListRoute.page),
         AutoRoute(page: AuthDeviceRoute.page),
+        AutoRoute(page: HomeRoute.page),
         AutoRoute(page: RecordRoute.page),
       ];
 }

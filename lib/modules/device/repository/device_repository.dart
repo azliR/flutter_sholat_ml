@@ -4,7 +4,9 @@ import 'dart:typed_data';
 
 import 'package:encrypt/encrypt.dart' as enc;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_sholat_ml/modules/device/models/device/device.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
 class DeviceRepository {
   Stream<List<ScanResult>> get scanResults => FlutterBluePlus.scanResults;
@@ -143,5 +145,16 @@ class DeviceRepository {
     return aes.encrypt(Uint8List.fromList(data)).bytes;
   }
 
-  void handleAuthResponse() {}
+  Future<Device?> getPrimaryDevice() async {
+    final devices = await LocalStorageService.getSavedDevices();
+    if (devices.isEmpty) return null;
+    return devices.first;
+  }
+
+  Future<void> saveDevice(Device device) async {
+    await LocalStorageService.setSavedDevice(device);
+  }
+
+  Stream<List<Device>> get savedDevicesStream =>
+      LocalStorageService.savedDevicesStream;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 Future<void> showErrorDialog(
   BuildContext context, {
@@ -10,7 +11,7 @@ Future<void> showErrorDialog(
     builder: (context) => AlertDialog(
       title: Text(title),
       content: Text(message),
-      icon: const Icon(Icons.error_rounded),
+      icon: const Icon(Symbols.error_rounded),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
@@ -29,9 +30,12 @@ Future<void> showLoadingDialog(BuildContext context) {
     barrierColor: colorScheme.surface.withOpacity(0.6),
     barrierDismissible: false,
     builder: (context) {
-      return const Align(
-        alignment: Alignment.topCenter,
-        child: LinearProgressIndicator(),
+      return WillPopScope(
+        onWillPop: () async => false,
+        child: const Align(
+          alignment: Alignment.topCenter,
+          child: LinearProgressIndicator(),
+        ),
       );
     },
   );

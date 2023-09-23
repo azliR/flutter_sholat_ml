@@ -8,24 +8,25 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:auto_route/auto_route.dart' as _i5;
-import 'package:flutter/material.dart' as _i7;
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i6;
-import 'package:flutter_sholat_ml/core/splash_page.dart' as _i4;
+import 'package:auto_route/auto_route.dart' as _i6;
+import 'package:flutter/material.dart' as _i8;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i7;
+import 'package:flutter_sholat_ml/core/splash/views/splash_page.dart' as _i5;
 import 'package:flutter_sholat_ml/modules/device/views/auth_device_page.dart'
     as _i1;
 import 'package:flutter_sholat_ml/modules/device/views/device_list_page.dart'
     as _i2;
-import 'package:flutter_sholat_ml/modules/home/views/record_page.dart' as _i3;
+import 'package:flutter_sholat_ml/modules/home/views/home_page.dart' as _i3;
+import 'package:flutter_sholat_ml/modules/record/views/record_page.dart' as _i4;
 
-abstract class $AppRouter extends _i5.RootStackRouter {
+abstract class $AppRouter extends _i6.RootStackRouter {
   $AppRouter({super.navigatorKey});
 
   @override
-  final Map<String, _i5.PageFactory> pagesMap = {
+  final Map<String, _i6.PageFactory> pagesMap = {
     AuthDeviceRoute.name: (routeData) {
       final args = routeData.argsAs<AuthDeviceRouteArgs>();
-      return _i5.AutoRoutePage<dynamic>(
+      return _i6.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: _i1.AuthDevicePage(
           device: args.device,
@@ -35,16 +36,22 @@ abstract class $AppRouter extends _i5.RootStackRouter {
       );
     },
     DeviceListRoute.name: (routeData) {
-      return _i5.AutoRoutePage<dynamic>(
+      return _i6.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i2.DeviceListPage(),
       );
     },
+    HomeRoute.name: (routeData) {
+      return _i6.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i3.HomePage(),
+      );
+    },
     RecordRoute.name: (routeData) {
       final args = routeData.argsAs<RecordRouteArgs>();
-      return _i5.AutoRoutePage<dynamic>(
+      return _i6.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i3.RecordPage(
+        child: _i4.RecordPage(
           device: args.device,
           services: args.services,
           key: args.key,
@@ -52,9 +59,9 @@ abstract class $AppRouter extends _i5.RootStackRouter {
       );
     },
     SplashRoute.name: (routeData) {
-      return _i5.AutoRoutePage<dynamic>(
+      return _i6.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i4.SplashPage(),
+        child: const _i5.SplashPage(),
       );
     },
   };
@@ -62,12 +69,12 @@ abstract class $AppRouter extends _i5.RootStackRouter {
 
 /// generated route for
 /// [_i1.AuthDevicePage]
-class AuthDeviceRoute extends _i5.PageRouteInfo<AuthDeviceRouteArgs> {
+class AuthDeviceRoute extends _i6.PageRouteInfo<AuthDeviceRouteArgs> {
   AuthDeviceRoute({
-    required _i6.BluetoothDevice device,
-    required List<_i6.BluetoothService> services,
-    _i7.Key? key,
-    List<_i5.PageRouteInfo>? children,
+    required _i7.BluetoothDevice device,
+    required List<_i7.BluetoothService> services,
+    _i8.Key? key,
+    List<_i6.PageRouteInfo>? children,
   }) : super(
           AuthDeviceRoute.name,
           args: AuthDeviceRouteArgs(
@@ -80,8 +87,8 @@ class AuthDeviceRoute extends _i5.PageRouteInfo<AuthDeviceRouteArgs> {
 
   static const String name = 'AuthDeviceRoute';
 
-  static const _i5.PageInfo<AuthDeviceRouteArgs> page =
-      _i5.PageInfo<AuthDeviceRouteArgs>(name);
+  static const _i6.PageInfo<AuthDeviceRouteArgs> page =
+      _i6.PageInfo<AuthDeviceRouteArgs>(name);
 }
 
 class AuthDeviceRouteArgs {
@@ -91,11 +98,11 @@ class AuthDeviceRouteArgs {
     this.key,
   });
 
-  final _i6.BluetoothDevice device;
+  final _i7.BluetoothDevice device;
 
-  final List<_i6.BluetoothService> services;
+  final List<_i7.BluetoothService> services;
 
-  final _i7.Key? key;
+  final _i8.Key? key;
 
   @override
   String toString() {
@@ -105,8 +112,8 @@ class AuthDeviceRouteArgs {
 
 /// generated route for
 /// [_i2.DeviceListPage]
-class DeviceListRoute extends _i5.PageRouteInfo<void> {
-  const DeviceListRoute({List<_i5.PageRouteInfo>? children})
+class DeviceListRoute extends _i6.PageRouteInfo<void> {
+  const DeviceListRoute({List<_i6.PageRouteInfo>? children})
       : super(
           DeviceListRoute.name,
           initialChildren: children,
@@ -114,17 +121,31 @@ class DeviceListRoute extends _i5.PageRouteInfo<void> {
 
   static const String name = 'DeviceListRoute';
 
-  static const _i5.PageInfo<void> page = _i5.PageInfo<void>(name);
+  static const _i6.PageInfo<void> page = _i6.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i3.RecordPage]
-class RecordRoute extends _i5.PageRouteInfo<RecordRouteArgs> {
+/// [_i3.HomePage]
+class HomeRoute extends _i6.PageRouteInfo<void> {
+  const HomeRoute({List<_i6.PageRouteInfo>? children})
+      : super(
+          HomeRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'HomeRoute';
+
+  static const _i6.PageInfo<void> page = _i6.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i4.RecordPage]
+class RecordRoute extends _i6.PageRouteInfo<RecordRouteArgs> {
   RecordRoute({
-    required _i6.BluetoothDevice device,
-    required List<_i6.BluetoothService> services,
-    _i7.Key? key,
-    List<_i5.PageRouteInfo>? children,
+    required _i7.BluetoothDevice device,
+    required List<_i7.BluetoothService> services,
+    _i8.Key? key,
+    List<_i6.PageRouteInfo>? children,
   }) : super(
           RecordRoute.name,
           args: RecordRouteArgs(
@@ -137,8 +158,8 @@ class RecordRoute extends _i5.PageRouteInfo<RecordRouteArgs> {
 
   static const String name = 'RecordRoute';
 
-  static const _i5.PageInfo<RecordRouteArgs> page =
-      _i5.PageInfo<RecordRouteArgs>(name);
+  static const _i6.PageInfo<RecordRouteArgs> page =
+      _i6.PageInfo<RecordRouteArgs>(name);
 }
 
 class RecordRouteArgs {
@@ -148,11 +169,11 @@ class RecordRouteArgs {
     this.key,
   });
 
-  final _i6.BluetoothDevice device;
+  final _i7.BluetoothDevice device;
 
-  final List<_i6.BluetoothService> services;
+  final List<_i7.BluetoothService> services;
 
-  final _i7.Key? key;
+  final _i8.Key? key;
 
   @override
   String toString() {
@@ -161,9 +182,9 @@ class RecordRouteArgs {
 }
 
 /// generated route for
-/// [_i4.SplashPage]
-class SplashRoute extends _i5.PageRouteInfo<void> {
-  const SplashRoute({List<_i5.PageRouteInfo>? children})
+/// [_i5.SplashPage]
+class SplashRoute extends _i6.PageRouteInfo<void> {
+  const SplashRoute({List<_i6.PageRouteInfo>? children})
       : super(
           SplashRoute.name,
           initialChildren: children,
@@ -171,5 +192,5 @@ class SplashRoute extends _i5.PageRouteInfo<void> {
 
   static const String name = 'SplashRoute';
 
-  static const _i5.PageInfo<void> page = _i5.PageInfo<void>(name);
+  static const _i6.PageInfo<void> page = _i6.PageInfo<void>(name);
 }

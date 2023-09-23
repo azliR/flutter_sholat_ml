@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:async/async.dart';
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset.dart';
-import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/modules/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
 part 'record_state.dart';
@@ -20,10 +21,10 @@ final recordProvider =
 
 class RecordNotifier extends StateNotifier<RecordState> {
   RecordNotifier()
-      : _homeRepository = HomeRepository(),
+      : _recordRepository = RecordRepository(),
         super(RecordState.initial());
 
-  final HomeRepository _homeRepository;
+  final RecordRepository _recordRepository;
 
   late final BluetoothService _miBand1Service;
   late final BluetoothService _heartRateService;
@@ -61,12 +62,14 @@ class RecordNotifier extends StateNotifier<RecordState> {
     _hzChar = _miBand1Service.characteristics.singleWhere(
       (char) => char.uuid == Guid(DeviceUuids.charHz),
     );
-    _heartRateMeasureSubscription ??=
-        _heartRateMeasureChar.onValueReceived.listen((event) {
-      // setState(() {
-      //   _accelerometerDatasets.add(event.last);
-      // });
-      log('Heart rate: $event');
+
+    StreamZip([
+      _heartRateMeasureChar.onValueReceived,
+      _hzChar.onValueReceived,
+    ]).listen((event) {
+      final heartRate = event[0];
+      final hz = event[1];
+      log('Heart rate: $heartRate, Hz: $hz');
     });
 
     _sensorSubscription ??= _sensorChar.onValueReceived.listen((event) {
@@ -75,9 +78,9 @@ class RecordNotifier extends StateNotifier<RecordState> {
 
     _hzSubscription ??= _hzChar.onValueReceived.listen((event) {
       log('Hz: $event');
-      _homeRepository.handleRawSensorData(
+      _recordRepository.handleRawSensorData(
         Uint8List.fromList(event),
-        (dataset) {
+        onUpdated: (dataset) {
           Timer(const Duration(milliseconds: 10), () {
             state = state.copyWith(
               accelerometerDatasets: [
@@ -99,7 +102,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
     });
 
     final isCameraPermissionGranted =
-        await _homeRepository.isCameraPermissionGranted;
+        await _recordRepository.isCameraPermissionGranted;
 
     state = state.copyWith(
       isInitialised: true,
@@ -111,7 +114,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
     CameraDescription? cameraDescription,
   ]) async {
     final (failure, controller) =
-        await _homeRepository.initialiseCamera(cameraDescription);
+        await _recordRepository.initialiseCamera(cameraDescription);
     if (failure != null) {
       if (failure is PermissionFailure) {
         state = state.copyWith(isCameraPermissionGranted: false);
@@ -132,7 +135,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
   Future<void> startRecording(CameraController cameraController) async {
     state = state.copyWith(cameraState: CameraState.preparing);
 
-    final (failure, _) = await _homeRepository.startRecording(
+    final (failure, _) = await _recordRepository.startRecording(
       cameraController: cameraController,
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
@@ -154,7 +157,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
   Future<void> stopRecording(CameraController cameraController) async {
     state = state.copyWith(cameraState: CameraState.saving);
 
-    final (stopFailure, savedPath) = await _homeRepository.stopRecording(
+    final (stopFailure, _) = await _recordRepository.stopRecording(
       cameraController: cameraController,
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
@@ -164,24 +167,27 @@ class RecordNotifier extends StateNotifier<RecordState> {
     );
     if (stopFailure != null) {
       state = state.copyWith(
+        accelerometerDatasets: [],
         presentationState: RecordFailureState(stopFailure),
         cameraState: CameraState.ready,
       );
       return;
     }
-    final (saveFailure, _) = await _homeRepository.saveRecording(
+    final (saveFailure, _) = await _recordRepository.saveRecording(
       cameraController: cameraController,
       accelerometerDatasets: state.accelerometerDatasets,
     );
     if (saveFailure != null) {
       state = state.copyWith(
+        accelerometerDatasets: [],
         presentationState: RecordFailureState(saveFailure),
         cameraState: CameraState.ready,
       );
       return;
     }
     state = state.copyWith(
-      presentationState: RecordSuccessState(savedPath!),
+      accelerometerDatasets: [],
+      presentationState: const RecordSuccessState(),
       cameraState: CameraState.ready,
     );
   }

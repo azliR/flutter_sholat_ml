@@ -1,12 +1,14 @@
 name: flutter_sholat_ml
 description: A Very Good Project created by Very Good CLI.
-version: 0.0.1+1
+version: 0.1.0+1
 publish_to: none
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  animations: ^2.0.8
+  async: ^2.11.0
   auto_route: ^7.8.3
   camera: ^0.10.5+4
   convert: ^3.1.1
@@ -19,12 +21,18 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^2.4.0
-  image_gallery_saver: ^2.0.3
+  hive: ^4.0.0-dev.2
   intl: ^0.18.0
+  isar_flutter_libs: ^4.0.0-dev.13
   material_symbols_icons: ^4.2668.0
+  path_provider: ^2.1.1
   permission_handler: ^11.0.0
   riverpod: ^2.4.0
+  shared_preferences: ^2.2.1
   syncfusion_flutter_charts: ^23.1.36
+  transparent_image: ^2.0.1
+  video_player: ^2.7.2
+  video_thumbnail: ^0.5.3
   wakelock: ^0.6.2
 
 dev_dependencies:

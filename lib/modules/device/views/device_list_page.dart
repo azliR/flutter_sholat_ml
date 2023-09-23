@@ -7,10 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/device_list/device_list_notifier.dart';
-import 'package:flutter_sholat_ml/modules/device/widgets/device_tile_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/dialogs.dart';
 import 'package:flutter_sholat_ml/utils/ui/input_formatters.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
 class DeviceListPage extends ConsumerStatefulWidget {
@@ -21,9 +22,9 @@ class DeviceListPage extends ConsumerStatefulWidget {
 }
 
 class _DeviceListPageState extends ConsumerState<DeviceListPage> {
-  Future<void> _showInputMacDialog() async {
-    final notifier = ref.read(deviceListProvider.notifier);
+  late final DeviceListNotifier _notifier;
 
+  Future<void> _showInputMacDialog() async {
     var macAddress = '';
     await showDialog<void>(
       context: context,
@@ -49,7 +50,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
             },
             decoration: InputDecoration(
               labelText: 'MAC address',
-              prefixIcon: const Icon(Icons.bluetooth),
+              prefixIcon: const Icon(Symbols.bluetooth),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -68,7 +69,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                 Navigator.pop(context);
 
                 final device = BluetoothDevice.fromId(macAddress);
-                await notifier.connectDevice(device);
+                await _notifier.connectDevice(device);
               },
               child: const Text('Input'),
             ),
@@ -80,8 +81,10 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
 
   @override
   void initState() {
+    _notifier = ref.read(deviceListProvider.notifier);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(deviceListProvider.notifier)
+      _notifier
         ..initialise()
         ..scanDevices()
         ..getBondedDevices();
@@ -93,8 +96,6 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
-    final notifier = ref.read(deviceListProvider.notifier);
 
     ref.listen(deviceListProvider, (previous, next) {
       if (previous?.presentationState != next.presentationState) {
@@ -113,7 +114,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
           case ConnectDeviceLoadingState():
             showLoadingDialog(context);
           case ConnectDeviceSuccessState():
-            notifier.selectDevice(presentationState.device);
+            _notifier.selectDevice(presentationState.device);
             Navigator.pop(context);
           case SelectDeviceLoadingState():
             showLoadingDialog(context);
@@ -150,7 +151,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
             sliver: SliverToBoxAdapter(
               child: FilledButton.tonalIcon(
                 onPressed: _showInputMacDialog,
-                icon: const Icon(Icons.login_rounded),
+                icon: const Icon(Symbols.login_rounded),
                 label: const Text('Input MAC address manually'),
               ),
             ),
@@ -178,9 +179,9 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       onPressed: () async {
-                        await notifier.scanDevices();
+                        await _notifier.scanDevices();
                       },
-                      icon: const Icon(Icons.refresh),
+                      icon: const Icon(Symbols.refresh),
                     ),
                 ],
               ),
@@ -222,14 +223,14 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                     scanResults[index].advertisementData.serviceUuids.any(
                           (service) => service == DeviceUuids.serviceMiBand1,
                         );
-                return DeviceTile(
+                return RoundedListTile(
                   title: Text(name.isEmpty ? 'Unknown device' : name),
                   subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Icons.bluetooth),
+                  leading: const Icon(Symbols.bluetooth),
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported
                       ? null
-                      : () => notifier.connectDevice(device),
+                      : () => _notifier.connectDevice(device),
                 );
               },
             ),
@@ -250,15 +251,15 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                 final name = device.localName;
                 final isSupported = device.type == BluetoothDeviceType.le;
 
-                return DeviceTile(
+                return RoundedListTile(
                   title: Text(name.isEmpty ? 'Unknown device' : name),
                   subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Icons.bluetooth),
+                  leading: const Icon(Symbols.bluetooth),
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported
                       ? null
                       : () async {
-                          await notifier.selectDevice(device);
+                          await _notifier.selectDevice(device);
                         },
                 );
               },
