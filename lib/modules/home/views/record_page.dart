@@ -1,174 +1,343 @@
-import 'dart:async';
-import 'dart:developer';
-
+import 'package:auto_route/auto_route.dart';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:flutter_sholat_ml/core/constants/device_uuids.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/modules/home/blocs/record/record_notifier.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:wakelock/wakelock.dart';
 
-class RecordPage extends StatefulWidget {
+@RoutePage()
+class RecordPage extends ConsumerStatefulWidget {
   const RecordPage({required this.device, required this.services, super.key});
 
   final BluetoothDevice device;
   final List<BluetoothService> services;
 
   @override
-  State<RecordPage> createState() => _RecordPageState();
+  ConsumerState<RecordPage> createState() => _RecordPageState();
 }
 
-class _RecordPageState extends State<RecordPage> {
-  late final BluetoothService _miBand1Service;
-  late final BluetoothService _heartRateService;
-  late final BluetoothCharacteristic _heartRateMeasureChar;
-  late final BluetoothCharacteristic _heartRateControlChar;
-  late final BluetoothCharacteristic _sensorChar;
-  late final BluetoothCharacteristic _hzChar;
-
-  final _accelerometerDatasets = <int>[];
-
-  var _isRecording = false;
-
-  Timer? _timer;
-  StreamSubscription<List<int>>? _heartRateMeasureSubscription;
-  StreamSubscription<List<int>>? _sensorSubscription;
-  StreamSubscription<List<int>>? _hzSubscription;
-
-  Future<void> _startRealtimeData() async {
-    log('Starting realtime...');
-    try {
-      await _heartRateMeasureChar.setNotifyValue(true);
-      await _sensorChar.setNotifyValue(true);
-      await _hzChar.setNotifyValue(true);
-
-      // stop heart monitor continues & manual
-      await _heartRateControlChar.write([0x15, 0x02, 0x00]);
-      await _heartRateControlChar.write([0x15, 0x01, 0x00]);
-
-      // start hear monitor continues
-      await _heartRateControlChar.write([0x15, 0x01, 0x01]);
-
-      // enabling accelerometer & heart monitor raw data notifications
-
-      await _sensorChar.write([0x01, 0x01, 0x19], withoutResponse: true);
-      await _sensorChar.write([0x02], withoutResponse: true);
-
-      // send ping request every 12 sec
-      _timer = Timer.periodic(const Duration(seconds: 12), (timer) {
-        _heartRateControlChar.write([0x16]);
-      });
-
-      setState(() {
-        _isRecording = true;
-      });
-      log('Realtime started!');
-    } catch (e, stackTrace) {
-      log('Failed starting realtime', error: e, stackTrace: stackTrace);
-      await _stopRealtimeData();
-    }
-  }
-
-  // def _parse_raw_accel(self, bytes):
-  //     res = []
-  //     for i in xrange(3):
-  //         g = struct.unpack('hhh', bytes[2 + i * 6:8 + i * 6])
-  //         res.append({'x': g[0], 'y': g[1], 'wtf': g[2]})
-  //     return res
-
-  Future<void> _stopRealtimeData() async {
-    log('Stopping realtime...');
-    try {
-      _timer?.cancel();
-
-      // stop heart monitor continues
-      await _heartRateControlChar.write([0x15, 0x01, 0x00]);
-      await _heartRateControlChar.write([0x15, 0x02, 0x00]);
-
-      await _sensorChar.write([0x03], withoutResponse: true);
-
-      await _heartRateMeasureChar.setNotifyValue(false);
-      await _sensorChar.setNotifyValue(false);
-
-      setState(() {
-        _isRecording = false;
-      });
-      log('Realtime stopped!');
-    } catch (e, stackTrace) {
-      log('Failed stopping realtime', error: e, stackTrace: stackTrace);
-    }
-  }
+class _RecordPageState extends ConsumerState<RecordPage>
+    with WidgetsBindingObserver {
+  late final RecordNotifier notifier;
+  CameraController? _cameraController;
 
   @override
   void initState() {
-    _miBand1Service = widget.services.singleWhere(
-      (service) => service.uuid == Guid(DeviceUuids.serviceMiBand1),
-    );
-    _heartRateService = widget.services.singleWhere(
-      (service) => service.uuid == Guid(DeviceUuids.serviceHeartRate),
-    );
-    _heartRateMeasureChar = _heartRateService.characteristics.singleWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charHeartRateMeasure),
-    );
-    _heartRateControlChar = _heartRateService.characteristics.singleWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charHeartRateControl),
-    );
-    _sensorChar = _miBand1Service.characteristics.singleWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charSensor),
-    );
-    _hzChar = _miBand1Service.characteristics.singleWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charHz),
-    );
+    notifier = ref.read(recordProvider.notifier);
 
-    _heartRateMeasureSubscription =
-        _heartRateMeasureChar.onValueReceived.listen((event) {
-      setState(() {
-        _accelerometerDatasets.add(event.last);
-      });
-      log('Heart rate: $event');
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      await notifier.initialise(
+        widget.device,
+        widget.services,
+      );
     });
-
-    _sensorSubscription = _sensorChar.onValueReceived.listen((event) {
-      log('Sensor: $event');
-    });
-
-    _hzSubscription = _hzChar.onValueReceived.listen((event) {
-      log('Hz: $event');
-    });
+    Wakelock.enable();
     super.initState();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final cameraController = _cameraController;
+
+    // App state changed before we got the chance to initialize.
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive) {
+      cameraController.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      notifier
+          .initialiseCamera(cameraController.description)
+          .then((controller) {
+        _cameraController = controller;
+      });
+    }
+  }
+
+  @override
   void dispose() {
-    _heartRateMeasureSubscription?.cancel();
-    _sensorSubscription?.cancel();
-    _hzSubscription?.cancel();
-    _timer?.cancel();
+    _cameraController?.dispose();
+
+    Wakelock.disable();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final notifier = ref.read(recordProvider.notifier);
+
+    ref.listen(recordProvider, (previous, next) async {
+      if (previous?.presentationState != next.presentationState) {
+        final presentationState = next.presentationState;
+        switch (presentationState) {
+          case CameraInitialisationFailureState():
+            showErrorSnackbar(context, 'Failed initialising camera');
+          case RecordFailureState():
+            showErrorSnackbar(context, 'Failed recording');
+          case RecordSuccessState():
+            showSnackbar(context, 'Success recording');
+          default:
+            break;
+        }
+      } else if (previous?.isCameraPermissionGranted !=
+          next.isCameraPermissionGranted) {
+        if (next.isCameraPermissionGranted) {
+          _cameraController = await notifier.initialiseCamera();
+        }
+      }
+    });
+
+    final isInitialised =
+        ref.watch(recordProvider.select((value) => value.isInitialised));
+    final isCameraPermissionGranted = ref.watch(
+      recordProvider.select((value) => value.isCameraPermissionGranted),
+    );
+    final cameraState =
+        ref.watch(recordProvider.select((value) => value.cameraState));
+    final accelerometerDatasets = ref
+        .watch(recordProvider.select((value) => value.accelerometerDatasets));
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          const SliverAppBar.large(
-            title: Text('Record'),
+      backgroundColor: !isCameraPermissionGranted ||
+              cameraState == CameraState.notInitialised
+          ? colorScheme.surface
+          : Colors.black,
+      body: SafeArea(
+        child: () {
+          if (!isInitialised) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          if (!isCameraPermissionGranted) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.videocam_off_rounded,
+                      size: 64,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'We need camera permission',
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Camera used to record together with accelerometer so it can be easy to determine what action that it did with accelerometer data.',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.tonal(
+                      onPressed: () async {
+                        _cameraController = await notifier.initialiseCamera();
+                      },
+                      child: const Text('Give permission'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          if (cameraState == CameraState.notInitialised) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          return Stack(
+            children: [
+              Positioned(
+                top: 80,
+                left: 0,
+                right: 0,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(24)),
+                  child: CameraPreview(_cameraController!),
+                ),
+              ),
+              Align(
+                alignment: Alignment.topCenter,
+                child: _AccelerometerChart(
+                  accelerometerDatasets: accelerometerDatasets,
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _RecordButton(
+                  cameraState: cameraState,
+                  cameraController: _cameraController!,
+                  onRecordPressed: () {
+                    if (cameraState == CameraState.ready) {
+                      notifier.startRecording(_cameraController!);
+                    } else if (cameraState == CameraState.recording) {
+                      notifier.stopRecording(_cameraController!);
+                    }
+                  },
+                ),
+              ),
+            ],
+          );
+        }(),
+      ),
+    );
+  }
+}
+
+class _AccelerometerChart extends StatelessWidget {
+  const _AccelerometerChart({required this.accelerometerDatasets, super.key});
+
+  final List<Dataset> accelerometerDatasets;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      width: double.infinity,
+      child: SfCartesianChart(
+        series: [
+          SplineSeries(
+            dataSource: accelerometerDatasets.reversed.take(10).toList(),
+            xValueMapper: (datum, index) => index,
+            yValueMapper: (datum, index) => datum.x,
+            color: Colors.red,
           ),
-          SliverToBoxAdapter(
-            child: Center(
-              child: Text(
-                _accelerometerDatasets.isEmpty
-                    ? '0'
-                    : _accelerometerDatasets.last.toString(),
-                style: textTheme.displaySmall,
+          SplineSeries(
+            dataSource: accelerometerDatasets.reversed.take(10).toList(),
+            xValueMapper: (datum, index) => index,
+            yValueMapper: (datum, index) => datum.y,
+            color: Colors.green,
+          ),
+          SplineSeries(
+            dataSource: accelerometerDatasets.reversed.take(10).toList(),
+            xValueMapper: (datum, index) => index,
+            yValueMapper: (datum, index) => datum.z,
+            color: Colors.blue,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordButton extends StatefulWidget {
+  const _RecordButton({
+    required this.cameraState,
+    required this.cameraController,
+    required this.onRecordPressed,
+    super.key,
+  });
+
+  final CameraState cameraState;
+  final CameraController cameraController;
+  final void Function() onRecordPressed;
+
+  @override
+  State<_RecordButton> createState() => __RecordButtonState();
+}
+
+class __RecordButtonState extends State<_RecordButton> {
+  var _isButtonPressed = false;
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(36),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          const SizedBox(width: 48),
+          GestureDetector(
+            onTap: () {
+              _isButtonPressed = false;
+              widget.onRecordPressed();
+            },
+            onTapDown: (details) {
+              if (widget.cameraState == CameraState.recording ||
+                  widget.cameraState == CameraState.saving) return;
+              setState(() {
+                _isButtonPressed = true;
+              });
+            },
+            onTapCancel: () {
+              if (widget.cameraState == CameraState.recording ||
+                  widget.cameraState == CameraState.saving) return;
+              setState(() {
+                _isButtonPressed = false;
+              });
+            },
+            onTapUp: (details) {
+              if (widget.cameraState == CameraState.recording ||
+                  widget.cameraState == CameraState.saving) return;
+              setState(() {
+                _isButtonPressed = false;
+              });
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.bounceInOut,
+                    margin: EdgeInsets.all(
+                      widget.cameraState == CameraState.recording
+                          ? 24
+                          : (_isButtonPressed ? 10 : 5),
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(
+                          widget.cameraState == CameraState.recording ? 6 : 36,
+                        ),
+                      ),
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+                if (widget.cameraState == CameraState.preparing ||
+                    widget.cameraState == CameraState.saving)
+                  const SizedBox(
+                    height: 72,
+                    width: 72,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 6,
+                      strokeAlign: -1,
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton.outlined(
+            iconSize: 36,
+            style: IconButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(
+                color: Colors.white,
+                width: 2,
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: FilledButton(
-              onPressed: _isRecording ? _stopRealtimeData : _startRealtimeData,
-              child: Text(_isRecording ? 'Stop record' : 'Start record'),
-            ),
+            onPressed: () {},
+            icon: const Icon(Symbols.sync_rounded),
           ),
         ],
       ),
