@@ -136,12 +136,12 @@ class RecordNotifier extends StateNotifier<RecordState> {
     state = state.copyWith(cameraState: CameraState.preparing);
 
     final (failure, _) = await _recordRepository.startRecording(
+      _timer,
       cameraController: cameraController,
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
       sensorChar: _sensorChar,
       hzChar: _hzChar,
-      timer: _timer,
     );
     if (failure != null) {
       state = state.copyWith(
@@ -158,12 +158,12 @@ class RecordNotifier extends StateNotifier<RecordState> {
     state = state.copyWith(cameraState: CameraState.saving);
 
     final (stopFailure, _) = await _recordRepository.stopRecording(
+      _timer,
       cameraController: cameraController,
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
       sensorChar: _sensorChar,
       hzChar: _hzChar,
-      timer: _timer,
     );
     if (stopFailure != null) {
       state = state.copyWith(

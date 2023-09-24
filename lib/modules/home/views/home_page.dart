@@ -1,11 +1,14 @@
+import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/home/home_notifier.dart';
-import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
+import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
+enum HomePageNavigation { home, device }
 
 @RoutePage()
 class HomePage extends ConsumerStatefulWidget {
@@ -19,7 +22,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   late final HomeNotifier _notifier;
   late final AuthDeviceNotifier _authDeviceNotifier;
 
+  late TabsRouter _tabsRouter;
+
   final _refreshKey = GlobalKey<RefreshIndicatorState>();
+
+  void _onNavigationChanged(TabsRouter tabsRouter, int index) {
+    if (index != tabsRouter.activeIndex) {
+      tabsRouter.setActiveIndex(index);
+    } else {
+      tabsRouter.stackRouterOfIndex(index)?.popUntilRoot();
+    }
+  }
 
   @override
   void initState() {
@@ -34,124 +47,121 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading =
-        ref.watch(homeProvider.select((state) => state.isLoading));
-    final datasetPaths =
-        ref.watch(homeProvider.select((state) => state.datasetPaths));
+    ref.listen(
+      authDeviceProvider,
+      (previous, next) => handleAuthDeviceState(
+        context,
+        previous,
+        next,
+        onAuthDeviceSuccessState: () {
+          _onNavigationChanged(_tabsRouter, 1);
+          Navigator.pop(context);
+        },
+      ),
+    );
 
+    final currentDevice =
+        ref.watch(authDeviceProvider.select((state) => state.currentDevice));
     final savedDevices =
         ref.watch(authDeviceProvider.select((state) => state.savedDevices));
 
-    return Scaffold(
-      drawer: NavigationDrawer(
-        onDestinationSelected: (index) {
-          if (index == savedDevices.length) {
-            context.router.push(const DeviceListRoute());
-          }
-        },
-        children: [
-          const SizedBox(height: 16),
-          ...savedDevices.map((device) {
-            return NavigationDrawerDestination(
-              icon: const Icon(Symbols.bluetooth_rounded),
-              label: Text(device.deviceName),
-            );
-          }),
-          const Divider(),
-          const NavigationDrawerDestination(
-            icon: Icon(Symbols.add_rounded),
-            label: Text('Add device'),
-          ),
-          const Divider(),
-          const NavigationDrawerDestination(
-            icon: Icon(Symbols.settings_rounded),
-            label: Text('Settings'),
-          ),
-        ],
+    return AutoTabsRouter(
+      curve: Curves.easeIn,
+      routes: HomePageNavigation.values.map((section) {
+        return switch (section) {
+          HomePageNavigation.home => const SavedDevicesRoute(),
+          HomePageNavigation.device => const DatasetsRoute(),
+        };
+      }).toList(),
+      transitionBuilder: (context, child, animation) => FadeThroughTransition(
+        animation: animation,
+        secondaryAnimation: ReverseAnimation(animation),
+        fillColor: Theme.of(context).canvasColor,
+        child: child,
       ),
-      body: RefreshIndicator(
-        key: _refreshKey,
-        onRefresh: () {
-          return _notifier.loadDatasetsFromDisk();
-        },
-        child: CustomScrollView(
-          slivers: [
-            const SliverAppBar.large(title: Text('Home')),
-            if (isLoading)
-              const SliverToBoxAdapter(
-                child: LinearProgressIndicator(),
-              ),
-            if (datasetPaths.isEmpty)
-              const SliverFillRemaining(
-                child: Center(
-                  child: Text('No datasets found'),
-                ),
-              ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final datasetPath = datasetPaths[index];
-                  final datasetName = datasetPath.split('/').last;
+      builder: (context, child) {
+        _tabsRouter = AutoTabsRouter.of(context);
 
-                  return RoundedListTile(
-                    title: Text(
-                      datasetName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    leading: const Icon(Symbols.csv_rounded),
-                    trailing: MenuAnchor(
-                      builder: (context, controller, child) {
-                        return IconButton(
-                          style: IconButton.styleFrom(
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () {
-                            if (controller.isOpen) {
-                              controller.close();
-                            } else {
-                              controller.open();
-                            }
-                          },
-                          icon: child!,
-                        );
-                      },
-                      menuChildren: [
-                        MenuItemButton(
-                          leadingIcon: const Icon(Symbols.delete_rounded),
-                          onPressed: () async {
-                            await _notifier.deleteDataset(datasetPath);
-                            await _refreshKey.currentState?.show();
-                          },
-                          child: const Text('Delete'),
-                        ),
-                      ],
-                      child: const Icon(Symbols.more_vert_rounded),
-                    ),
-                    onTap: () {},
+        return WillPopScope(
+          onWillPop: () async {
+            if (_tabsRouter.activeIndex != 0) {
+              _tabsRouter.setActiveIndex(0);
+              return false;
+            } else {
+              return true;
+            }
+          },
+          child: Scaffold(
+            drawer: NavigationDrawer(
+              selectedIndex: _tabsRouter.activeIndex,
+              onDestinationSelected: (index) async {
+                if (index == 0) {
+                  _onNavigationChanged(_tabsRouter, index);
+                  Navigator.pop(context);
+                } else if (index - 1 < savedDevices.length) {
+                  final deviceIndex = index - 1;
+                  final device = savedDevices[deviceIndex];
+                  if (device == currentDevice) {
+                    _onNavigationChanged(_tabsRouter, index);
+                    Navigator.pop(context);
+                    return;
+                  }
+                  await _authDeviceNotifier.connectToSavedDevice(device);
+                } else if (index - 1 == savedDevices.length) {
+                  await context.router.push(const DiscoverDeviceRoute());
+                }
+              },
+              children: [
+                const SizedBox(height: 16),
+                const NavigationDrawerDestination(
+                  icon: Icon(Symbols.home_rounded),
+                  label: Text('Home'),
+                ),
+                const Divider(),
+                ...savedDevices.map((device) {
+                  return NavigationDrawerDestination(
+                    icon: const Icon(Symbols.bluetooth_rounded),
+                    label: Text(device.deviceName),
                   );
-                },
-                childCount: datasetPaths.length,
+                }),
+                const Divider(),
+                const NavigationDrawerDestination(
+                  icon: Icon(Symbols.add_rounded),
+                  label: Text('Add device'),
+                ),
+                const Divider(),
+                const NavigationDrawerDestination(
+                  icon: Icon(Symbols.settings_rounded),
+                  label: Text('Settings'),
+                ),
+              ],
+            ),
+            body: RefreshIndicator(
+              key: _refreshKey,
+              onRefresh: () {
+                return _notifier.loadDatasetsFromDisk();
+              },
+              child: child,
+            ),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: FloatingActionButton.large(
+              onPressed: () async {
+                await context.router.push(
+                  RecordRoute(
+                    device: _authDeviceNotifier.bluetoothDevice!,
+                    services: _authDeviceNotifier.services!,
+                  ),
+                );
+                await _refreshKey.currentState?.show();
+              },
+              child: const Icon(
+                Symbols.videocam_rounded,
               ),
             ),
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton.large(
-        onPressed: () async {
-          await context.router.push(
-            RecordRoute(
-              device: _authDeviceNotifier.device,
-              services: _authDeviceNotifier.services,
-            ),
-          );
-          await _refreshKey.currentState?.show();
-        },
-        child: const Icon(
-          Symbols.videocam_rounded,
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -26,82 +26,84 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
 
   final DeviceRepository _deviceRepository;
 
-  late BluetoothDevice device;
-  late List<BluetoothService> services;
+  BluetoothDevice? bluetoothDevice;
+  List<BluetoothService>? services;
 
-  late BluetoothService _authService;
-  late BluetoothCharacteristic _authChar;
-
-  late String _authKey;
+  BluetoothService? _authService;
+  BluetoothCharacteristic? _authChar;
 
   StreamSubscription<List<int>>? _authSubscription;
   StreamSubscription<List<Device>>? _savedDevicesSubscription;
 
-  Future<Device?> getPrimaryDevice() {
-    return _deviceRepository.getPrimaryDevice();
+  Future<Device?> getPrimaryDevice() async {
+    final (failure, device) = await _deviceRepository.getPrimaryDevice();
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: GetPrimaryDeviceFailure(failure),
+      );
+      return null;
+    }
+    return device;
+  }
+
+  Future<bool> removeSavedDevice(Device device) async {
+    if (!state.savedDevices.contains(device)) return false;
+
+    await disconnectCurrentDevice();
+
+    final (removeFailure, _) = await _deviceRepository.removeDevice(device);
+    if (removeFailure != null) {
+      state = state.copyWith(
+        presentationState: RemoveDeviceFailure(removeFailure),
+      );
+      return false;
+    }
+
+    state = state.copyWith(currentDevice: () => null);
+    return true;
   }
 
   Future<void> connectToSavedDevice(Device savedDevice) async {
-    state = state.copyWith(
-      presentationState: const AuthDeviceLoadingState(),
-    );
-
     final device = BluetoothDevice(
       remoteId: DeviceIdentifier(savedDevice.deviceId),
       localName: savedDevice.deviceName,
       type: BluetoothDeviceType.le,
     );
 
-    final (connectFailure, _) = await _deviceRepository.connectDevice(device);
-    if (connectFailure != null) {
-      state = state.copyWith(
-        presentationState: AuthDeviceFailureState(connectFailure),
-      );
-      return;
-    }
-
-    final (discoverFailure, services) =
-        await _deviceRepository.discoverServices(device);
-    if (discoverFailure != null) {
-      state = state.copyWith(
-        presentationState: AuthDeviceFailureState(discoverFailure),
-      );
-      return;
-    }
-
-    await initialise(savedDevice.authKey, device, services);
+    await connectDevice(device);
+    final services = await selectDevice(device);
+    if (services == null) return;
 
     await auth(savedDevice.authKey, device, services);
   }
 
   Future<void> initialise(
     String authKey,
-    BluetoothDevice device,
+    BluetoothDevice bluetoothDevice,
     List<BluetoothService> services,
   ) async {
-    await _authSubscription?.cancel();
-
-    _authKey = authKey;
-    this.device = device;
+    this.bluetoothDevice = bluetoothDevice;
     this.services = services;
 
     _authService = services.singleWhere(
       (element) => element.uuid == Guid(DeviceUuids.serviceMiBand2),
     );
-    _authChar = _authService.characteristics.singleWhere(
+    _authChar = _authService!.characteristics.singleWhere(
       (element) => element.uuid == Guid(DeviceUuids.charAuth),
     );
 
-    await _authChar.setNotifyValue(true);
+    final authChar = _authChar!;
 
-    _authSubscription = _authChar.onValueReceived.listen((value) async {
+    await authChar.setNotifyValue(true);
+
+    _authSubscription = authChar.onValueReceived.listen((value) async {
       log('Auth value: $value');
 
       final hexResponse = hex.encode(value.sublist(0, 3));
       if (hexResponse == DeviceResponses.randomKeyReceived) {
         final number = value.sublist(3);
         final (failure, _) =
-            await _deviceRepository.sendEncRandom(_authChar, _authKey, number);
+            await _deviceRepository.sendEncRandom(authChar, authKey, number);
 
         if (failure != null) {
           state = state.copyWith(
@@ -110,15 +112,15 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
           return;
         }
       } else if (hexResponse == DeviceResponses.authSucceeded) {
-        await _deviceRepository.saveDevice(
-          Device(
-            authKey: _authKey,
-            deviceId: device.remoteId.str,
-            deviceName: device.localName,
-          ),
+        final currentDevice = Device(
+          authKey: authKey,
+          deviceId: bluetoothDevice.remoteId.str,
+          deviceName: bluetoothDevice.localName,
         );
+        await _deviceRepository.saveDevice(currentDevice);
 
         state = state.copyWith(
+          currentDevice: () => currentDevice,
           presentationState: const AuthDeviceSuccessState(),
         );
       } else {
@@ -140,6 +142,45 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     // });
   }
 
+  Future<void> connectDevice(BluetoothDevice bluetoothDevice) async {
+    state =
+        state.copyWith(presentationState: const ConnectDeviceLoadingState());
+
+    await disconnectCurrentDevice();
+
+    state = state.copyWith(currentDevice: () => null);
+
+    final (connectFailure, _) =
+        await _deviceRepository.connectDevice(bluetoothDevice);
+    if (connectFailure != null) {
+      state = state.copyWith(
+        presentationState: ConnectDeviceFailureState(connectFailure),
+      );
+      return;
+    }
+    state = state.copyWith(
+      presentationState: ConnectDeviceSuccessState(bluetoothDevice),
+    );
+  }
+
+  Future<List<BluetoothService>?> selectDevice(BluetoothDevice device) async {
+    state = state.copyWith(presentationState: const SelectDeviceLoadingState());
+
+    final (failure, services) =
+        await _deviceRepository.discoverServices(device);
+    if (failure != null) {
+      state =
+          state.copyWith(presentationState: SelectDeviceFailureState(failure));
+      return null;
+    }
+
+    state = state.copyWith(
+      presentationState: SelectDeviceSuccessState(device, services),
+    );
+
+    return services;
+  }
+
   Future<void> auth(
     String authKey,
     BluetoothDevice device,
@@ -151,13 +192,35 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
 
     await initialise(authKey, device, services);
 
-    final (failure, _) = await _deviceRepository.requestRandomNumber(_authChar);
+    final (failure, _) =
+        await _deviceRepository.requestRandomNumber(_authChar!);
     if (failure != null) {
       state = state.copyWith(
         presentationState: AuthDeviceFailureState(failure),
       );
       return;
     }
+  }
+
+  Future<bool> disconnectCurrentDevice() async {
+    if (bluetoothDevice == null) return false;
+
+    final (disconnectFailure, _) =
+        await _deviceRepository.disconnectDevice(bluetoothDevice!);
+    if (disconnectFailure != null) {
+      state = state.copyWith(
+        presentationState: DisconnectDeviceFailure(disconnectFailure),
+      );
+      return false;
+    }
+
+    bluetoothDevice = null;
+    services = null;
+    _authChar = null;
+    _authService = null;
+    await _authSubscription?.cancel();
+
+    return true;
   }
 
   @override

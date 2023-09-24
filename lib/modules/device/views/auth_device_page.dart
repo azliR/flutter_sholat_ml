@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
-import 'package:flutter_sholat_ml/utils/ui/dialogs.dart';
+import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -74,27 +73,10 @@ class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(authDeviceProvider, (previous, next) {
-      if (previous?.presentationState != next.presentationState) {
-        final presentationState = next.presentationState;
-        switch (presentationState) {
-          case AuthDeviceFailureState():
-            Navigator.pop(context);
-            showErrorSnackbar(context, 'Failed authenticating device');
-          case AuthDeviceLoadingState():
-            showLoadingDialog(context);
-          case AuthDeviceSuccessState():
-            Navigator.pop(context);
-            context.router
-                .pushAndPopUntil(const HomeRoute(), predicate: (_) => false);
-          case AuthDeviceResponseFailureState():
-            Navigator.pop(context);
-            showErrorSnackbar(context, 'Failed authenticating device');
-          case AuthDeviceInitialState():
-            break;
-        }
-      }
-    });
+    ref.listen(
+      authDeviceProvider,
+      (previous, next) => handleAuthDeviceState(context, previous, next),
+    );
 
     return Scaffold(
       body: CustomScrollView(

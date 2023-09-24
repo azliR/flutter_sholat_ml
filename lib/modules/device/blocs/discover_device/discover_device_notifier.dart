@@ -7,17 +7,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/device/repository/device_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
-part 'device_list_state.dart';
+part 'discover_device_state.dart';
 
-final deviceListProvider =
-    StateNotifierProvider.autoDispose<DeviceListNotifier, DeviceListState>(
-  (ref) => DeviceListNotifier(),
+final discoverDeviceProvider = StateNotifierProvider.autoDispose<
+    DiscoverDeviceNotifier, DiscoverDeviceState>(
+  (ref) => DiscoverDeviceNotifier(),
 );
 
-class DeviceListNotifier extends StateNotifier<DeviceListState> {
-  DeviceListNotifier()
+class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
+  DiscoverDeviceNotifier()
       : _deviceRepository = DeviceRepository(),
-        super(DeviceListState.initial());
+        super(DiscoverDeviceState.initial());
 
   final DeviceRepository _deviceRepository;
 
@@ -79,33 +79,6 @@ class DeviceListNotifier extends StateNotifier<DeviceListState> {
       return;
     }
     state = state.copyWith(bondedDevices: bondedDevices);
-  }
-
-  Future<void> connectDevice(BluetoothDevice device) async {
-    state =
-        state.copyWith(presentationState: const ConnectDeviceLoadingState());
-    final (failure, _) = await _deviceRepository.connectDevice(device);
-    if (failure != null) {
-      state =
-          state.copyWith(presentationState: ConnectDeviceFailureState(failure));
-      return;
-    }
-    state =
-        state.copyWith(presentationState: ConnectDeviceSuccessState(device));
-  }
-
-  Future<void> selectDevice(BluetoothDevice device) async {
-    state = state.copyWith(presentationState: const SelectDeviceLoadingState());
-    final (failure, services) =
-        await _deviceRepository.discoverServices(device);
-    if (failure != null) {
-      state =
-          state.copyWith(presentationState: SelectDeviceFailureState(failure));
-      return;
-    }
-    state = state.copyWith(
-      presentationState: SelectDeviceSuccessState(device, services),
-    );
   }
 
   @override

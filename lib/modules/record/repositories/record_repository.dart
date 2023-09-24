@@ -54,13 +54,13 @@ class RecordRepository {
         permission.isLimited;
   }
 
-  Future<(Failure?, void)> startRecording({
+  Future<(Failure?, void)> startRecording(
+    Timer? timer, {
     required CameraController cameraController,
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
-    required Timer? timer,
   }) async {
     try {
       await _startRealtimeData(
@@ -79,13 +79,13 @@ class RecordRepository {
     }
   }
 
-  Future<(Failure?, void)> stopRecording({
+  Future<(Failure?, void)> stopRecording(
+    Timer? timer, {
     required CameraController cameraController,
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
-    required Timer? timer,
   }) async {
     try {
       await cameraController.pauseVideoRecording();

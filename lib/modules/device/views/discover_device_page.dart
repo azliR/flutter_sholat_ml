@@ -6,23 +6,25 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
-import 'package:flutter_sholat_ml/modules/device/blocs/device_list/device_list_notifier.dart';
-import 'package:flutter_sholat_ml/utils/ui/dialogs.dart';
+import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
+import 'package:flutter_sholat_ml/modules/device/blocs/discover_device/discover_device_notifier.dart';
+import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/input_formatters.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
-class DeviceListPage extends ConsumerStatefulWidget {
-  const DeviceListPage({super.key});
+class DiscoverDevicePage extends ConsumerStatefulWidget {
+  const DiscoverDevicePage({super.key});
 
   @override
-  ConsumerState<DeviceListPage> createState() => _DeviceListPageState();
+  ConsumerState<DiscoverDevicePage> createState() => _DiscoverDevicePageState();
 }
 
-class _DeviceListPageState extends ConsumerState<DeviceListPage> {
-  late final DeviceListNotifier _notifier;
+class _DiscoverDevicePageState extends ConsumerState<DiscoverDevicePage> {
+  late final DiscoverDeviceNotifier _notifier;
+  late final AuthDeviceNotifier _authDeviceNotifier;
 
   Future<void> _showInputMacDialog() async {
     var macAddress = '';
@@ -67,9 +69,8 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
             FilledButton(
               onPressed: () async {
                 Navigator.pop(context);
-
-                final device = BluetoothDevice.fromId(macAddress);
-                await _notifier.connectDevice(device);
+                final bluetoothDevice = BluetoothDevice.fromId(macAddress);
+                await _onConnectPressed(bluetoothDevice);
               },
               child: const Text('Input'),
             ),
@@ -79,9 +80,30 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
     );
   }
 
+  Future<void> _onConnectPressed(
+    BluetoothDevice bluetoothDevice, {
+    bool isBonded = false,
+  }) async {
+    if (!isBonded) {
+      await _authDeviceNotifier.connectDevice(bluetoothDevice);
+    }
+    final services = await _authDeviceNotifier.selectDevice(bluetoothDevice);
+    if (services == null) return;
+
+    if (!context.mounted) return;
+
+    await context.router.push(
+      AuthDeviceRoute(
+        device: bluetoothDevice,
+        services: services,
+      ),
+    );
+  }
+
   @override
   void initState() {
-    _notifier = ref.read(deviceListProvider.notifier);
+    _notifier = ref.read(discoverDeviceProvider.notifier);
+    _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifier
@@ -97,54 +119,40 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    ref.listen(deviceListProvider, (previous, next) {
-      if (previous?.presentationState != next.presentationState) {
-        final presentationState = next.presentationState;
-        switch (presentationState) {
-          case TurnOnBluetoothFailureState():
-            showErrorSnackbar(context, 'Failed turning on bluetooth');
-          case ScanDevicesFailureState():
-            showErrorSnackbar(context, 'Failed scanning devices');
-          case GetBondedDevicesFailureState():
-            showErrorSnackbar(context, 'Failed getting bonded devices');
-          case ConnectDeviceFailureState():
-            showErrorSnackbar(context, 'Failed connecting to device');
-          case SelectDeviceFailureState():
-            showErrorSnackbar(context, 'Failed selecting device');
-          case ConnectDeviceLoadingState():
-            showLoadingDialog(context);
-          case ConnectDeviceSuccessState():
-            _notifier.selectDevice(presentationState.device);
-            Navigator.pop(context);
-          case SelectDeviceLoadingState():
-            showLoadingDialog(context);
-          case SelectDeviceSuccessState():
-            Navigator.pop(context);
-            context.router.push(
-              AuthDeviceRoute(
-                device: presentationState.device,
-                services: presentationState.services,
-              ),
-            );
-          case DeviceListInitialState():
+    ref
+      ..listen(discoverDeviceProvider, (previous, next) {
+        if (previous?.presentationState != next.presentationState) {
+          final presentationState = next.presentationState;
+          switch (presentationState) {
+            case TurnOnBluetoothFailureState():
+              showErrorSnackbar(context, 'Failed turning on bluetooth');
+            case ScanDevicesFailureState():
+              showErrorSnackbar(context, 'Failed scanning devices');
+            case GetBondedDevicesFailureState():
+              showErrorSnackbar(context, 'Failed getting bonded devices');
+            case DiscoverDeviceInitialState():
+          }
         }
-      }
-    });
+      })
+      ..listen(
+        authDeviceProvider,
+        (previous, next) => handleAuthDeviceState(context, previous, next),
+      );
 
     final isScanning =
-        ref.watch(deviceListProvider.select((value) => value.isScanning));
-    final bluetoothState =
-        ref.watch(deviceListProvider.select((value) => value.bluetoothState));
+        ref.watch(discoverDeviceProvider.select((value) => value.isScanning));
+    final bluetoothState = ref
+        .watch(discoverDeviceProvider.select((value) => value.bluetoothState));
     final scanResults =
-        ref.watch(deviceListProvider.select((value) => value.scanResults));
-    final bondedDevices =
-        ref.watch(deviceListProvider.select((value) => value.bondedDevices));
+        ref.watch(discoverDeviceProvider.select((value) => value.scanResults));
+    final bondedDevices = ref
+        .watch(discoverDeviceProvider.select((value) => value.bondedDevices));
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           const SliverAppBar.large(
-            title: Text('Device List'),
+            title: Text('Discover Device'),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -228,9 +236,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                   subtitle: Text(device.remoteId.str),
                   leading: const Icon(Symbols.bluetooth),
                   trailing: isSupported ? null : const Text('Not Supported'),
-                  onTap: !isSupported
-                      ? null
-                      : () => _notifier.connectDevice(device),
+                  onTap: !isSupported ? null : () => _onConnectPressed(device),
                 );
               },
             ),
@@ -258,9 +264,7 @@ class _DeviceListPageState extends ConsumerState<DeviceListPage> {
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported
                       ? null
-                      : () async {
-                          await _notifier.selectDevice(device);
-                        },
+                      : () => _onConnectPressed(device, isBonded: true),
                 );
               },
             ),

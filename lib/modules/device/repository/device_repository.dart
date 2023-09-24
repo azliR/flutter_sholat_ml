@@ -80,6 +80,21 @@ class DeviceRepository {
     }
   }
 
+  Future<(Failure?, void)> disconnectDevice(BluetoothDevice device) async {
+    try {
+      log('Disconnecting from: ${device.remoteId.str}');
+
+      await device.disconnect(timeout: 10);
+
+      log('Disconnected from: ${device.remoteId.str}');
+      return (null, null);
+    } catch (e, stackTrace) {
+      final message = 'Failed connecting to: ${device.remoteId.str}';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
   Future<(Failure?, List<BluetoothService>)> discoverServices(
     BluetoothDevice device,
   ) async {
@@ -145,14 +160,38 @@ class DeviceRepository {
     return aes.encrypt(Uint8List.fromList(data)).bytes;
   }
 
-  Future<Device?> getPrimaryDevice() async {
-    final devices = await LocalStorageService.getSavedDevices();
-    if (devices.isEmpty) return null;
-    return devices.first;
+  Future<(Failure?, Device?)> getPrimaryDevice() async {
+    try {
+      final devices = await LocalStorageService.getSavedDevices();
+      if (devices.isEmpty) return (null, null);
+      return (null, devices.first);
+    } catch (e, stackTrace) {
+      const message = 'Failed getting primary device';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
   }
 
-  Future<void> saveDevice(Device device) async {
-    await LocalStorageService.setSavedDevice(device);
+  Future<(Failure?, void)> saveDevice(Device device) async {
+    try {
+      await LocalStorageService.setSavedDevice(device);
+      return (null, null);
+    } catch (e, stackTrace) {
+      final message = 'Failed saving device: $device';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> removeDevice(Device device) async {
+    try {
+      await LocalStorageService.deleteSavedDevice(device);
+      return (null, null);
+    } catch (e, stackTrace) {
+      final message = 'Failed removing device: $device';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
   }
 
   Stream<List<Device>> get savedDevicesStream =>
