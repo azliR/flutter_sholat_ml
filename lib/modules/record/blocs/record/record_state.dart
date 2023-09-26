@@ -8,6 +8,8 @@ class RecordState extends Equatable {
     required this.isCameraPermissionGranted,
     required this.cameraState,
     required this.accelerometerDatasets,
+    required this.lastDataset,
+    required this.lastDatasets,
     required this.presentationState,
   });
 
@@ -16,6 +18,8 @@ class RecordState extends Equatable {
         isCameraPermissionGranted: false,
         cameraState: CameraState.notInitialised,
         accelerometerDatasets: [],
+        lastDataset: null,
+        lastDatasets: null,
         presentationState: RecordInitialState(),
       );
 
@@ -23,6 +27,8 @@ class RecordState extends Equatable {
   final bool isCameraPermissionGranted;
   final CameraState cameraState;
   final List<Dataset> accelerometerDatasets;
+  final Dataset? lastDataset;
+  final List<Dataset>? lastDatasets;
   final RecordPresentationState presentationState;
 
   RecordState copyWith({
@@ -30,6 +36,8 @@ class RecordState extends Equatable {
     bool? isCameraPermissionGranted,
     CameraState? cameraState,
     List<Dataset>? accelerometerDatasets,
+    ValueGetter<Dataset?>? lastDataset,
+    ValueGetter<List<Dataset>?>? lastDatasets,
     RecordPresentationState? presentationState,
   }) {
     return RecordState(
@@ -39,6 +47,8 @@ class RecordState extends Equatable {
       cameraState: cameraState ?? this.cameraState,
       accelerometerDatasets:
           accelerometerDatasets ?? this.accelerometerDatasets,
+      lastDataset: lastDataset == null ? null : lastDataset(),
+      lastDatasets: lastDatasets == null ? null : lastDatasets(),
       presentationState: presentationState ?? this.presentationState,
     );
   }

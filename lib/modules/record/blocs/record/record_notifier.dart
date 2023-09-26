@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:async/async.dart';
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -33,6 +32,8 @@ class RecordNotifier extends StateNotifier<RecordState> {
   late final BluetoothCharacteristic _sensorChar;
   late final BluetoothCharacteristic _hzChar;
 
+  final _stopwatch = Stopwatch();
+
   Timer? _timer;
   StreamSubscription<List<int>>? _heartRateMeasureSubscription;
   StreamSubscription<List<int>>? _sensorSubscription;
@@ -63,42 +64,37 @@ class RecordNotifier extends StateNotifier<RecordState> {
       (char) => char.uuid == Guid(DeviceUuids.charHz),
     );
 
-    StreamZip([
-      _heartRateMeasureChar.onValueReceived,
-      _hzChar.onValueReceived,
-    ]).listen((event) {
-      final heartRate = event[0];
-      final hz = event[1];
-      log('Heart rate: $heartRate, Hz: $hz');
-    });
+    await _heartRateMeasureChar.setNotifyValue(true);
+    await _sensorChar.setNotifyValue(true);
+    await _hzChar.setNotifyValue(true);
+
+    // StreamZip([
+    //   _heartRateMeasureChar.onValueReceived,
+    //   _hzChar.onValueReceived,
+    // ]).listen((event) {
+    //   final heartRate = event[0];
+    //   final hz = event[1];
+    //   log('Heart rate: $heartRate, Hz: $hz');
+    // });
 
     _sensorSubscription ??= _sensorChar.onValueReceived.listen((event) {
       log('Sensor: $event');
     });
 
     _hzSubscription ??= _hzChar.onValueReceived.listen((event) {
-      log('Hz: $event');
-      _recordRepository.handleRawSensorData(
+      final datasets = _recordRepository.handleRawSensorData(
         Uint8List.fromList(event),
-        onUpdated: (dataset) {
-          Timer(const Duration(milliseconds: 10), () {
-            state = state.copyWith(
-              accelerometerDatasets: [
-                ...state.accelerometerDatasets,
-                dataset,
-              ],
-            );
-          });
-        },
+        _stopwatch,
       );
-      // if (accelerometerDatasets == null) return;
-
-      // state = state.copyWith(
-      //   accelerometerDatasets: [
-      //     ...state.accelerometerDatasets,
-      //     ...accelerometerDatasets,
-      //   ],
-      // );
+      if (datasets != null) {
+        state = state.copyWith(
+          accelerometerDatasets: [
+            ...state.accelerometerDatasets,
+            ...datasets,
+          ],
+          lastDatasets: () => datasets,
+        );
+      }
     });
 
     final isCameraPermissionGranted =
@@ -133,7 +129,13 @@ class RecordNotifier extends StateNotifier<RecordState> {
   }
 
   Future<void> startRecording(CameraController cameraController) async {
-    state = state.copyWith(cameraState: CameraState.preparing);
+    state = state.copyWith(
+      accelerometerDatasets: [],
+      lastDataset: () => null,
+      cameraState: CameraState.preparing,
+    );
+
+    _stopwatch.reset();
 
     final (failure, _) = await _recordRepository.startRecording(
       _timer,
@@ -151,11 +153,14 @@ class RecordNotifier extends StateNotifier<RecordState> {
       return;
     }
 
+    _stopwatch.start();
     state = state.copyWith(cameraState: CameraState.recording);
   }
 
   Future<void> stopRecording(CameraController cameraController) async {
     state = state.copyWith(cameraState: CameraState.saving);
+
+    _stopwatch.stop();
 
     final (stopFailure, _) = await _recordRepository.stopRecording(
       _timer,
@@ -167,7 +172,6 @@ class RecordNotifier extends StateNotifier<RecordState> {
     );
     if (stopFailure != null) {
       state = state.copyWith(
-        accelerometerDatasets: [],
         presentationState: RecordFailureState(stopFailure),
         cameraState: CameraState.ready,
       );
@@ -179,14 +183,12 @@ class RecordNotifier extends StateNotifier<RecordState> {
     );
     if (saveFailure != null) {
       state = state.copyWith(
-        accelerometerDatasets: [],
         presentationState: RecordFailureState(saveFailure),
         cameraState: CameraState.ready,
       );
       return;
     }
     state = state.copyWith(
-      accelerometerDatasets: [],
       presentationState: const RecordSuccessState(),
       cameraState: CameraState.ready,
     );

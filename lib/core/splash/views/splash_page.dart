@@ -32,7 +32,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   Future<void> onFailure() async {
     showErrorSnackbar(context, 'Failed to connect to saved device');
     await context.router.pushAndPopUntil(
-      const DiscoverDeviceRoute(),
+      const SavedDevicesRoute(),
       predicate: (_) => false,
     );
   }
@@ -112,7 +112,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                   },
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

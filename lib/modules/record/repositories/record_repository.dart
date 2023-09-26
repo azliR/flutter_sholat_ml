@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math' hide log;
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
+import 'package:convert/convert.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
-import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -64,11 +65,11 @@ class RecordRepository {
   }) async {
     try {
       await _startRealtimeData(
+        timer,
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,
         sensorChar: sensorChar,
         hzChar: hzChar,
-        timer: timer,
       );
       await cameraController.startVideoRecording();
       return (null, null);
@@ -90,11 +91,11 @@ class RecordRepository {
     try {
       await cameraController.pauseVideoRecording();
       await _stopRealtimeData(
+        timer,
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,
         sensorChar: sensorChar,
         hzChar: hzChar,
-        timer: timer,
       );
       return (null, null);
     } catch (e, stackTrace) {
@@ -111,7 +112,7 @@ class RecordRepository {
     final now = DateTime.now();
     final dir = await getApplicationDocumentsDirectory();
     const savedDir = Directories.savedDatasetDir;
-    final fileName = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+    final fileName = now.toIso8601String();
 
     final fullSavedDir = await Directory('${dir.path}/$savedDir/$fileName')
         .create(recursive: true);
@@ -122,7 +123,7 @@ class RecordRepository {
         final x = dataset.x.toStringAsFixed(6);
         final y = dataset.y.toStringAsFixed(6);
         final z = dataset.z.toStringAsFixed(6);
-        final timeStamp = dataset.timestamp.toIso8601String();
+        final timeStamp = dataset.timestamp.inMilliseconds.toString();
 
         return '$previousValue$timeStamp,$x,$y,$z\n';
       });
@@ -160,12 +161,12 @@ class RecordRepository {
     }
   }
 
-  Future<(Failure?, void)> _startRealtimeData({
+  Future<(Failure?, void)> _startRealtimeData(
+    Timer? timer, {
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
-    required Timer? timer,
   }) async {
     log('Starting realtime...');
     try {
@@ -187,6 +188,7 @@ class RecordRepository {
       await sensorChar.write([0x02], withoutResponse: true);
 
       // send ping request every 12 sec
+      // ignore: parameter_assignments
       timer = Timer.periodic(const Duration(seconds: 12), (timer) async {
         await heartRateControlChar.write([0x16]);
       });
@@ -199,23 +201,23 @@ class RecordRepository {
       final failure = Failure(message, error: e, stackTrace: stackTrace);
 
       await _stopRealtimeData(
+        timer,
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,
         sensorChar: sensorChar,
         hzChar: hzChar,
-        timer: timer,
       );
 
       return (failure, null);
     }
   }
 
-  Future<(Failure?, void)> _stopRealtimeData({
+  Future<(Failure?, void)> _stopRealtimeData(
+    Timer? timer, {
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
-    required Timer? timer,
   }) async {
     log('Stopping realtime...');
     try {
@@ -226,10 +228,6 @@ class RecordRepository {
       await heartRateControlChar.write([0x15, 0x02, 0x00]);
 
       await sensorChar.write([0x03], withoutResponse: true);
-
-      await heartRateMeasureChar.setNotifyValue(false);
-      await sensorChar.setNotifyValue(false);
-      await hzChar.setNotifyValue(false);
 
       log('Realtime stopped!');
 
@@ -265,8 +263,60 @@ class RecordRepository {
   //   }
   // }
 
-  void handleRawSensorData(
-    Uint8List value, {
+  List<Dataset>? handleRawSensorData(Uint8List bytes, Stopwatch stopwatch) {
+    final buf = ByteData.view(bytes.buffer);
+    final type = buf.getInt8(0);
+    final index = buf.getInt8(1) & 0xff;
+    if (type == 0x00) {
+      final datasets = <Dataset>[];
+      log(hex.encode(bytes));
+      final g = ByteData.sublistView(bytes).buffer.asInt16List();
+      log('g: $g');
+
+      for (var i = 1; i < g.length; i = i + 3) {
+        final dataset = Dataset(
+          x: g[i],
+          y: g[i + 1],
+          z: g[i + 2],
+          timestamp: Duration(milliseconds: stopwatch.elapsedMilliseconds),
+        );
+        datasets.add(dataset);
+      }
+      return datasets;
+    } else if (type == 0x01) {
+      if ((bytes.length - 2) % 4 != 0) {
+        log('Raw sensor value for type 1 not divisible by 4');
+        return null;
+      }
+
+      for (var i = 2; i < bytes.length; i += 4) {
+        final val = _toUint32(bytes, i);
+        log('Raw sensor 1: $val');
+      }
+    } else if (type == 0x07) {
+      final targetType = buf.getInt8(2) & 0xff;
+      final tsMillis = buf.getInt64(3);
+      log('Raw sensor timestamp for type=$targetType index=$index: $tsMillis');
+    } else {
+      log('Unknown raw sensor type: ${_hexdumpWrap(bytes)}');
+    }
+    return null;
+  }
+
+  List<double> getEuler(List<int> g) {
+    final gx = g[0];
+    final gy = g[1];
+    final gz = g[2];
+
+    final roll = atan2(gy, gz);
+    final pitch = atan2(-gx, sqrt(pow(gy, 2) + pow(gz, 2)));
+
+    return [roll, pitch, 0];
+  }
+
+  void handleRawSensorData2(
+    Uint8List value,
+    Stopwatch stopwatch, {
     required void Function(Dataset dataset) onUpdated,
   }) {
     const scaleFactor = 4100.0;
@@ -285,6 +335,7 @@ class RecordRepository {
         final x = (_toUint16(value, i) << 16) >> 16;
         final y = (_toUint16(value, i + 2) << 16) >> 16;
         final z = (_toUint16(value, i + 4) << 16) >> 16;
+        log('Raw sensor raw g: x=$x y=$y z=$z');
 
         final gx = (x * gravity) / scaleFactor;
         final gy = (y * gravity) / scaleFactor;
@@ -296,7 +347,7 @@ class RecordRepository {
             x: gx,
             y: gy,
             z: gz,
-            timestamp: DateTime.now(),
+            timestamp: Duration(milliseconds: stopwatch.elapsedMilliseconds),
           ),
         );
       }

@@ -3,10 +3,17 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/record/blocs/record/record_notifier.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:mp_chart/mp/chart/line_chart.dart';
+import 'package:mp_chart/mp/controller/line_chart_controller.dart';
+import 'package:mp_chart/mp/core/data/line_data.dart';
+import 'package:mp_chart/mp/core/data_set/line_data_set.dart';
+import 'package:mp_chart/mp/core/description.dart';
+import 'package:mp_chart/mp/core/entry/entry.dart';
+import 'package:mp_chart/mp/core/enums/mode.dart';
+import 'package:mp_chart/mp/core/enums/x_axis_position.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:wakelock/wakelock.dart';
 
@@ -104,8 +111,6 @@ class _RecordPageState extends ConsumerState<RecordPage>
     );
     final cameraState =
         ref.watch(recordProvider.select((value) => value.cameraState));
-    final accelerometerDatasets = ref
-        .watch(recordProvider.select((value) => value.accelerometerDatasets));
 
     return Scaffold(
       backgroundColor: !isCameraPermissionGranted ||
@@ -161,19 +166,20 @@ class _RecordPageState extends ConsumerState<RecordPage>
           }
           return Stack(
             children: [
-              Positioned(
-                top: 80,
-                left: 0,
-                right: 0,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(24)),
-                  child: CameraPreview(_cameraController!),
-                ),
-              ),
-              Align(
+              // Positioned(
+              //   top: 80,
+              //   left: 0,
+              //   right: 0,
+              //   child: ClipRRect(
+              //     borderRadius: const BorderRadius.all(Radius.circular(24)),
+              //     child: CameraPreview(_cameraController!),
+              //   ),
+              // ),
+              const Align(
                 alignment: Alignment.topCenter,
-                child: _AccelerometerChart(
-                  accelerometerDatasets: accelerometerDatasets,
+                child: SizedBox(
+                  height: 200,
+                  child: _AccelerometerChart(),
                 ),
               ),
               Align(
@@ -198,38 +204,201 @@ class _RecordPageState extends ConsumerState<RecordPage>
   }
 }
 
-class _AccelerometerChart extends StatelessWidget {
-  const _AccelerometerChart({required this.accelerometerDatasets});
+class _AccelerometerChart2 extends ConsumerStatefulWidget {
+  const _AccelerometerChart2({super.key});
 
-  final List<Dataset> accelerometerDatasets;
+  @override
+  ConsumerState<_AccelerometerChart2> createState() =>
+      _AccelerometerChart2State();
+}
+
+class _AccelerometerChart2State extends ConsumerState<_AccelerometerChart2> {
+  late final LineChartController _controller;
+
+  @override
+  void initState() {
+    _initController();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      _controller.setVisibleXRange(0, 100);
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200,
-      width: double.infinity,
-      child: SfCartesianChart(
-        series: [
-          SplineSeries(
-            dataSource: accelerometerDatasets.reversed.take(10).toList(),
-            xValueMapper: (datum, index) => index,
-            yValueMapper: (datum, index) => datum.x,
-            color: Colors.red,
-          ),
-          SplineSeries(
-            dataSource: accelerometerDatasets.reversed.take(10).toList(),
-            xValueMapper: (datum, index) => index,
-            yValueMapper: (datum, index) => datum.y,
-            color: Colors.green,
-          ),
-          SplineSeries(
-            dataSource: accelerometerDatasets.reversed.take(10).toList(),
-            xValueMapper: (datum, index) => index,
-            yValueMapper: (datum, index) => datum.z,
-            color: Colors.blue,
-          ),
-        ],
-      ),
+    ref.listen(recordProvider, (previous, next) {
+      if (previous?.lastDatasets != null && next.lastDatasets == null) {
+        _controller.data?.clearValues();
+        _controller.state?.setStateIfNotDispose();
+        _createDataset();
+      } else if (previous?.lastDatasets != next.lastDatasets &&
+          next.lastDatasets != null) {
+        final data = _controller.data!;
+        for (final dataset in next.lastDatasets!) {
+          final xSet = data.getDataSetByIndex(0)!;
+          final count = xSet.getEntryCount().toDouble();
+
+          final xEntry = Entry(x: count, y: dataset.x.toDouble());
+          final yEntry = Entry(x: count, y: dataset.y.toDouble());
+          final zEntry = Entry(x: count, y: dataset.z.toDouble());
+
+          data
+            ..addEntry(xEntry, 0)
+            ..addEntry(yEntry, 1)
+            ..addEntry(zEntry, 2)
+            ..notifyDataChanged();
+        }
+        // final xSet = data.getDataSetByIndex(0)!;
+        // final count = xSet.getEntryCount().toDouble();
+        // _controller.setVisibleXRange(0, min(count, 100));
+        _controller.state?.setStateIfNotDispose();
+
+        // final index = set.getEntryCount() - 1;
+        // final x = set.getEntryForIndex(index)?.x;
+
+        // xEntry.x = x;
+        // yEntry.x = x;
+        // zEntry.x = x;
+
+        // data
+        //   ..updateEntryByIndex(index, xEntry, 0)
+        //   ..updateEntryByIndex(index, yEntry, 1)
+        //   ..updateEntryByIndex(index, zEntry, 2)
+        //   ..notifyDataChanged();
+      }
+    });
+
+    return LineChart(_controller);
+  }
+
+  void _initController() {
+    final desc = Description()..enabled = false;
+    _controller = LineChartController(
+      resolveGestureHorizontalConflict: true,
+      axisLeftSettingFunction: (axisLeft, controller) {
+        axisLeft
+          ?..zeroLineWidth = 1
+          ..zeroLineColor = Colors.grey.shade500
+          ..drawZeroLine = true
+          ..drawGridLines = false
+          ..textColor = Colors.white70
+          ..axisLineColor = Colors.white70;
+      },
+      axisRightSettingFunction: (axisRight, controller) {
+        axisRight?.enabled = false;
+      },
+      xAxisSettingFunction: (xAxis, controller) {
+        xAxis
+          ?..avoidFirstLastClipping = true
+          ..position = XAxisPosition.BOTTOM
+          ..drawGridLines = false
+          ..drawAxisLine = true
+          ..textColor = Colors.white70
+          ..axisLineColor = Colors.white70;
+      },
+      legendSettingFunction: (legend, controller) {
+        legend?.textColor = Colors.white70;
+      },
+      backgroundColor: Colors.black26,
+      description: desc,
+    );
+    _createDataset();
+  }
+
+  void _createDataset() {
+    final xSet = LineDataSet([], 'x')
+      ..setColor1(Colors.red)
+      ..setDrawValues(false)
+      ..setDrawCircles(false)
+      ..setMode(Mode.CUBIC_BEZIER)
+      ..setLineWidth(1.2);
+
+    final ySet = LineDataSet([], 'y')
+      ..setColor1(Colors.green)
+      ..setDrawValues(false)
+      ..setDrawCircles(false)
+      ..setMode(Mode.CUBIC_BEZIER)
+      ..setLineWidth(1.2);
+
+    final zSet = LineDataSet([], 'z')
+      ..setColor1(Colors.blue)
+      ..setDrawValues(false)
+      ..setDrawCircles(false)
+      ..setMode(Mode.CUBIC_BEZIER)
+      ..setLineWidth(1.2);
+
+    _controller.data = LineData.fromList([xSet, ySet, zSet]);
+  }
+}
+
+class _AccelerometerChart extends ConsumerStatefulWidget {
+  const _AccelerometerChart();
+
+  @override
+  ConsumerState<_AccelerometerChart> createState() =>
+      _AccelerometerChartState();
+}
+
+class _AccelerometerChartState extends ConsumerState<_AccelerometerChart> {
+  final List<num> indexes = [];
+  final List<num> xDataset = [];
+  final List<num> yDataset = [];
+  final List<num> zDataset = [];
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen(recordProvider, (previous, next) {
+      if (previous?.lastDatasets != next.lastDatasets &&
+          next.lastDatasets != null) {
+        final datasets = next.lastDatasets!;
+        for (var i = 0; i < datasets.length; i++) {
+          final dataset = datasets[i];
+
+          final index = indexes.lastOrNull ?? -1;
+          indexes.add(index + 1);
+          xDataset.add(dataset.x);
+          yDataset.add(dataset.y);
+          zDataset.add(dataset.z);
+
+          if (xDataset.length == 100) {
+            indexes.removeAt(0);
+            xDataset.removeAt(0);
+            yDataset.removeAt(0);
+            zDataset.removeAt(0);
+          }
+        }
+
+        setState(() {});
+      }
+    });
+
+    return SfCartesianChart(
+      series: [
+        SplineSeries(
+          animationDelay: 0,
+          animationDuration: 0,
+          dataSource: xDataset,
+          xValueMapper: (data, index) => indexes[index],
+          yValueMapper: (data, index) => data,
+          color: Colors.red,
+        ),
+        SplineSeries(
+          animationDelay: 0,
+          animationDuration: 0,
+          dataSource: yDataset,
+          xValueMapper: (data, index) => indexes[index],
+          yValueMapper: (data, index) => data,
+          color: Colors.green,
+        ),
+        SplineSeries(
+          animationDelay: 0,
+          animationDuration: 0,
+          dataSource: zDataset,
+          xValueMapper: (data, index) => indexes[index],
+          yValueMapper: (data, index) => data,
+          color: Colors.blue,
+        ),
+      ],
     );
   }
 }

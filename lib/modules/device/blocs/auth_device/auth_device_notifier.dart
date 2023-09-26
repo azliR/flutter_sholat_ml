@@ -70,7 +70,8 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
       type: BluetoothDeviceType.le,
     );
 
-    await connectDevice(device);
+    final success = await connectDevice(device);
+    if (!success) return;
     final services = await selectDevice(device);
     if (services == null) return;
 
@@ -142,7 +143,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     // });
   }
 
-  Future<void> connectDevice(BluetoothDevice bluetoothDevice) async {
+  Future<bool> connectDevice(BluetoothDevice bluetoothDevice) async {
     state =
         state.copyWith(presentationState: const ConnectDeviceLoadingState());
 
@@ -156,11 +157,12 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
       state = state.copyWith(
         presentationState: ConnectDeviceFailureState(connectFailure),
       );
-      return;
+      return false;
     }
     state = state.copyWith(
       presentationState: ConnectDeviceSuccessState(bluetoothDevice),
     );
+    return true;
   }
 
   Future<List<BluetoothService>?> selectDevice(BluetoothDevice device) async {

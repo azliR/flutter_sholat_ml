@@ -8,28 +8,30 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:auto_route/auto_route.dart' as _i8;
-import 'package:flutter/material.dart' as _i10;
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i9;
-import 'package:flutter_sholat_ml/core/splash/views/splash_page.dart' as _i7;
+import 'package:auto_route/auto_route.dart' as _i9;
+import 'package:flutter/material.dart' as _i11;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i10;
+import 'package:flutter_sholat_ml/core/splash/views/splash_page.dart' as _i8;
 import 'package:flutter_sholat_ml/modules/device/views/auth_device_page.dart'
     as _i1;
 import 'package:flutter_sholat_ml/modules/device/views/discover_device_page.dart'
     as _i3;
 import 'package:flutter_sholat_ml/modules/device/views/saved_devices_page.dart'
-    as _i6;
+    as _i7;
 import 'package:flutter_sholat_ml/modules/home/views/datasets_page.dart' as _i2;
 import 'package:flutter_sholat_ml/modules/home/views/home_page.dart' as _i4;
-import 'package:flutter_sholat_ml/modules/record/views/record_page.dart' as _i5;
+import 'package:flutter_sholat_ml/modules/preprocess/views/preprocess_page.dart'
+    as _i5;
+import 'package:flutter_sholat_ml/modules/record/views/record_page.dart' as _i6;
 
-abstract class $AppRouter extends _i8.RootStackRouter {
+abstract class $AppRouter extends _i9.RootStackRouter {
   $AppRouter({super.navigatorKey});
 
   @override
-  final Map<String, _i8.PageFactory> pagesMap = {
+  final Map<String, _i9.PageFactory> pagesMap = {
     AuthDeviceRoute.name: (routeData) {
       final args = routeData.argsAs<AuthDeviceRouteArgs>();
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: _i1.AuthDevicePage(
           device: args.device,
@@ -39,28 +41,38 @@ abstract class $AppRouter extends _i8.RootStackRouter {
       );
     },
     DatasetsRoute.name: (routeData) {
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i2.DatasetsPage(),
       );
     },
     DiscoverDeviceRoute.name: (routeData) {
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i3.DiscoverDevicePage(),
       );
     },
     HomeRoute.name: (routeData) {
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const _i4.HomePage(),
       );
     },
+    PreprocessRoute.name: (routeData) {
+      final args = routeData.argsAs<PreprocessRouteArgs>();
+      return _i9.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: _i5.PreprocessPage(
+          path: args.path,
+          key: args.key,
+        ),
+      );
+    },
     RecordRoute.name: (routeData) {
       final args = routeData.argsAs<RecordRouteArgs>();
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i5.RecordPage(
+        child: _i6.RecordPage(
           device: args.device,
           services: args.services,
           key: args.key,
@@ -68,15 +80,15 @@ abstract class $AppRouter extends _i8.RootStackRouter {
       );
     },
     SavedDevicesRoute.name: (routeData) {
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i6.SavedDevicesPage(),
+        child: const _i7.SavedDevicesPage(),
       );
     },
     SplashRoute.name: (routeData) {
-      return _i8.AutoRoutePage<dynamic>(
+      return _i9.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i7.SplashPage(),
+        child: const _i8.SplashPage(),
       );
     },
   };
@@ -84,12 +96,12 @@ abstract class $AppRouter extends _i8.RootStackRouter {
 
 /// generated route for
 /// [_i1.AuthDevicePage]
-class AuthDeviceRoute extends _i8.PageRouteInfo<AuthDeviceRouteArgs> {
+class AuthDeviceRoute extends _i9.PageRouteInfo<AuthDeviceRouteArgs> {
   AuthDeviceRoute({
-    required _i9.BluetoothDevice device,
-    required List<_i9.BluetoothService> services,
-    _i10.Key? key,
-    List<_i8.PageRouteInfo>? children,
+    required _i10.BluetoothDevice device,
+    required List<_i10.BluetoothService> services,
+    _i11.Key? key,
+    List<_i9.PageRouteInfo>? children,
   }) : super(
           AuthDeviceRoute.name,
           args: AuthDeviceRouteArgs(
@@ -102,8 +114,8 @@ class AuthDeviceRoute extends _i8.PageRouteInfo<AuthDeviceRouteArgs> {
 
   static const String name = 'AuthDeviceRoute';
 
-  static const _i8.PageInfo<AuthDeviceRouteArgs> page =
-      _i8.PageInfo<AuthDeviceRouteArgs>(name);
+  static const _i9.PageInfo<AuthDeviceRouteArgs> page =
+      _i9.PageInfo<AuthDeviceRouteArgs>(name);
 }
 
 class AuthDeviceRouteArgs {
@@ -113,11 +125,11 @@ class AuthDeviceRouteArgs {
     this.key,
   });
 
-  final _i9.BluetoothDevice device;
+  final _i10.BluetoothDevice device;
 
-  final List<_i9.BluetoothService> services;
+  final List<_i10.BluetoothService> services;
 
-  final _i10.Key? key;
+  final _i11.Key? key;
 
   @override
   String toString() {
@@ -127,8 +139,8 @@ class AuthDeviceRouteArgs {
 
 /// generated route for
 /// [_i2.DatasetsPage]
-class DatasetsRoute extends _i8.PageRouteInfo<void> {
-  const DatasetsRoute({List<_i8.PageRouteInfo>? children})
+class DatasetsRoute extends _i9.PageRouteInfo<void> {
+  const DatasetsRoute({List<_i9.PageRouteInfo>? children})
       : super(
           DatasetsRoute.name,
           initialChildren: children,
@@ -136,13 +148,13 @@ class DatasetsRoute extends _i8.PageRouteInfo<void> {
 
   static const String name = 'DatasetsRoute';
 
-  static const _i8.PageInfo<void> page = _i8.PageInfo<void>(name);
+  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
 }
 
 /// generated route for
 /// [_i3.DiscoverDevicePage]
-class DiscoverDeviceRoute extends _i8.PageRouteInfo<void> {
-  const DiscoverDeviceRoute({List<_i8.PageRouteInfo>? children})
+class DiscoverDeviceRoute extends _i9.PageRouteInfo<void> {
+  const DiscoverDeviceRoute({List<_i9.PageRouteInfo>? children})
       : super(
           DiscoverDeviceRoute.name,
           initialChildren: children,
@@ -150,13 +162,13 @@ class DiscoverDeviceRoute extends _i8.PageRouteInfo<void> {
 
   static const String name = 'DiscoverDeviceRoute';
 
-  static const _i8.PageInfo<void> page = _i8.PageInfo<void>(name);
+  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
 }
 
 /// generated route for
 /// [_i4.HomePage]
-class HomeRoute extends _i8.PageRouteInfo<void> {
-  const HomeRoute({List<_i8.PageRouteInfo>? children})
+class HomeRoute extends _i9.PageRouteInfo<void> {
+  const HomeRoute({List<_i9.PageRouteInfo>? children})
       : super(
           HomeRoute.name,
           initialChildren: children,
@@ -164,17 +176,55 @@ class HomeRoute extends _i8.PageRouteInfo<void> {
 
   static const String name = 'HomeRoute';
 
-  static const _i8.PageInfo<void> page = _i8.PageInfo<void>(name);
+  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i5.RecordPage]
-class RecordRoute extends _i8.PageRouteInfo<RecordRouteArgs> {
+/// [_i5.PreprocessPage]
+class PreprocessRoute extends _i9.PageRouteInfo<PreprocessRouteArgs> {
+  PreprocessRoute({
+    required String path,
+    _i11.Key? key,
+    List<_i9.PageRouteInfo>? children,
+  }) : super(
+          PreprocessRoute.name,
+          args: PreprocessRouteArgs(
+            path: path,
+            key: key,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'PreprocessRoute';
+
+  static const _i9.PageInfo<PreprocessRouteArgs> page =
+      _i9.PageInfo<PreprocessRouteArgs>(name);
+}
+
+class PreprocessRouteArgs {
+  const PreprocessRouteArgs({
+    required this.path,
+    this.key,
+  });
+
+  final String path;
+
+  final _i11.Key? key;
+
+  @override
+  String toString() {
+    return 'PreprocessRouteArgs{path: $path, key: $key}';
+  }
+}
+
+/// generated route for
+/// [_i6.RecordPage]
+class RecordRoute extends _i9.PageRouteInfo<RecordRouteArgs> {
   RecordRoute({
-    required _i9.BluetoothDevice device,
-    required List<_i9.BluetoothService> services,
-    _i10.Key? key,
-    List<_i8.PageRouteInfo>? children,
+    required _i10.BluetoothDevice device,
+    required List<_i10.BluetoothService> services,
+    _i11.Key? key,
+    List<_i9.PageRouteInfo>? children,
   }) : super(
           RecordRoute.name,
           args: RecordRouteArgs(
@@ -187,8 +237,8 @@ class RecordRoute extends _i8.PageRouteInfo<RecordRouteArgs> {
 
   static const String name = 'RecordRoute';
 
-  static const _i8.PageInfo<RecordRouteArgs> page =
-      _i8.PageInfo<RecordRouteArgs>(name);
+  static const _i9.PageInfo<RecordRouteArgs> page =
+      _i9.PageInfo<RecordRouteArgs>(name);
 }
 
 class RecordRouteArgs {
@@ -198,11 +248,11 @@ class RecordRouteArgs {
     this.key,
   });
 
-  final _i9.BluetoothDevice device;
+  final _i10.BluetoothDevice device;
 
-  final List<_i9.BluetoothService> services;
+  final List<_i10.BluetoothService> services;
 
-  final _i10.Key? key;
+  final _i11.Key? key;
 
   @override
   String toString() {
@@ -211,9 +261,9 @@ class RecordRouteArgs {
 }
 
 /// generated route for
-/// [_i6.SavedDevicesPage]
-class SavedDevicesRoute extends _i8.PageRouteInfo<void> {
-  const SavedDevicesRoute({List<_i8.PageRouteInfo>? children})
+/// [_i7.SavedDevicesPage]
+class SavedDevicesRoute extends _i9.PageRouteInfo<void> {
+  const SavedDevicesRoute({List<_i9.PageRouteInfo>? children})
       : super(
           SavedDevicesRoute.name,
           initialChildren: children,
@@ -221,13 +271,13 @@ class SavedDevicesRoute extends _i8.PageRouteInfo<void> {
 
   static const String name = 'SavedDevicesRoute';
 
-  static const _i8.PageInfo<void> page = _i8.PageInfo<void>(name);
+  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i7.SplashPage]
-class SplashRoute extends _i8.PageRouteInfo<void> {
-  const SplashRoute({List<_i8.PageRouteInfo>? children})
+/// [_i8.SplashPage]
+class SplashRoute extends _i9.PageRouteInfo<void> {
+  const SplashRoute({List<_i9.PageRouteInfo>? children})
       : super(
           SplashRoute.name,
           initialChildren: children,
@@ -235,5 +285,5 @@ class SplashRoute extends _i8.PageRouteInfo<void> {
 
   static const String name = 'SplashRoute';
 
-  static const _i8.PageInfo<void> page = _i8.PageInfo<void>(name);
+  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
 }

@@ -1,0 +1,93 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
+import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+
+part 'datasets_state.dart';
+
+final datasetsProvider =
+    StateNotifierProvider.autoDispose<DatasetsNotifier, HomeState>(
+  (ref) => DatasetsNotifier(),
+);
+
+class DatasetsNotifier extends StateNotifier<HomeState> {
+  DatasetsNotifier()
+      : _homeRepository = HomeRepository(),
+        super(HomeState.initial());
+
+  final HomeRepository _homeRepository;
+
+  Future<void> loadDatasetsFromDisk() async {
+    state = state.copyWith(isLoading: true);
+
+    final (failure, savedPaths) = await _homeRepository.loadDatasetsFromDisk();
+    if (failure != null) {
+      state = state.copyWith(
+        isLoading: false,
+        presentationState: LoadDatasetsFailureState(failure),
+      );
+      return;
+    }
+    state = state.copyWith(
+      datasetPaths: savedPaths,
+      isLoading: false,
+    );
+  }
+
+  void onSelectedDataset(String path) {
+    final selectedPaths = state.selectedDatasetPaths;
+    if (selectedPaths.contains(path)) {
+      state = state.copyWith(
+        selectedDatasetPaths: [...selectedPaths]..remove(path),
+      );
+      return;
+    }
+    state = state.copyWith(
+      selectedDatasetPaths: [...selectedPaths, path],
+    );
+  }
+
+  void onSelectAllDatasets() {
+    state = state.copyWith(selectedDatasetPaths: state.datasetPaths);
+  }
+
+  void clearSelections() {
+    state = state.copyWith(selectedDatasetPaths: []);
+  }
+
+  Future<void> deleteSelectedDatasets() async {
+    state =
+        state.copyWith(presentationState: const DeleteDatasetLoadingState());
+    for (final path in state.selectedDatasetPaths) {
+      final (failure, _) = await _homeRepository.deleteDataset(path);
+      if (failure != null) {
+        state = state.copyWith(
+          presentationState: DeleteDatasetFailureState(failure),
+        );
+        return;
+      }
+    }
+    state =
+        state.copyWith(presentationState: const DeleteDatasetSuccessState());
+    clearSelections();
+  }
+
+  Future<bool> deleteDataset(String path) async {
+    state =
+        state.copyWith(presentationState: const DeleteDatasetLoadingState());
+
+    final (failure, _) = await _homeRepository.deleteDataset(path);
+    if (failure != null) {
+      state = state.copyWith(
+        isLoading: false,
+        presentationState: DeleteDatasetFailureState(failure),
+      );
+      return false;
+    }
+    state = state.copyWith(
+      presentationState: const DeleteDatasetSuccessState(),
+    );
+    return true;
+  }
+}

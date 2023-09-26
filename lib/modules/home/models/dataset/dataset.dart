@@ -10,10 +10,10 @@ class Dataset {
     required this.timestamp,
   });
 
-  final double x;
-  final double y;
-  final double z;
-  final DateTime timestamp;
+  final num x;
+  final num y;
+  final num z;
+  final Duration timestamp;
 
   @override
   bool operator ==(covariant Dataset other) {

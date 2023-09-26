@@ -25,6 +25,13 @@ dependencies:
   intl: ^0.18.0
   isar_flutter_libs: ^4.0.0-dev.13
   material_symbols_icons: ^4.2668.0
+  mp_chart:
+    git:
+      url: https://github.com/azliR/flutter_mp_chart.git
+      ref: master
+      path: mp_chart
+  # mp_chart_x: ^1.0.2
+  oscilloscope: ^0.2.0+1
   path_provider: ^2.1.1
   permission_handler: ^11.0.0
   riverpod: ^2.4.0

@@ -44,7 +44,7 @@ class SavedDevicesPage extends ConsumerWidget {
                               .connectToSavedDevice(savedDevices[index]);
                         },
                   trailing: savedDevices[index] == currentDevice
-                      ? const SizedBox()
+                      ? const Text('CONNECTED')
                       : null,
                 );
               },
