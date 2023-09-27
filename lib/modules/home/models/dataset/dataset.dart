@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -7,13 +6,13 @@ class Dataset {
     required this.x,
     required this.y,
     required this.z,
-    required this.timestamp,
+    this.timestamp,
   });
 
   final num x;
   final num y;
   final num z;
-  final Duration timestamp;
+  final Duration? timestamp;
 
   @override
   bool operator ==(covariant Dataset other) {
@@ -23,6 +22,20 @@ class Dataset {
         other.y == y &&
         other.z == z &&
         other.timestamp == timestamp;
+  }
+
+  Dataset copyWith({
+    num? x,
+    num? y,
+    num? z,
+    Duration? timestamp,
+  }) {
+    return Dataset(
+      x: x ?? this.x,
+      y: y ?? this.y,
+      z: z ?? this.z,
+      timestamp: timestamp ?? this.timestamp,
+    );
   }
 
   @override

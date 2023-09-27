@@ -82,11 +82,22 @@ class RecordNotifier extends StateNotifier<RecordState> {
     });
 
     _hzSubscription ??= _hzChar.onValueReceived.listen((event) {
-      final datasets = _recordRepository.handleRawSensorData(
-        Uint8List.fromList(event),
-        _stopwatch,
-      );
+      final datasets =
+          _recordRepository.handleRawSensorData(Uint8List.fromList(event));
       if (datasets != null) {
+        final lastElapsed =
+            state.lastDatasets?.lastOrNull?.timestamp?.inMilliseconds ?? 0;
+        final elapsed = _stopwatch.elapsedMilliseconds;
+        final fraction = (elapsed - lastElapsed) / datasets.length;
+
+        for (var i = 0; i < datasets.length; i++) {
+          datasets[i] = datasets[i].copyWith(
+            timestamp: Duration(
+              milliseconds: (lastElapsed + (fraction * (i + 1))).toInt(),
+            ),
+          );
+        }
+
         state = state.copyWith(
           accelerometerDatasets: [
             ...state.accelerometerDatasets,

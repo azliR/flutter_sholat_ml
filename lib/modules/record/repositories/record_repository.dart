@@ -5,7 +5,6 @@ import 'dart:math' hide log;
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:convert/convert.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
@@ -123,7 +122,7 @@ class RecordRepository {
         final x = dataset.x.toStringAsFixed(6);
         final y = dataset.y.toStringAsFixed(6);
         final z = dataset.z.toStringAsFixed(6);
-        final timeStamp = dataset.timestamp.inMilliseconds.toString();
+        final timeStamp = dataset.timestamp!.inMilliseconds.toString();
 
         return '$previousValue$timeStamp,$x,$y,$z\n';
       });
@@ -263,22 +262,19 @@ class RecordRepository {
   //   }
   // }
 
-  List<Dataset>? handleRawSensorData(Uint8List bytes, Stopwatch stopwatch) {
+  List<Dataset>? handleRawSensorData(Uint8List bytes) {
     final buf = ByteData.view(bytes.buffer);
     final type = buf.getInt8(0);
     final index = buf.getInt8(1) & 0xff;
     if (type == 0x00) {
       final datasets = <Dataset>[];
-      log(hex.encode(bytes));
       final g = ByteData.sublistView(bytes).buffer.asInt16List();
-      log('g: $g');
 
       for (var i = 1; i < g.length; i = i + 3) {
         final dataset = Dataset(
           x: g[i],
           y: g[i + 1],
           z: g[i + 2],
-          timestamp: Duration(milliseconds: stopwatch.elapsedMilliseconds),
         );
         datasets.add(dataset);
       }

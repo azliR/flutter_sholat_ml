@@ -35,9 +35,9 @@ class PreprocessRepository {
         final split = dataset.split(',');
         return Dataset(
           timestamp: Duration(milliseconds: int.parse(split[0])),
-          x: int.parse(split[1]),
-          y: int.parse(split[2]),
-          z: int.parse(split[3]),
+          x: double.parse(split[1]),
+          y: double.parse(split[2]),
+          z: double.parse(split[3]),
         );
       }).toList();
       return (null, datasets);

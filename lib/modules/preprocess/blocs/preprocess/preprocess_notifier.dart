@@ -25,6 +25,31 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     await readDatasets(state.preprocess!.csvPath);
   }
 
+  void onIsPlayingChanged({required bool isPlaying}) {
+    state = state.copyWith(isPlaying: isPlaying);
+  }
+
+  void onCurrentSelectedIndexChanged({required int index}) {
+    state = state.copyWith(currentSelectedIndex: index);
+  }
+
+  void onSelectedDatasetChanged(Dataset dataset) {
+    final selectedDatasets = state.selectedDatasets;
+    if (selectedDatasets.contains(dataset)) {
+      state = state.copyWith(
+        selectedDatasets: [...selectedDatasets]..remove(dataset),
+      );
+    } else {
+      state = state.copyWith(
+        selectedDatasets: [...selectedDatasets, dataset],
+      );
+    }
+  }
+
+  void clearSelectedDatasets() {
+    state = state.copyWith(selectedDatasets: []);
+  }
+
   Future<bool> getPreprocessPath(String path) async {
     final (failure, paths) = await _preprocessRepository.getPreprocess(path);
     if (failure != null) {
