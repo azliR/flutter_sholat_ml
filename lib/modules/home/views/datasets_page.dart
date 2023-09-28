@@ -69,9 +69,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final savedDevices =
-        ref.watch(authDeviceProvider.select((state) => state.savedDevices));
-
     ref.listen(datasetsProvider, (previous, next) {
       if (previous?.presentationState != next.presentationState) {
         final presentationState = next.presentationState;
@@ -119,6 +116,18 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage> {
             slivers: [
               SliverAppBar.large(
                 title: const Text('Datasets'),
+                leading: IconButton(
+                  onPressed: () {
+                    if (isSelectMode) {
+                      _notifier.clearSelections();
+                    } else {
+                      Scaffold.of(context).openDrawer();
+                    }
+                  },
+                  icon: isSelectMode
+                      ? const Icon(Symbols.clear_rounded)
+                      : const Icon(Symbols.menu_rounded),
+                ),
                 actions: [
                   if (!isSelectMode)
                     MenuAnchor(
@@ -141,6 +150,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage> {
                         MenuItemButton(
                           leadingIcon: const Icon(Symbols.delete_rounded),
                           onPressed: () async {
+                            final savedDevices =
+                                ref.read(authDeviceProvider).savedDevices;
                             final device = savedDevices.firstWhere(
                               (savedDevice) =>
                                   savedDevice.deviceId ==
@@ -195,6 +206,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage> {
                 ),
               SliverList(
                 delegate: SliverChildBuilderDelegate(
+                  childCount: datasetPaths.length,
                   (context, index) {
                     final datasetPath = datasetPaths[index];
                     final datasetName = datasetPath.split('/').last;
@@ -259,7 +271,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage> {
                           _notifier.onSelectedDataset(datasetPath),
                     );
                   },
-                  childCount: datasetPaths.length,
                 ),
               ),
               const SliverPadding(

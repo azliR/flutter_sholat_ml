@@ -50,6 +50,24 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(selectedDatasets: []);
   }
 
+  void onTaggedDatasets(
+    String labelCategory,
+    String label,
+  ) {
+    state = state.copyWith(
+      datasets: state.datasets.map((dataset) {
+        if (state.selectedDatasets.contains(dataset)) {
+          return dataset.copyWith(
+            labelCategory: labelCategory,
+            label: label,
+          );
+        }
+        return dataset;
+      }).toList(),
+    );
+    clearSelectedDatasets();
+  }
+
   Future<bool> getPreprocessPath(String path) async {
     final (failure, paths) = await _preprocessRepository.getPreprocess(path);
     if (failure != null) {

@@ -8,7 +8,6 @@ class PreprocessState {
     required this.isPlaying,
     required this.datasets,
     required this.selectedDatasets,
-    required this.taggedDatasets,
     required this.presentationState,
   });
 
@@ -18,7 +17,6 @@ class PreprocessState {
         isPlaying: false,
         datasets: [],
         selectedDatasets: [],
-        taggedDatasets: [],
         presentationState: PreprocessInitial(),
       );
 
@@ -27,7 +25,6 @@ class PreprocessState {
   final bool isPlaying;
   final List<Dataset> datasets;
   final List<Dataset> selectedDatasets;
-  final List<Dataset> taggedDatasets;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -45,7 +42,6 @@ class PreprocessState {
       isPlaying: isPlaying ?? this.isPlaying,
       datasets: datasets ?? this.datasets,
       selectedDatasets: selectedDatasets ?? this.selectedDatasets,
-      taggedDatasets: taggedDatasets ?? this.taggedDatasets,
       presentationState: presentationState ?? this.presentationState,
     );
   }

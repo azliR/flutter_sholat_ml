@@ -34,7 +34,6 @@ class RecordNotifier extends StateNotifier<RecordState> {
 
   final _stopwatch = Stopwatch();
 
-  Timer? _timer;
   StreamSubscription<List<int>>? _heartRateMeasureSubscription;
   StreamSubscription<List<int>>? _sensorSubscription;
   StreamSubscription<List<int>>? _hzSubscription;
@@ -81,32 +80,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
       log('Sensor: $event');
     });
 
-    _hzSubscription ??= _hzChar.onValueReceived.listen((event) {
-      final datasets =
-          _recordRepository.handleRawSensorData(Uint8List.fromList(event));
-      if (datasets != null) {
-        final lastElapsed =
-            state.lastDatasets?.lastOrNull?.timestamp?.inMilliseconds ?? 0;
-        final elapsed = _stopwatch.elapsedMilliseconds;
-        final fraction = (elapsed - lastElapsed) / datasets.length;
-
-        for (var i = 0; i < datasets.length; i++) {
-          datasets[i] = datasets[i].copyWith(
-            timestamp: Duration(
-              milliseconds: (lastElapsed + (fraction * (i + 1))).toInt(),
-            ),
-          );
-        }
-
-        state = state.copyWith(
-          accelerometerDatasets: [
-            ...state.accelerometerDatasets,
-            ...datasets,
-          ],
-          lastDatasets: () => datasets,
-        );
-      }
-    });
+    _hzSubscription ??= _hzChar.onValueReceived.listen(_handleAccelerometer);
 
     final isCameraPermissionGranted =
         await _recordRepository.isCameraPermissionGranted;
@@ -117,11 +91,45 @@ class RecordNotifier extends StateNotifier<RecordState> {
     );
   }
 
-  Future<CameraController?> initialiseCamera([
+  void _handleAccelerometer(List<int> event) {
+    final datasets =
+        _recordRepository.handleRawSensorData(Uint8List.fromList(event));
+    if (datasets != null && _stopwatch.isRunning) {
+      const delay = 200;
+      final lastElapsed =
+          (state.lastDatasets?.lastOrNull?.timestamp?.inMilliseconds ?? 0) +
+              delay;
+      final elapsed = _stopwatch.elapsedMilliseconds;
+      final fraction = (elapsed - lastElapsed) / datasets.length;
+
+      for (var i = 0; i < datasets.length; i++) {
+        final realTimestamp = (lastElapsed + (fraction * (i + 1))).toInt();
+        // subtract by average delay bluetooth connection
+        final tunedTimestamp = realTimestamp - delay;
+        if (tunedTimestamp >= 0) {
+          datasets[i] = datasets[i].copyWith(
+            timestamp: Duration(
+              milliseconds: tunedTimestamp,
+            ),
+          );
+        }
+      }
+      datasets.removeWhere((dataset) => dataset.timestamp == null);
+      state = state.copyWith(
+        accelerometerDatasets: [
+          ...state.accelerometerDatasets,
+          ...datasets,
+        ],
+        lastDatasets: () => datasets,
+      );
+    }
+  }
+
+  Future<CameraController?> initialiseCameraController([
     CameraDescription? cameraDescription,
   ]) async {
     final (failure, controller) =
-        await _recordRepository.initialiseCamera(cameraDescription);
+        await _recordRepository.initialiseCameraController(cameraDescription);
     if (failure != null) {
       if (failure is PermissionFailure) {
         state = state.copyWith(isCameraPermissionGranted: false);
@@ -142,14 +150,14 @@ class RecordNotifier extends StateNotifier<RecordState> {
   Future<void> startRecording(CameraController cameraController) async {
     state = state.copyWith(
       accelerometerDatasets: [],
-      lastDataset: () => null,
+      lastDatasets: () => null,
       cameraState: CameraState.preparing,
     );
 
     _stopwatch.reset();
 
     final (failure, _) = await _recordRepository.startRecording(
-      _timer,
+      _stopwatch,
       cameraController: cameraController,
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
@@ -163,18 +171,17 @@ class RecordNotifier extends StateNotifier<RecordState> {
       );
       return;
     }
-
-    _stopwatch.start();
     state = state.copyWith(cameraState: CameraState.recording);
   }
 
   Future<void> stopRecording(CameraController cameraController) async {
+    _stopwatch
+      ..stop()
+      ..reset();
+
     state = state.copyWith(cameraState: CameraState.saving);
 
-    _stopwatch.stop();
-
     final (stopFailure, _) = await _recordRepository.stopRecording(
-      _timer,
       cameraController: cameraController,
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
@@ -210,7 +217,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
     _heartRateMeasureSubscription?.cancel();
     _sensorSubscription?.cancel();
     _hzSubscription?.cancel();
-    _timer?.cancel();
+    _recordRepository.dispose();
     super.dispose();
   }
 }

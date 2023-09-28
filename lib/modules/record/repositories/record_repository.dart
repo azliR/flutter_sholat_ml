@@ -14,8 +14,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 class RecordRepository {
   final hextChars = '0123456789ABCDEF'.split('');
+  Timer? _timer;
 
-  Future<(Failure?, CameraController?)> initialiseCamera([
+  Future<(Failure?, CameraController?)> initialiseCameraController([
     CameraDescription? cameraDescription,
   ]) async {
     try {
@@ -55,7 +56,7 @@ class RecordRepository {
   }
 
   Future<(Failure?, void)> startRecording(
-    Timer? timer, {
+    Stopwatch stopwatch, {
     required CameraController cameraController,
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
@@ -64,13 +65,13 @@ class RecordRepository {
   }) async {
     try {
       await _startRealtimeData(
-        timer,
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,
         sensorChar: sensorChar,
         hzChar: hzChar,
       );
       await cameraController.startVideoRecording();
+      stopwatch.start();
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed starting recording';
@@ -79,8 +80,7 @@ class RecordRepository {
     }
   }
 
-  Future<(Failure?, void)> stopRecording(
-    Timer? timer, {
+  Future<(Failure?, void)> stopRecording({
     required CameraController cameraController,
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
@@ -90,7 +90,6 @@ class RecordRepository {
     try {
       await cameraController.pauseVideoRecording();
       await _stopRealtimeData(
-        timer,
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,
         sensorChar: sensorChar,
@@ -160,8 +159,7 @@ class RecordRepository {
     }
   }
 
-  Future<(Failure?, void)> _startRealtimeData(
-    Timer? timer, {
+  Future<(Failure?, void)> _startRealtimeData({
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
@@ -188,7 +186,7 @@ class RecordRepository {
 
       // send ping request every 12 sec
       // ignore: parameter_assignments
-      timer = Timer.periodic(const Duration(seconds: 12), (timer) async {
+      _timer = Timer.periodic(const Duration(seconds: 12), (timer) async {
         await heartRateControlChar.write([0x16]);
       });
 
@@ -200,7 +198,6 @@ class RecordRepository {
       final failure = Failure(message, error: e, stackTrace: stackTrace);
 
       await _stopRealtimeData(
-        timer,
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,
         sensorChar: sensorChar,
@@ -211,8 +208,7 @@ class RecordRepository {
     }
   }
 
-  Future<(Failure?, void)> _stopRealtimeData(
-    Timer? timer, {
+  Future<(Failure?, void)> _stopRealtimeData({
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
@@ -220,7 +216,7 @@ class RecordRepository {
   }) async {
     log('Stopping realtime...');
     try {
-      timer?.cancel();
+      _timer?.cancel();
 
       // stop heart monitor continues
       await heartRateControlChar.write([0x15, 0x01, 0x00]);
@@ -263,12 +259,13 @@ class RecordRepository {
   // }
 
   List<Dataset>? handleRawSensorData(Uint8List bytes) {
-    final buf = ByteData.view(bytes.buffer);
-    final type = buf.getInt8(0);
-    final index = buf.getInt8(1) & 0xff;
+    final byteData = ByteData.view(bytes.buffer);
+    final type = byteData.getInt8(0);
+    final index = byteData.getInt8(1) & 0xff;
+
     if (type == 0x00) {
       final datasets = <Dataset>[];
-      final g = ByteData.sublistView(bytes).buffer.asInt16List();
+      final g = byteData.buffer.asInt16List();
 
       for (var i = 1; i < g.length; i = i + 3) {
         final dataset = Dataset(
@@ -290,8 +287,8 @@ class RecordRepository {
         log('Raw sensor 1: $val');
       }
     } else if (type == 0x07) {
-      final targetType = buf.getInt8(2) & 0xff;
-      final tsMillis = buf.getInt64(3);
+      final targetType = byteData.getInt8(2) & 0xff;
+      final tsMillis = byteData.getInt64(3);
       log('Raw sensor timestamp for type=$targetType index=$index: $tsMillis');
     } else {
       log('Unknown raw sensor type: ${_hexdumpWrap(bytes)}');
@@ -394,5 +391,9 @@ class RecordRepository {
       hexChars[i * 2 + 1] = hextChars[v & 0x0F];
     }
     return hexChars.join();
+  }
+
+  void dispose() {
+    _timer?.cancel();
   }
 }

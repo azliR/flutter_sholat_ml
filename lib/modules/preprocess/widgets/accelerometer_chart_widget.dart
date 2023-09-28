@@ -3,10 +3,15 @@ import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class AccelerometerChart extends StatelessWidget {
-  const AccelerometerChart(
-      {required this.datasets, required this.onTrackballChanged, super.key});
+  const AccelerometerChart({
+    required this.datasets,
+    required this.onTrackballChanged,
+    required this.trackballBehavior,
+    super.key,
+  });
 
   final List<Dataset> datasets;
+  final TrackballBehavior trackballBehavior;
   final void Function(TrackballArgs trackballArgs) onTrackballChanged;
 
   @override
@@ -29,9 +34,7 @@ class AccelerometerChart extends StatelessWidget {
       zoomPanBehavior: ZoomPanBehavior(
         enablePanning: true,
       ),
-      trackballBehavior: TrackballBehavior(
-        enable: true,
-      ),
+      trackballBehavior: trackballBehavior,
       onTrackballPositionChanging: onTrackballChanged,
       series: [
         SplineSeries(

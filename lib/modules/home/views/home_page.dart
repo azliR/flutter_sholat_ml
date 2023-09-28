@@ -97,8 +97,10 @@ class _HomePageState extends ConsumerState<HomePage> {
             },
             children: [
               const SizedBox(height: 16),
-              const NavigationDrawerDestination(
-                icon: Icon(Symbols.home_rounded),
+              NavigationDrawerDestination(
+                icon: _tabsRouter.activeIndex == 0
+                    ? Icon(Symbols.home_rounded, fill: 1)
+                    : Icon(Symbols.home_rounded),
                 label: Text('Home'),
               ),
               const Divider(),

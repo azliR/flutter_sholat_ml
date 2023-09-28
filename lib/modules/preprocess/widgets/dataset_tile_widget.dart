@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
-class DatasetTileWidget extends ConsumerWidget {
+class DatasetTileWidget extends StatelessWidget {
   const DatasetTileWidget({
     required this.index,
     required this.dataset,
@@ -20,15 +21,37 @@ class DatasetTileWidget extends ConsumerWidget {
   final bool highlighted;
   final bool selected;
 
+  bool get tagged => dataset.labelCategory != null && dataset.label != null;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    var color = Colors.transparent;
+    if (highlighted) {
+      color = colorScheme.outline.withOpacity(0.3);
+    }
+    if (selected) {
+      color = Color.alphaBlend(color, colorScheme.primaryContainer);
+    }
+
+    Icon? icon;
+    if (tagged && selected) {
+      icon = Icon(
+        Symbols.warning_rounded,
+        color: colorScheme.secondary,
+        weight: 300,
+      );
+    } else if (tagged) {
+      icon = Icon(
+        Symbols.label_rounded,
+        color: colorScheme.onSurface,
+        weight: 300,
+      );
+    }
+
     return Material(
-      color: Color.alphaBlend(
-        colorScheme.outline.withOpacity(highlighted ? 0.5 : 0),
-        selected ? colorScheme.primary : colorScheme.surface,
-      ),
+      color: color,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
@@ -43,21 +66,42 @@ class DatasetTileWidget extends ConsumerWidget {
                 flex: 3,
                 child: Center(
                   child: Text(
-                    dataset.timestamp.toString(),
+                    dataset.timestamp.toString().replaceFirst('000', ''),
                   ),
                 ),
               ),
               Expanded(
                 flex: 2,
-                child: Center(child: Text(dataset.x.toString())),
+                child: Center(child: Text(dataset.x.toStringAsFixed(0))),
               ),
               Expanded(
                 flex: 2,
-                child: Center(child: Text(dataset.y.toString())),
+                child: Center(child: Text(dataset.y.toStringAsFixed(0))),
               ),
               Expanded(
                 flex: 2,
-                child: Center(child: Text(dataset.z.toString())),
+                child: Center(child: Text(dataset.z.toStringAsFixed(0))),
+              ),
+              Expanded(
+                flex: 2,
+                child: Center(child: Text('-')),
+              ),
+              Expanded(
+                child: Center(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () {
+                      if (tagged) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        showSnackbar(
+                          context,
+                          '${dataset.label}${dataset.label!}',
+                        );
+                      }
+                    },
+                    child: icon,
+                  ),
+                ),
               ),
             ],
           ),

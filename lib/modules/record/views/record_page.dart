@@ -54,7 +54,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
       cameraController.dispose();
     } else if (state == AppLifecycleState.resumed) {
       _notifier
-          .initialiseCamera(cameraController.description)
+          .initialiseCameraController(cameraController.description)
           .then((controller) {
         _cameraController = controller;
       });
@@ -92,7 +92,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
       } else if (previous?.isCameraPermissionGranted !=
           next.isCameraPermissionGranted) {
         if (next.isCameraPermissionGranted) {
-          _cameraController = await notifier.initialiseCamera();
+          _cameraController = await notifier.initialiseCameraController();
         }
       }
     });
@@ -143,7 +143,8 @@ class _RecordPageState extends ConsumerState<RecordPage>
                     const SizedBox(height: 16),
                     FilledButton.tonal(
                       onPressed: () async {
-                        _cameraController = await notifier.initialiseCamera();
+                        _cameraController =
+                            await notifier.initialiseCameraController();
                       },
                       child: const Text('Give permission'),
                     ),
@@ -159,15 +160,15 @@ class _RecordPageState extends ConsumerState<RecordPage>
           }
           return Stack(
             children: [
-              // Positioned(
-              //   top: 80,
-              //   left: 0,
-              //   right: 0,
-              //   child: ClipRRect(
-              //     borderRadius: const BorderRadius.all(Radius.circular(24)),
-              //     child: CameraPreview(_cameraController!),
-              //   ),
-              // ),
+              Positioned(
+                top: 80,
+                left: 0,
+                right: 0,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(24)),
+                  child: CameraPreview(_cameraController!),
+                ),
+              ),
               const Align(
                 alignment: Alignment.topCenter,
                 child: SizedBox(
