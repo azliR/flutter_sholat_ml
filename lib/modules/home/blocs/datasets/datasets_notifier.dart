@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
@@ -18,10 +19,16 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
 
   final HomeRepository _homeRepository;
 
-  Future<void> loadDatasetsFromDisk() async {
+  Future<void> loadDatasetsFromDisk(String folder) async {
+    if (![Directories.needReviewDir, Directories.reviewedDir]
+        .contains(folder)) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true);
 
-    final (failure, savedPaths) = await _homeRepository.loadDatasetsFromDisk();
+    final (failure, savedPaths) =
+        await _homeRepository.loadDatasetsFromDisk(folder);
     if (failure != null) {
       state = state.copyWith(
         isLoading: false,
@@ -29,10 +36,18 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return;
     }
-    state = state.copyWith(
-      datasetPaths: savedPaths,
-      isLoading: false,
-    );
+
+    if (folder == Directories.needReviewDir) {
+      state = state.copyWith(
+        needReviewDatasetPaths: savedPaths,
+        isLoading: false,
+      );
+    } else {
+      state = state.copyWith(
+        reviewedDatasetPaths: savedPaths,
+        isLoading: false,
+      );
+    }
   }
 
   void onSelectedDataset(String path) {
@@ -49,7 +64,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   }
 
   void onSelectAllDatasets() {
-    state = state.copyWith(selectedDatasetPaths: state.datasetPaths);
+    state = state.copyWith(selectedDatasetPaths: state.needReviewDatasetPaths);
   }
 
   void clearSelections() {

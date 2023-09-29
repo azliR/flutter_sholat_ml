@@ -6,6 +6,7 @@ class RecordState extends Equatable {
   const RecordState({
     required this.isInitialised,
     required this.isCameraPermissionGranted,
+    required this.isLocked,
     required this.cameraState,
     required this.accelerometerDatasets,
     required this.lastDatasets,
@@ -15,6 +16,7 @@ class RecordState extends Equatable {
   factory RecordState.initial() => const RecordState(
         isInitialised: false,
         isCameraPermissionGranted: false,
+        isLocked: false,
         cameraState: CameraState.notInitialised,
         accelerometerDatasets: [],
         lastDatasets: null,
@@ -23,6 +25,7 @@ class RecordState extends Equatable {
 
   final bool isInitialised;
   final bool isCameraPermissionGranted;
+  final bool isLocked;
   final CameraState cameraState;
   final List<Dataset> accelerometerDatasets;
   final List<Dataset>? lastDatasets;
@@ -31,6 +34,7 @@ class RecordState extends Equatable {
   RecordState copyWith({
     bool? isInitialised,
     bool? isCameraPermissionGranted,
+    bool? isLocked,
     CameraState? cameraState,
     List<Dataset>? accelerometerDatasets,
     ValueGetter<List<Dataset>?>? lastDatasets,
@@ -40,6 +44,7 @@ class RecordState extends Equatable {
       isInitialised: isInitialised ?? this.isInitialised,
       isCameraPermissionGranted:
           isCameraPermissionGranted ?? this.isCameraPermissionGranted,
+      isLocked: isLocked ?? this.isLocked,
       cameraState: cameraState ?? this.cameraState,
       accelerometerDatasets:
           accelerometerDatasets ?? this.accelerometerDatasets,

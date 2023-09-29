@@ -7,6 +7,7 @@ class Dataset extends Equatable {
     required this.x,
     required this.y,
     required this.z,
+    this.heartRate,
     this.timestamp,
     this.labelCategory,
     this.label,
@@ -15,6 +16,7 @@ class Dataset extends Equatable {
   final num x;
   final num y;
   final num z;
+  final int? heartRate;
   final Duration? timestamp;
   final String? labelCategory;
   final String? label;
@@ -25,6 +27,7 @@ class Dataset extends Equatable {
     num? x,
     num? y,
     num? z,
+    int? heartRate,
     Duration? timestamp,
     String? labelCategory,
     String? label,
@@ -33,6 +36,7 @@ class Dataset extends Equatable {
       x: x ?? this.x,
       y: y ?? this.y,
       z: z ?? this.z,
+      heartRate: heartRate ?? this.heartRate,
       timestamp: timestamp ?? this.timestamp,
       labelCategory: labelCategory ?? this.labelCategory,
       label: label ?? this.label,
@@ -40,5 +44,6 @@ class Dataset extends Equatable {
   }
 
   @override
-  List<Object?> get props => [x, y, z, timestamp, labelCategory, label];
+  List<Object?> get props =>
+      [x, y, z, heartRate, timestamp, labelCategory, label];
 }

@@ -84,7 +84,8 @@ class DatasetTileWidget extends StatelessWidget {
               ),
               Expanded(
                 flex: 2,
-                child: Center(child: Text('-')),
+                child:
+                    Center(child: Text(dataset.heartRate?.toString() ?? '-')),
               ),
               Expanded(
                 child: Center(
@@ -93,10 +94,7 @@ class DatasetTileWidget extends StatelessWidget {
                     onTap: () {
                       if (tagged) {
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        showSnackbar(
-                          context,
-                          '${dataset.label}${dataset.label!}',
-                        );
+                        showSnackbar(context, dataset.label!);
                       }
                     },
                     child: icon,

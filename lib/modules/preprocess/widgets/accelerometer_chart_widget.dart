@@ -28,11 +28,13 @@ class AccelerometerChart extends StatelessWidget {
     }
 
     return SfCartesianChart(
+      legend: const Legend(isVisible: true),
       primaryXAxis: NumericAxis(
         visibleMaximum: 100,
       ),
       zoomPanBehavior: ZoomPanBehavior(
         enablePanning: true,
+        enablePinching: true,
       ),
       trackballBehavior: trackballBehavior,
       onTrackballPositionChanging: onTrackballChanged,
@@ -42,18 +44,21 @@ class AccelerometerChart extends StatelessWidget {
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
           color: Colors.red,
+          legendItemText: 'x',
         ),
         SplineSeries(
           dataSource: yDatasets,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
           color: Colors.green,
+          legendItemText: 'y',
         ),
         SplineSeries(
           dataSource: zDatasets,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
           color: Colors.blue,
+          legendItemText: 'z',
         ),
       ],
     );

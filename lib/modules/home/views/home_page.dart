@@ -99,9 +99,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(height: 16),
               NavigationDrawerDestination(
                 icon: _tabsRouter.activeIndex == 0
-                    ? Icon(Symbols.home_rounded, fill: 1)
-                    : Icon(Symbols.home_rounded),
-                label: Text('Home'),
+                    ? const Icon(Symbols.home_rounded, fill: 1)
+                    : const Icon(Symbols.home_rounded),
+                label: const Text('Home'),
               ),
               const Divider(),
               ...savedDevices.map((device) {

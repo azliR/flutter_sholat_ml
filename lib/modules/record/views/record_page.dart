@@ -1,10 +1,12 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/record/blocs/record/record_notifier.dart';
 import 'package:flutter_sholat_ml/modules/record/widgets/accelerometer_chart_widget.dart';
+import 'package:flutter_sholat_ml/modules/record/widgets/heart_rate_chart_widget.dart';
 import 'package:flutter_sholat_ml/modules/record/widgets/record_button_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -26,6 +28,49 @@ class _RecordPageState extends ConsumerState<RecordPage>
   late final RecordNotifier _notifier;
 
   CameraController? _cameraController;
+
+  Future<void> _onLockPressed() async {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (!context.mounted) {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      return;
+    }
+    _notifier.onLockChanged(isLocked: true);
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black,
+      barrierDismissible: false,
+      builder: (context) {
+        return WillPopScope(
+          onWillPop: () async {
+            return false;
+          },
+          child: Align(
+            alignment: Alignment.topRight,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: const BorderRadius.all(Radius.circular(24)),
+                onLongPress: () {
+                  Navigator.pop(context);
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(
+                    Symbols.lock_open_rounded,
+                    size: 28,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _notifier.onLockChanged(isLocked: false);
+  }
 
   @override
   void initState() {
@@ -104,6 +149,8 @@ class _RecordPageState extends ConsumerState<RecordPage>
     );
     final cameraState =
         ref.watch(recordProvider.select((value) => value.cameraState));
+    final isLocked =
+        ref.watch(recordProvider.select((value) => value.isLocked));
 
     return Scaffold(
       backgroundColor: !isCameraPermissionGranted ||
@@ -160,20 +207,27 @@ class _RecordPageState extends ConsumerState<RecordPage>
           }
           return Stack(
             children: [
-              Positioned(
-                top: 80,
-                left: 0,
-                right: 0,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(24)),
-                  child: CameraPreview(_cameraController!),
+              if (!isLocked)
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(24)),
+                    child: CameraPreview(_cameraController!),
+                  ),
                 ),
-              ),
               const Align(
                 alignment: Alignment.topCenter,
                 child: SizedBox(
-                  height: 200,
-                  child: AccelerometerChart(),
+                  height: 300,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(child: AccelerometerChart()),
+                      Expanded(child: HeartRateChart()),
+                    ],
+                  ),
                 ),
               ),
               Align(
@@ -188,6 +242,7 @@ class _RecordPageState extends ConsumerState<RecordPage>
                       notifier.stopRecording(_cameraController!);
                     }
                   },
+                  onLockPressed: _onLockPressed,
                 ),
               ),
             ],

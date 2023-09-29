@@ -8,12 +8,14 @@ class RecordButton extends StatefulWidget {
     required this.cameraState,
     required this.cameraController,
     required this.onRecordPressed,
+    required this.onLockPressed,
     super.key,
   });
 
   final CameraState cameraState;
   final CameraController cameraController;
   final void Function() onRecordPressed;
+  final void Function() onLockPressed;
 
   @override
   State<RecordButton> createState() => __RecordButtonState();
@@ -21,6 +23,7 @@ class RecordButton extends StatefulWidget {
 
 class __RecordButtonState extends State<RecordButton> {
   var _isButtonPressed = false;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -28,7 +31,18 @@ class __RecordButtonState extends State<RecordButton> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          const SizedBox(width: 48),
+          IconButton.outlined(
+            iconSize: 36,
+            style: IconButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(
+                color: Colors.white,
+                width: 2,
+              ),
+            ),
+            onPressed: widget.onLockPressed,
+            icon: const Icon(Symbols.lock_rounded, grade: -25),
+          ),
           GestureDetector(
             onTap: () {
               _isButtonPressed = false;

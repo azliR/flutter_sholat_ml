@@ -109,7 +109,8 @@ class RecordRepository {
   }) async {
     final now = DateTime.now();
     final dir = await getApplicationDocumentsDirectory();
-    const savedDir = Directories.savedDatasetDir;
+    const savedDir =
+        '${Directories.savedDatasetDir}/${Directories.needReviewDir}';
     final fileName = now.toIso8601String();
 
     final fullSavedDir = await Directory('${dir.path}/$savedDir/$fileName')
@@ -118,12 +119,13 @@ class RecordRepository {
     try {
       final datasetStr =
           accelerometerDatasets.fold('', (previousValue, dataset) {
-        final x = dataset.x.toStringAsFixed(6);
-        final y = dataset.y.toStringAsFixed(6);
-        final z = dataset.z.toStringAsFixed(6);
+        final x = dataset.x.toString();
+        final y = dataset.y.toString();
+        final z = dataset.z.toString();
+        final heartRate = dataset.heartRate.toString();
         final timeStamp = dataset.timestamp!.inMilliseconds.toString();
 
-        return '$previousValue$timeStamp,$x,$y,$z\n';
+        return '$previousValue$timeStamp,$x,$y,$z,$heartRate\n';
       });
 
       final videoFile = await cameraController.stopVideoRecording();
@@ -185,9 +187,11 @@ class RecordRepository {
       await sensorChar.write([0x02], withoutResponse: true);
 
       // send ping request every 12 sec
-      // ignore: parameter_assignments
-      _timer = Timer.periodic(const Duration(seconds: 12), (timer) async {
+      _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
         await heartRateControlChar.write([0x16]);
+        if (timer.tick % 5 == 0) {
+          await sensorChar.write([0x00], withoutResponse: true);
+        }
       });
 
       log('Realtime started!');
@@ -234,64 +238,27 @@ class RecordRepository {
     }
   }
 
-  // void _parseRawAccel(Uint8List bytes) {
-  //   final res = <Map<String, int>>[];
-  //   for (var i = 0; i < 3; i++) {
-  //     final g = ByteData.sublistView(bytes, 2 + i * 6, 6).buffer.asInt16List();
-  //     res.add({'x': g[0], 'y': g[1], 'wtf': g[2]});
-  //   }
-  // }
-
-  // void _parseRawAccel(Uint8List bytes) {
-  //   for (var i = 0; i < 3; i++) {
-  //     final g = bytes.buffer.asUint16List(i * 3 + 1, 3);
-  //     setState(() {
-  //       _accelerometerDatasets.add(
-  //         Dataset(
-  //           x: g[0].toDouble(),
-  //           y: g[1].toDouble(),
-  //           z: g[2].toDouble(),
-  //           timestamp: DateTime.now(),
-  //         ),
-  //       );
-  //     });
-  //   }
-  // }
-
   List<Dataset>? handleRawSensorData(Uint8List bytes) {
     final byteData = ByteData.view(bytes.buffer);
     final type = byteData.getInt8(0);
-    final index = byteData.getInt8(1) & 0xff;
 
     if (type == 0x00) {
       final datasets = <Dataset>[];
-      final g = byteData.buffer.asInt16List();
+      final list = byteData.buffer.asInt16List();
 
-      for (var i = 1; i < g.length; i = i + 3) {
+      for (var i = 1; i < list.length; i = i + 3) {
+        // final gx = (x * gravity) / scaleFactor;
+        // final gy = (y * gravity) / scaleFactor;
+        // final gz = (z * gravity) / scaleFactor;
+
         final dataset = Dataset(
-          x: g[i],
-          y: g[i + 1],
-          z: g[i + 2],
+          x: list[i],
+          y: list[i + 1],
+          z: list[i + 2],
         );
         datasets.add(dataset);
       }
       return datasets;
-    } else if (type == 0x01) {
-      if ((bytes.length - 2) % 4 != 0) {
-        log('Raw sensor value for type 1 not divisible by 4');
-        return null;
-      }
-
-      for (var i = 2; i < bytes.length; i += 4) {
-        final val = _toUint32(bytes, i);
-        log('Raw sensor 1: $val');
-      }
-    } else if (type == 0x07) {
-      final targetType = byteData.getInt8(2) & 0xff;
-      final tsMillis = byteData.getInt64(3);
-      log('Raw sensor timestamp for type=$targetType index=$index: $tsMillis');
-    } else {
-      log('Unknown raw sensor type: ${_hexdumpWrap(bytes)}');
     }
     return null;
   }
@@ -305,92 +272,6 @@ class RecordRepository {
     final pitch = atan2(-gx, sqrt(pow(gy, 2) + pow(gz, 2)));
 
     return [roll, pitch, 0];
-  }
-
-  void handleRawSensorData2(
-    Uint8List value,
-    Stopwatch stopwatch, {
-    required void Function(Dataset dataset) onUpdated,
-  }) {
-    const scaleFactor = 4100.0;
-    const gravity = -9.81;
-    final buf = ByteData.view(value.buffer);
-    final type = buf.getInt8(0);
-    final index = buf.getInt8(1) & 0xff;
-
-    if (type == 0x00) {
-      if ((value.length - 2) % 6 != 0) {
-        log('Raw sensor value for type 0 not divisible by 6');
-        return;
-      }
-
-      for (var i = 2; i < value.length; i += 6) {
-        final x = (_toUint16(value, i) << 16) >> 16;
-        final y = (_toUint16(value, i + 2) << 16) >> 16;
-        final z = (_toUint16(value, i + 4) << 16) >> 16;
-        log('Raw sensor raw g: x=$x y=$y z=$z');
-
-        final gx = (x * gravity) / scaleFactor;
-        final gy = (y * gravity) / scaleFactor;
-        final gz = (z * gravity) / scaleFactor;
-
-        log('Raw sensor g: x=$gx y=$gy z=$gz');
-        onUpdated(
-          Dataset(
-            x: gx,
-            y: gy,
-            z: gz,
-            timestamp: Duration(milliseconds: stopwatch.elapsedMilliseconds),
-          ),
-        );
-      }
-    } else if (type == 0x01) {
-      if ((value.length - 2) % 4 != 0) {
-        log('Raw sensor value for type 1 not divisible by 4');
-        return;
-      }
-
-      for (var i = 2; i < value.length; i += 4) {
-        final val = _toUint32(value, i);
-        log('Raw sensor 1: $val');
-      }
-    } else if (type == 0x07) {
-      final targetType = buf.getInt8(2) & 0xff;
-      final tsMillis = buf.getInt64(3);
-      log('Raw sensor timestamp for type=$targetType index=$index: $tsMillis');
-    } else {
-      log('Unknown raw sensor type: ${_hexdumpWrap(value)}');
-    }
-  }
-
-  int _toUint16(Uint8List bytes, int offset) {
-    return (bytes[offset + 0] & 0xff) | ((bytes[offset + 1] & 0xff) << 8);
-  }
-
-  int _toUint32(Uint8List bytes, int offset) {
-    return (bytes[offset + 0] & 0xff) |
-        ((bytes[offset + 1] & 0xff) << 8) |
-        ((bytes[offset + 2] & 0xff) << 16) |
-        ((bytes[offset + 3] & 0xff) << 24);
-  }
-
-  String _hexdumpWrap(Uint8List buffer) {
-    return _hexdump(buffer, 0, buffer.length);
-  }
-
-  String _hexdump(Uint8List buffer, int offset, int length) {
-    var lengthCopy = length;
-    if (length == -1) {
-      lengthCopy = buffer.length - offset;
-    }
-
-    final hexChars = List.filled(lengthCopy * 2, ' ');
-    for (var i = 0; i < lengthCopy; i++) {
-      final v = buffer[i + offset] & 0xFF;
-      hexChars[i * 2] = hextChars[v >> 4];
-      hexChars[i * 2 + 1] = hextChars[v & 0x0F];
-    }
-    return hexChars.join();
   }
 
   void dispose() {

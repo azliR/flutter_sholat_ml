@@ -38,6 +38,8 @@ class RecordNotifier extends StateNotifier<RecordState> {
   StreamSubscription<List<int>>? _sensorSubscription;
   StreamSubscription<List<int>>? _hzSubscription;
 
+  int? _lastHeartRate;
+
   Future<void> initialise(
     BluetoothDevice device,
     List<BluetoothService> services,
@@ -67,14 +69,11 @@ class RecordNotifier extends StateNotifier<RecordState> {
     await _sensorChar.setNotifyValue(true);
     await _hzChar.setNotifyValue(true);
 
-    // StreamZip([
-    //   _heartRateMeasureChar.onValueReceived,
-    //   _hzChar.onValueReceived,
-    // ]).listen((event) {
-    //   final heartRate = event[0];
-    //   final hz = event[1];
-    //   log('Heart rate: $heartRate, Hz: $hz');
-    // });
+    _heartRateMeasureChar.onValueReceived.listen((event) {
+      log('Heart Rate: $event');
+      log('Last Heart Rate: $_lastHeartRate');
+      _lastHeartRate = event[1];
+    });
 
     _sensorSubscription ??= _sensorChar.onValueReceived.listen((event) {
       log('Sensor: $event');
@@ -108,6 +107,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
         final tunedTimestamp = realTimestamp - delay;
         if (tunedTimestamp >= 0) {
           datasets[i] = datasets[i].copyWith(
+            heartRate: _lastHeartRate,
             timestamp: Duration(
               milliseconds: tunedTimestamp,
             ),
@@ -153,8 +153,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
       lastDatasets: () => null,
       cameraState: CameraState.preparing,
     );
-
-    _stopwatch.reset();
+    _lastHeartRate = null;
 
     final (failure, _) = await _recordRepository.startRecording(
       _stopwatch,
@@ -210,6 +209,10 @@ class RecordNotifier extends StateNotifier<RecordState> {
       presentationState: const RecordSuccessState(),
       cameraState: CameraState.ready,
     );
+  }
+
+  void onLockChanged({required bool isLocked}) {
+    state = state.copyWith(isLocked: isLocked);
   }
 
   @override

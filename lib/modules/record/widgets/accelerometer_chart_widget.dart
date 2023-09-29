@@ -11,7 +11,7 @@ class AccelerometerChart extends ConsumerStatefulWidget {
 }
 
 class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
-  final List<num> indexes = [];
+  final List<int> indexes = [];
   final List<num> xDatasets = [];
   final List<num> yDatasets = [];
   final List<num> zDatasets = [];
@@ -44,6 +44,12 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
     });
 
     return SfCartesianChart(
+      legend: const Legend(
+        isVisible: true,
+        textStyle: TextStyle(
+          color: Colors.grey,
+        ),
+      ),
       series: [
         SplineSeries(
           animationDelay: 0,
@@ -52,6 +58,7 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           xValueMapper: (data, index) => indexes[index],
           yValueMapper: (data, index) => data,
           color: Colors.red,
+          legendItemText: 'x',
         ),
         SplineSeries(
           animationDelay: 0,
@@ -60,6 +67,7 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           xValueMapper: (data, index) => indexes[index],
           yValueMapper: (data, index) => data,
           color: Colors.green,
+          legendItemText: 'y',
         ),
         SplineSeries(
           animationDelay: 0,
@@ -68,6 +76,7 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           xValueMapper: (data, index) => indexes[index],
           yValueMapper: (data, index) => data,
           color: Colors.blue,
+          legendItemText: 'z',
         ),
       ],
     );

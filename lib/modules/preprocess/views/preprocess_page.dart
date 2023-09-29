@@ -42,6 +42,46 @@ class _PreprocessPageState extends ConsumerState<PreprocessPage> {
 
   Timer? _timer;
 
+  void _onDatasetTilePressed(int index, Dataset dataset) {
+    _videoPlayerController.seekTo(dataset.timestamp!);
+    _notifier.onCurrentSelectedIndexChanged(index: index);
+    _trackballBehavior.showByIndex(index);
+  }
+
+  void _videoListener() {
+    if (!mounted) return;
+
+    _notifier.onIsPlayingChanged(
+      isPlaying: _videoPlayerController.value.isPlaying,
+    );
+
+    if (!_videoPlayerController.value.isPlaying) return;
+
+    final datasets = ref.read(preprocessProvider).datasets;
+    final currentPosition =
+        _videoPlayerController.value.position.inMilliseconds;
+    var index = 0;
+    for (var i = 0; i < datasets.length; i++) {
+      final dataset = datasets[i];
+      if ((dataset.timestamp?.inMilliseconds ?? 0) > currentPosition) {
+        index = i - 1;
+        break;
+      }
+    }
+
+    _notifier.onCurrentSelectedIndexChanged(index: index);
+    _scrollToDatasetTile(index);
+    _trackballBehavior.showByIndex(index);
+  }
+
+  void _scrollToDatasetTile(int index) {
+    _scrollController.animateTo(
+      index * 32,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier)..initialise(widget.path);
@@ -80,8 +120,6 @@ class _PreprocessPageState extends ConsumerState<PreprocessPage> {
         ref.watch(preprocessProvider.select((state) => state.preprocess));
     final datasets =
         ref.watch(preprocessProvider.select((state) => state.datasets));
-    final isPlaying =
-        ref.watch(preprocessProvider.select((state) => state.isPlaying));
 
     return WillPopScope(
       onWillPop: () async {
@@ -95,6 +133,19 @@ class _PreprocessPageState extends ConsumerState<PreprocessPage> {
         return true;
       },
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Preprocess'),
+          scrolledUnderElevation: 0,
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: FilledButton.tonal(
+                onPressed: () {},
+                child: const Text('Save'),
+              ),
+            ),
+          ],
+        ),
         body: SafeArea(
           bottom: false,
           child: () {
@@ -117,6 +168,8 @@ class _PreprocessPageState extends ConsumerState<PreprocessPage> {
                           datasets: datasets,
                           trackballBehavior: _trackballBehavior,
                           onTrackballChanged: (trackballArgs) {
+                            if (_videoPlayerController.value.isPlaying) return;
+
                             final index =
                                 trackballArgs.chartPointInfo.dataPointIndex ??
                                     0;
@@ -183,21 +236,30 @@ class _PreprocessPageState extends ConsumerState<PreprocessPage> {
                               ),
                               onPressed: _showTagDialog,
                             ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            style: IconButton.styleFrom(
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            onPressed: () {
-                              if (isPlaying) {
-                                _videoPlayerController.pause();
-                              } else {
-                                _videoPlayerController.play();
-                              }
+                          Consumer(
+                            builder: (context, ref, child) {
+                              final isPlaying = ref.watch(preprocessProvider
+                                  .select((state) => state.isPlaying));
+
+                              return IconButton(
+                                visualDensity: VisualDensity.compact,
+                                style: IconButton.styleFrom(
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  if (isPlaying) {
+                                    _videoPlayerController.pause();
+                                  } else {
+                                    _videoPlayerController.play();
+                                  }
+                                },
+                                icon: isPlaying
+                                    ? const Icon(Symbols.pause, weight: 300)
+                                    : const Icon(Symbols.play_arrow,
+                                        weight: 300),
+                              );
                             },
-                            icon: isPlaying
-                                ? const Icon(Symbols.pause, weight: 300)
-                                : const Icon(Symbols.play_arrow, weight: 300),
                           ),
                         ],
                       );
@@ -540,44 +602,5 @@ class _PreprocessPageState extends ConsumerState<PreprocessPage> {
         );
       },
     );
-  }
-
-  void _onDatasetTilePressed(int index, Dataset dataset) {
-    _videoPlayerController.seekTo(dataset.timestamp!);
-    _notifier.onCurrentSelectedIndexChanged(index: index);
-    _trackballBehavior.showByIndex(index);
-  }
-
-  void _scrollToDatasetTile(int index) {
-    _scrollController.animateTo(
-      index * 32,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  void _videoListener() {
-    if (!mounted) return;
-
-    _notifier.onIsPlayingChanged(
-      isPlaying: _videoPlayerController.value.isPlaying,
-    );
-
-    if (!_videoPlayerController.value.isPlaying) return;
-
-    final datasets = ref.read(preprocessProvider).datasets;
-    final currentPosition =
-        _videoPlayerController.value.position.inMilliseconds;
-    var index = 0;
-    for (var i = 0; i < datasets.length; i++) {
-      final dataset = datasets[i];
-      if ((dataset.timestamp?.inMilliseconds ?? 0) > currentPosition) {
-        index = i - 1;
-        break;
-      }
-    }
-
-    _scrollToDatasetTile(index);
-    _trackballBehavior.showByIndex(index);
   }
 }

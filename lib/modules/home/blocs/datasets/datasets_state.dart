@@ -3,32 +3,38 @@ part of 'datasets_notifier.dart';
 class HomeState extends Equatable {
   const HomeState({
     required this.isLoading,
-    required this.datasetPaths,
+    required this.needReviewDatasetPaths,
+    required this.reviewedDatasetPaths,
     required this.selectedDatasetPaths,
     required this.presentationState,
   });
 
   factory HomeState.initial() => const HomeState(
         isLoading: false,
-        datasetPaths: [],
+        needReviewDatasetPaths: null,
+        reviewedDatasetPaths: null,
         selectedDatasetPaths: [],
         presentationState: DatasetsInitial(),
       );
 
   final bool isLoading;
-  final List<String> datasetPaths;
+  final List<String>? needReviewDatasetPaths;
+  final List<String>? reviewedDatasetPaths;
   final List<String> selectedDatasetPaths;
   final DatasetsPresentationState presentationState;
 
   HomeState copyWith({
     bool? isLoading,
-    List<String>? datasetPaths,
+    List<String>? needReviewDatasetPaths,
+    List<String>? reviewedDatasetPaths,
     List<String>? selectedDatasetPaths,
     DatasetsPresentationState? presentationState,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
-      datasetPaths: datasetPaths ?? this.datasetPaths,
+      needReviewDatasetPaths:
+          needReviewDatasetPaths ?? this.needReviewDatasetPaths,
+      reviewedDatasetPaths: reviewedDatasetPaths ?? this.reviewedDatasetPaths,
       selectedDatasetPaths: selectedDatasetPaths ?? this.selectedDatasetPaths,
       presentationState: presentationState ?? this.presentationState,
     );
@@ -37,7 +43,8 @@ class HomeState extends Equatable {
   @override
   List<Object?> get props => [
         isLoading,
-        datasetPaths,
+        needReviewDatasetPaths,
+        reviewedDatasetPaths,
         selectedDatasetPaths,
         presentationState,
       ];

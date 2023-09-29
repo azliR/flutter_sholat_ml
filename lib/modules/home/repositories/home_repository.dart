@@ -6,11 +6,15 @@ import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:path_provider/path_provider.dart';
 
 class HomeRepository {
-  Future<(Failure?, List<String>?)> loadDatasetsFromDisk() async {
+  Future<(Failure?, List<String>?)> loadDatasetsFromDisk(String folder) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
       const savedDir = Directories.savedDatasetDir;
-      final entities = await Directory('${dir.path}/$savedDir').list().toList();
+      final fullDir = Directory('${dir.path}/$savedDir/$folder');
+      if (!fullDir.existsSync()) {
+        await fullDir.create(recursive: true);
+      }
+      final entities = await fullDir.list().toList();
 
       final datasetPaths = entities.fold(<String>[], (previous, entity) {
         final type = FileSystemEntity.typeSync(entity.path);
