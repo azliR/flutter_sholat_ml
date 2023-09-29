@@ -16,18 +16,16 @@ class RecordRepository {
   final hextChars = '0123456789ABCDEF'.split('');
   Timer? _timer;
 
-  Future<(Failure?, CameraController?)> initialiseCameraController([
-    CameraDescription? cameraDescription,
-  ]) async {
+  Future<(Failure?, CameraController?)> initialiseCameraController(
+    CameraDescription cameraDescription,
+  ) async {
     try {
       if (!await isCameraPermissionGranted && !await requestCameraPermission) {
         return (PermissionFailure('Camera permission denied'), null);
       }
 
-      final cameras = await availableCameras();
-
       final controller = CameraController(
-        cameraDescription ?? cameras[0],
+        cameraDescription,
         ResolutionPreset.medium,
       );
       await controller.initialize();
@@ -38,6 +36,24 @@ class RecordRepository {
       const message = 'Failed initialising camera controller';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
+    }
+  }
+
+  Future<(Failure?, List<CameraDescription>)> getAvailableCameras() async {
+    try {
+      if (!await isCameraPermissionGranted && !await requestCameraPermission) {
+        return (
+          PermissionFailure('Camera permission denied'),
+          <CameraDescription>[]
+        );
+      }
+
+      final cameras = await availableCameras();
+      return (null, cameras);
+    } catch (e, stackTrace) {
+      const message = 'Failed getting cameras';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, <CameraDescription>[]);
     }
   }
 

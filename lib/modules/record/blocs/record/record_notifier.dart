@@ -128,14 +128,37 @@ class RecordNotifier extends StateNotifier<RecordState> {
   Future<CameraController?> initialiseCameraController([
     CameraDescription? cameraDescription,
   ]) async {
-    final (failure, controller) =
-        await _recordRepository.initialiseCameraController(cameraDescription);
-    if (failure != null) {
-      if (failure is PermissionFailure) {
+    final CameraDescription camera;
+    if (cameraDescription == null) {
+      final (getCamerasFailure, cameras) =
+          await _recordRepository.getAvailableCameras();
+      if (getCamerasFailure != null) {
+        if (getCamerasFailure is PermissionFailure) {
+          state = state.copyWith(isCameraPermissionGranted: false);
+        } else {
+          state = state.copyWith(
+            presentationState: GetCamerasFailureState(getCamerasFailure),
+          );
+        }
+        return null;
+      }
+      camera = cameras[0];
+      state = state.copyWith(availableCameras: cameras);
+    } else {
+      camera = cameraDescription;
+    }
+
+    state = state.copyWith(currentCamera: camera);
+
+    final (initFailure, controller) =
+        await _recordRepository.initialiseCameraController(camera);
+
+    if (initFailure != null) {
+      if (initFailure is PermissionFailure) {
         state = state.copyWith(isCameraPermissionGranted: false);
       } else {
         state = state.copyWith(
-          presentationState: CameraInitialisationFailureState(failure),
+          presentationState: CameraInitialisationFailureState(initFailure),
         );
       }
       return null;

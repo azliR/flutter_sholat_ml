@@ -40,6 +40,8 @@ class AccelerometerChart extends StatelessWidget {
       onTrackballPositionChanging: onTrackballChanged,
       series: [
         SplineSeries(
+          width: 1.4,
+          cardinalSplineTension: 1,
           dataSource: xDatasets,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
@@ -47,6 +49,8 @@ class AccelerometerChart extends StatelessWidget {
           legendItemText: 'x',
         ),
         SplineSeries(
+          width: 1.4,
+          cardinalSplineTension: 1,
           dataSource: yDatasets,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
@@ -54,6 +58,8 @@ class AccelerometerChart extends StatelessWidget {
           legendItemText: 'y',
         ),
         SplineSeries(
+          width: 1.4,
+          cardinalSplineTension: 1,
           dataSource: zDatasets,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,

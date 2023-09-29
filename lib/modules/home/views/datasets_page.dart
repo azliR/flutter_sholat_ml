@@ -25,7 +25,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
   late final AuthDeviceNotifier _authDeviceNotifier;
   late final TabController _tabController;
 
-  final _refreshKey = GlobalKey<RefreshIndicatorState>();
+  final _needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
+  final _reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _showDeleteDialog({required void Function() action}) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -66,7 +67,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
       final reviewedDatasetPaths =
           ref.read(datasetsProvider).reviewedDatasetPaths;
       if (reviewedDatasetPaths == null) {
-        await _refreshKey.currentState?.show();
+        await _reviewedRefreshKey.currentState?.show();
       }
     }
   }
@@ -80,7 +81,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     _tabController.addListener(_tabListener);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshKey.currentState?.show();
+      _needReviewRefreshKey.currentState?.show();
     });
 
     super.initState();
@@ -106,10 +107,12 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             showLoadingDialog(context);
           case DeleteDatasetSuccessState():
             Navigator.pop(context);
-            _refreshKey.currentState?.show();
+            _needReviewRefreshKey.currentState?.show();
+            _reviewedRefreshKey.currentState?.show();
           case DeleteDatasetFailureState():
             Navigator.pop(context);
-            _refreshKey.currentState?.show();
+            _needReviewRefreshKey.currentState?.show();
+            _reviewedRefreshKey.currentState?.show();
             showErrorSnackbar(context, 'Failed to delete dataset');
           case DatasetsInitial():
             break;
@@ -134,75 +137,67 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
         return true;
       },
       child: Material(
-        child: RefreshIndicator(
-          key: _refreshKey,
-          onRefresh: () {
-            return _notifier.loadDatasetsFromDisk(
-              _tabController.index == 0
-                  ? Directories.needReviewDir
-                  : Directories.reviewedDir,
-            );
-          },
-          child: NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverAppBar.medium(
-                  title: const Text('Datasets'),
-                  leading: IconButton(
-                    onPressed: () {
-                      if (isSelectMode) {
-                        _notifier.clearSelections();
-                      } else {
-                        Scaffold.of(context).openDrawer();
-                      }
-                    },
-                    icon: isSelectMode
-                        ? const Icon(Symbols.clear_rounded)
-                        : const Icon(Symbols.menu_rounded),
-                  ),
-                  actions: _buildAppBarActions(isSelectMode),
-                  bottom: TabBar(
-                    controller: _tabController,
-                    tabs: const [
-                      Tab(
-                        child: Text('Need review'),
-                      ),
-                      Tab(
-                        child: Text('Reviewed'),
-                      ),
-                    ],
-                  ),
-                ),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final isLoading = ref.watch(
-                      datasetsProvider.select((state) => state.isLoading),
-                    );
-                    if (isLoading) {
-                      return const SliverToBoxAdapter(
-                        child: LinearProgressIndicator(),
-                      );
+        child: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar.medium(
+                title: const Text('Datasets'),
+                leading: IconButton(
+                  onPressed: () {
+                    if (isSelectMode) {
+                      _notifier.clearSelections();
+                    } else {
+                      Scaffold.of(context).openDrawer();
                     }
-                    return const SliverToBoxAdapter();
                   },
+                  icon: isSelectMode
+                      ? const Icon(Symbols.clear_rounded)
+                      : const Icon(Symbols.menu_rounded),
                 ),
-              ];
-            },
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _DatasetsBody(
-                  datasetPaths: needReviewDatasetPaths ?? [],
-                  refreshKey: _refreshKey,
-                  isSelectMode: isSelectMode,
+                actions: _buildAppBarActions(isSelectMode),
+                bottom: TabBar(
+                  controller: _tabController,
+                  tabs: const [
+                    Tab(
+                      child: Text('Need review'),
+                    ),
+                    Tab(
+                      child: Text('Reviewed'),
+                    ),
+                  ],
                 ),
-                _DatasetsBody(
-                  datasetPaths: reviewedDatasetPaths ?? [],
-                  refreshKey: _refreshKey,
-                  isSelectMode: isSelectMode,
-                ),
-              ],
-            ),
+              ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final isLoading = ref.watch(
+                    datasetsProvider.select((state) => state.isLoading),
+                  );
+                  if (isLoading) {
+                    return const SliverToBoxAdapter(
+                      child: LinearProgressIndicator(),
+                    );
+                  }
+                  return const SliverToBoxAdapter();
+                },
+              ),
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _DatasetsBody(
+                folder: Directories.needReviewDir,
+                datasetPaths: needReviewDatasetPaths ?? [],
+                refreshKey: _needReviewRefreshKey,
+                isSelectMode: isSelectMode,
+              ),
+              _DatasetsBody(
+                folder: Directories.reviewedDir,
+                datasetPaths: reviewedDatasetPaths ?? [],
+                refreshKey: _reviewedRefreshKey,
+                isSelectMode: isSelectMode,
+              ),
+            ],
           ),
         ),
       ),
@@ -260,7 +255,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             action: () async {
               Navigator.pop(context);
               await _notifier.deleteSelectedDatasets();
-              await _refreshKey.currentState?.show();
+              await _needReviewRefreshKey.currentState?.show();
+              await _reviewedRefreshKey.currentState?.show();
             },
           ),
           icon: const Icon(Symbols.delete_rounded),
@@ -276,12 +272,14 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
 class _DatasetsBody extends ConsumerWidget {
   const _DatasetsBody({
+    required this.folder,
     required this.datasetPaths,
     required this.refreshKey,
     required this.isSelectMode,
     super.key,
   });
 
+  final String folder;
   final List<String> datasetPaths;
   final GlobalKey<RefreshIndicatorState> refreshKey;
   final bool isSelectMode;
@@ -290,75 +288,83 @@ class _DatasetsBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(datasetsProvider.notifier);
 
-    if (datasetPaths.isEmpty) {
-      return const Center(
-        child: Text('No datasets'),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, kBottomNavigationBarHeight),
-      itemCount: datasetPaths.length,
-      itemBuilder: (context, index) {
-        final datasetPath = datasetPaths[index];
-        final datasetName = datasetPath.split('/').last;
-        final dateTime = DateTime.tryParse(datasetName);
-        final formattedDatasetName = dateTime == null
-            ? datasetName
-            : DateFormat("EEEE 'at' HH:mm - MMM yyy").format(dateTime);
-
-        final isSelected = ref.watch(
-          datasetsProvider.select(
-            (value) => value.selectedDatasetPaths.contains(datasetPath),
-          ),
-        );
-
-        return RoundedListTile(
-          title: Text(
-            formattedDatasetName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          selected: isSelected,
-          leading: const Icon(Symbols.csv_rounded),
-          trailing: MenuAnchor(
-            builder: (context, controller, child) {
-              return IconButton(
-                style: IconButton.styleFrom(
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: () {
-                  if (controller.isOpen) {
-                    controller.close();
-                  } else {
-                    controller.open();
-                  }
-                },
-                icon: child!,
-              );
-            },
-            menuChildren: [
-              MenuItemButton(
-                leadingIcon: const Icon(Symbols.delete_rounded),
-                onPressed: () async {
-                  await notifier.deleteDataset(datasetPath);
-                  await refreshKey.currentState?.show();
-                },
-                child: const Text('Delete'),
-              ),
-            ],
-            child: const Icon(Symbols.more_vert_rounded),
-          ),
-          onTap: () {
-            if (isSelectMode) {
-              notifier.onSelectedDataset(datasetPath);
-            } else {
-              context.router.push(PreprocessRoute(path: datasetPath));
-            }
-          },
-          onLongPress: () => notifier.onSelectedDataset(datasetPath),
-        );
+    return RefreshIndicator(
+      key: refreshKey,
+      onRefresh: () {
+        return notifier.loadDatasetsFromDisk(folder);
       },
+      child: () {
+        if (datasetPaths.isEmpty) {
+          return const Center(
+            child: Text('No datasets'),
+          );
+        }
+        return ListView.builder(
+          padding:
+              const EdgeInsets.fromLTRB(0, 8, 0, kBottomNavigationBarHeight),
+          itemCount: datasetPaths.length,
+          itemBuilder: (context, index) {
+            final datasetPath = datasetPaths[index];
+            final datasetName = datasetPath.split('/').last;
+            final dateTime = DateTime.tryParse(datasetName);
+            final formattedDatasetName = dateTime == null
+                ? datasetName
+                : DateFormat("EEEE 'at' HH:mm - MMM yyy").format(dateTime);
+
+            final isSelected = ref.watch(
+              datasetsProvider.select(
+                (value) => value.selectedDatasetPaths.contains(datasetPath),
+              ),
+            );
+
+            return RoundedListTile(
+              title: Text(
+                formattedDatasetName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              selected: isSelected,
+              leading: const Icon(Symbols.csv_rounded),
+              trailing: MenuAnchor(
+                builder: (context, controller, child) {
+                  return IconButton(
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      if (controller.isOpen) {
+                        controller.close();
+                      } else {
+                        controller.open();
+                      }
+                    },
+                    icon: child!,
+                  );
+                },
+                menuChildren: [
+                  MenuItemButton(
+                    leadingIcon: const Icon(Symbols.delete_rounded),
+                    onPressed: () async {
+                      await notifier.deleteDataset(datasetPath);
+                      await refreshKey.currentState?.show();
+                    },
+                    child: const Text('Delete'),
+                  ),
+                ],
+                child: const Icon(Symbols.more_vert_rounded),
+              ),
+              onTap: () {
+                if (isSelectMode) {
+                  notifier.onSelectedDataset(datasetPath);
+                } else {
+                  context.router.push(PreprocessRoute(path: datasetPath));
+                }
+              },
+              onLongPress: () => notifier.onSelectedDataset(datasetPath),
+            );
+          },
+        );
+      }(),
     );
   }
 }

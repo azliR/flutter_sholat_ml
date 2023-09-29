@@ -131,6 +131,8 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
             showErrorSnackbar(context, 'Failed recording');
           case RecordSuccessState():
             showSnackbar(context, 'Success recording');
+          case GetCamerasFailureState():
+            showErrorSnackbar(context, 'Failed getting available cameras');
           case RecordInitialState():
             break;
         }
@@ -232,17 +234,49 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
               ),
               Align(
                 alignment: Alignment.bottomCenter,
-                child: RecordButton(
-                  cameraState: cameraState,
-                  cameraController: _cameraController!,
-                  onRecordPressed: () {
-                    if (cameraState == CameraState.ready) {
-                      notifier.startRecording(_cameraController!);
-                    } else if (cameraState == CameraState.recording) {
-                      notifier.stopRecording(_cameraController!);
-                    }
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final availableCameras = ref.watch(recordProvider
+                        .select((value) => value.availableCameras));
+
+                    return RecordButton(
+                      cameraState: cameraState,
+                      cameraController: _cameraController!,
+                      onRecordPressed: () {
+                        if (cameraState == CameraState.ready) {
+                          notifier.startRecording(_cameraController!);
+                        } else if (cameraState == CameraState.recording) {
+                          notifier.stopRecording(_cameraController!);
+                        }
+                      },
+                      onLockPressed: _onLockPressed,
+                      onSwitchPressed: availableCameras.every(
+                        (camera) => [
+                          CameraLensDirection.back,
+                          CameraLensDirection.front,
+                        ].contains(camera.lensDirection),
+                      )
+                          ? () async {
+                              final currentCamera =
+                                  ref.read(recordProvider).currentCamera!;
+                              final switchCamera =
+                                  availableCameras.firstWhere((camera) {
+                                if (currentCamera.lensDirection ==
+                                    CameraLensDirection.back) {
+                                  return camera.lensDirection ==
+                                      CameraLensDirection.front;
+                                } else {
+                                  return camera.lensDirection ==
+                                      CameraLensDirection.back;
+                                }
+                              });
+                              _cameraController = await _notifier
+                                  .initialiseCameraController(switchCamera);
+                              setState(() {});
+                            }
+                          : null,
+                    );
                   },
-                  onLockPressed: _onLockPressed,
                 ),
               ),
             ],

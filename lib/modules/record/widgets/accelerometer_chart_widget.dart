@@ -52,6 +52,7 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
       ),
       series: [
         SplineSeries(
+          width: 1.4,
           animationDelay: 0,
           animationDuration: 0,
           dataSource: xDatasets,
@@ -61,6 +62,7 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           legendItemText: 'x',
         ),
         SplineSeries(
+          width: 1.4,
           animationDelay: 0,
           animationDuration: 0,
           dataSource: yDatasets,
@@ -70,6 +72,7 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           legendItemText: 'y',
         ),
         SplineSeries(
+          width: 1.4,
           animationDelay: 0,
           animationDuration: 0,
           dataSource: zDatasets,

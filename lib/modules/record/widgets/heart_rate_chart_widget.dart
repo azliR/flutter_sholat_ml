@@ -52,6 +52,7 @@ class _HeartRateChartState extends ConsumerState<HeartRateChart> {
         ),
         series: [
           SplineSeries(
+            width: 1.4,
             animationDelay: 0,
             animationDuration: 0,
             dataSource: heartRateDatasets,

@@ -43,8 +43,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   Timer? _timer;
 
   void _onDatasetTilePressed(int index, Dataset dataset) {
-    _videoPlayerController.seekTo(dataset.timestamp!);
-    _notifier.onCurrentSelectedIndexChanged(index: index);
     _trackballBehavior.showByIndex(index);
   }
 

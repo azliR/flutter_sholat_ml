@@ -8,6 +8,8 @@ class RecordState extends Equatable {
     required this.isCameraPermissionGranted,
     required this.isLocked,
     required this.cameraState,
+    required this.currentCamera,
+    required this.availableCameras,
     required this.accelerometerDatasets,
     required this.lastDatasets,
     required this.presentationState,
@@ -18,6 +20,8 @@ class RecordState extends Equatable {
         isCameraPermissionGranted: false,
         isLocked: false,
         cameraState: CameraState.notInitialised,
+        currentCamera: null,
+        availableCameras: [],
         accelerometerDatasets: [],
         lastDatasets: null,
         presentationState: RecordInitialState(),
@@ -27,6 +31,8 @@ class RecordState extends Equatable {
   final bool isCameraPermissionGranted;
   final bool isLocked;
   final CameraState cameraState;
+  final CameraDescription? currentCamera;
+  final List<CameraDescription> availableCameras;
   final List<Dataset> accelerometerDatasets;
   final List<Dataset>? lastDatasets;
   final RecordPresentationState presentationState;
@@ -36,7 +42,9 @@ class RecordState extends Equatable {
     bool? isCameraPermissionGranted,
     bool? isLocked,
     CameraState? cameraState,
+    CameraDescription? currentCamera,
     List<Dataset>? accelerometerDatasets,
+    List<CameraDescription>? availableCameras,
     ValueGetter<List<Dataset>?>? lastDatasets,
     RecordPresentationState? presentationState,
   }) {
@@ -46,8 +54,10 @@ class RecordState extends Equatable {
           isCameraPermissionGranted ?? this.isCameraPermissionGranted,
       isLocked: isLocked ?? this.isLocked,
       cameraState: cameraState ?? this.cameraState,
+      currentCamera: currentCamera ?? this.currentCamera,
       accelerometerDatasets:
           accelerometerDatasets ?? this.accelerometerDatasets,
+      availableCameras: availableCameras ?? this.availableCameras,
       lastDatasets: lastDatasets == null ? null : lastDatasets(),
       presentationState: presentationState ?? this.presentationState,
     );
@@ -57,8 +67,12 @@ class RecordState extends Equatable {
   List<Object?> get props => [
         isInitialised,
         isCameraPermissionGranted,
+        isLocked,
         cameraState,
+        currentCamera,
+        availableCameras,
         accelerometerDatasets,
+        lastDatasets,
         presentationState,
       ];
 }
@@ -80,18 +94,24 @@ final class RecordInitialState extends RecordPresentationState {
   const RecordInitialState();
 }
 
+final class CameraInitialisationFailureState extends RecordPresentationState {
+  const CameraInitialisationFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class GetCamerasFailureState extends RecordPresentationState {
+  const GetCamerasFailureState(this.failure);
+
+  final Failure failure;
+}
+
 final class RecordSuccessState extends RecordPresentationState {
   const RecordSuccessState();
 }
 
 final class RecordFailureState extends RecordPresentationState {
   const RecordFailureState(this.failure);
-
-  final Failure failure;
-}
-
-final class CameraInitialisationFailureState extends RecordPresentationState {
-  const CameraInitialisationFailureState(this.failure);
 
   final Failure failure;
 }

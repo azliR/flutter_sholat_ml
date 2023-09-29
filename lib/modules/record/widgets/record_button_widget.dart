@@ -9,6 +9,7 @@ class RecordButton extends StatefulWidget {
     required this.cameraController,
     required this.onRecordPressed,
     required this.onLockPressed,
+    required this.onSwitchPressed,
     super.key,
   });
 
@@ -16,6 +17,7 @@ class RecordButton extends StatefulWidget {
   final CameraController cameraController;
   final void Function() onRecordPressed;
   final void Function() onLockPressed;
+  final void Function()? onSwitchPressed;
 
   @override
   State<RecordButton> createState() => __RecordButtonState();
@@ -111,18 +113,22 @@ class __RecordButtonState extends State<RecordButton> {
               ],
             ),
           ),
-          IconButton.outlined(
-            iconSize: 36,
-            style: IconButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: const BorderSide(
-                color: Colors.white,
-                width: 2,
+          if (widget.onSwitchPressed != null &&
+              widget.cameraState == CameraState.ready)
+            IconButton.outlined(
+              iconSize: 36,
+              style: IconButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(
+                  color: Colors.white,
+                  width: 2,
+                ),
               ),
-            ),
-            onPressed: () {},
-            icon: const Icon(Symbols.sync_rounded),
-          ),
+              onPressed: widget.onSwitchPressed,
+              icon: const Icon(Symbols.sync_rounded),
+            )
+          else
+            const SizedBox(width: 48),
         ],
       ),
     );
