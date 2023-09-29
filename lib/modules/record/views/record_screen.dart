@@ -13,17 +13,17 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:wakelock/wakelock.dart';
 
 @RoutePage()
-class RecordPage extends ConsumerStatefulWidget {
-  const RecordPage({required this.device, required this.services, super.key});
+class RecordScreen extends ConsumerStatefulWidget {
+  const RecordScreen({required this.device, required this.services, super.key});
 
   final BluetoothDevice device;
   final List<BluetoothService> services;
 
   @override
-  ConsumerState<RecordPage> createState() => _RecordPageState();
+  ConsumerState<RecordScreen> createState() => _RecordScreenState();
 }
 
-class _RecordPageState extends ConsumerState<RecordPage>
+class _RecordScreenState extends ConsumerState<RecordScreen>
     with WidgetsBindingObserver {
   late final RecordNotifier _notifier;
 

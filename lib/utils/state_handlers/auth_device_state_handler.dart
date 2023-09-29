@@ -77,7 +77,7 @@ void handleAuthDeviceState(
           onAuthDeviceSuccessState.call();
         } else {
           context.router
-              .pushAndPopUntil(const DatasetsRoute(), predicate: (_) => false);
+              .pushAndPopUntil(const DatasetsPage(), predicate: (_) => false);
         }
       case AuthDeviceFailureState():
         if (onAuthDeviceFailureState != null) {

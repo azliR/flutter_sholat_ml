@@ -15,14 +15,15 @@ import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
-class DiscoverDevicePage extends ConsumerStatefulWidget {
-  const DiscoverDevicePage({super.key});
+class DiscoverDeviceScreen extends ConsumerStatefulWidget {
+  const DiscoverDeviceScreen({super.key});
 
   @override
-  ConsumerState<DiscoverDevicePage> createState() => _DiscoverDevicePageState();
+  ConsumerState<DiscoverDeviceScreen> createState() =>
+      _DiscoverDevicePageState();
 }
 
-class _DiscoverDevicePageState extends ConsumerState<DiscoverDevicePage> {
+class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
   late final DiscoverDeviceNotifier _notifier;
   late final AuthDeviceNotifier _authDeviceNotifier;
 

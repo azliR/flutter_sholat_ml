@@ -9,14 +9,14 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
-class SplashPage extends ConsumerStatefulWidget {
-  const SplashPage({super.key});
+class SplashScreen extends ConsumerStatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  ConsumerState<SplashPage> createState() => _SplashPageState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashPageState extends ConsumerState<SplashPage> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   late final AuthDeviceNotifier _authDeviceNotifier;
 
   Future<void> _connectToSavedDevice() async {
@@ -32,7 +32,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   Future<void> onFailure() async {
     showErrorSnackbar(context, 'Failed to connect to saved device');
     await context.router.pushAndPopUntil(
-      const SavedDevicesRoute(),
+      const SavedDevicesPage(),
       predicate: (_) => false,
     );
   }

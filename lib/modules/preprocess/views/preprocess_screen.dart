@@ -14,16 +14,16 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:video_player/video_player.dart';
 
 @RoutePage()
-class PreprocessPage extends ConsumerStatefulWidget {
-  const PreprocessPage({required this.path, super.key});
+class PreprocessScreen extends ConsumerStatefulWidget {
+  const PreprocessScreen({required this.path, super.key});
 
   final String path;
 
   @override
-  ConsumerState<PreprocessPage> createState() => _PreprocessPageState();
+  ConsumerState<PreprocessScreen> createState() => _PreprocessScreenState();
 }
 
-class _PreprocessPageState extends ConsumerState<PreprocessPage> {
+class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   late final PreprocessNotifier _notifier;
 
   late final VideoPlayerController _videoPlayerController;

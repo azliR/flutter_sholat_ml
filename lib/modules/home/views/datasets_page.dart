@@ -245,7 +245,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                   if (savedDevices.isEmpty) {
                     await context.router.push(const DiscoverDeviceRoute());
                   } else {
-                    await context.router.push(const SavedDevicesRoute());
+                    await context.router.push(const SavedDevicesPage());
                   }
                 }
               },

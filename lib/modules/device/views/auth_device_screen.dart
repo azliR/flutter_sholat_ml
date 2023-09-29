@@ -9,8 +9,8 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
-class AuthDevicePage extends ConsumerStatefulWidget {
-  const AuthDevicePage({
+class AuthDeviceScreen extends ConsumerStatefulWidget {
+  const AuthDeviceScreen({
     required this.device,
     required this.services,
     super.key,
@@ -20,10 +20,10 @@ class AuthDevicePage extends ConsumerStatefulWidget {
   final List<BluetoothService> services;
 
   @override
-  ConsumerState<AuthDevicePage> createState() => _AuthDevicePageState();
+  ConsumerState<AuthDeviceScreen> createState() => _AuthDeviceScreenState();
 }
 
-class _AuthDevicePageState extends ConsumerState<AuthDevicePage> {
+class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
   late final AuthDeviceNotifier _notifier;
 
   final _authController = TextEditingController();

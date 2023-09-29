@@ -7,17 +7,17 @@ import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_n
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-enum HomePageNavigation { home, device }
+enum HomeScreenNavigation { home, device }
 
 @RoutePage()
-class HomePage extends ConsumerStatefulWidget {
-  const HomePage({super.key});
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final AuthDeviceNotifier _authDeviceNotifier;
 
   late TabsRouter _tabsRouter;
@@ -60,10 +60,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return AutoTabsRouter(
       curve: Curves.easeIn,
-      routes: HomePageNavigation.values.map((section) {
+      routes: HomeScreenNavigation.values.map((section) {
         return switch (section) {
-          HomePageNavigation.home => const SavedDevicesRoute(),
-          HomePageNavigation.device => const DatasetsRoute(),
+          HomeScreenNavigation.home => const SavedDevicesPage(),
+          HomeScreenNavigation.device => const DatasetsPage(),
         };
       }).toList(),
       transitionBuilder: (context, child, animation) => FadeThroughTransition(
