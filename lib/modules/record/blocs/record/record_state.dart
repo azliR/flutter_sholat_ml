@@ -7,6 +7,7 @@ class RecordState extends Equatable {
     required this.isInitialised,
     required this.isCameraPermissionGranted,
     required this.isLocked,
+    required this.deviceLocation,
     required this.cameraState,
     required this.currentCamera,
     required this.availableCameras,
@@ -19,6 +20,7 @@ class RecordState extends Equatable {
         isInitialised: false,
         isCameraPermissionGranted: false,
         isLocked: false,
+        deviceLocation: null,
         cameraState: CameraState.notInitialised,
         currentCamera: null,
         availableCameras: [],
@@ -30,6 +32,7 @@ class RecordState extends Equatable {
   final bool isInitialised;
   final bool isCameraPermissionGranted;
   final bool isLocked;
+  final DeviceLocation? deviceLocation;
   final CameraState cameraState;
   final CameraDescription? currentCamera;
   final List<CameraDescription> availableCameras;
@@ -41,6 +44,7 @@ class RecordState extends Equatable {
     bool? isInitialised,
     bool? isCameraPermissionGranted,
     bool? isLocked,
+    DeviceLocation? deviceLocation,
     CameraState? cameraState,
     CameraDescription? currentCamera,
     List<Dataset>? accelerometerDatasets,
@@ -53,6 +57,7 @@ class RecordState extends Equatable {
       isCameraPermissionGranted:
           isCameraPermissionGranted ?? this.isCameraPermissionGranted,
       isLocked: isLocked ?? this.isLocked,
+      deviceLocation: deviceLocation ?? this.deviceLocation,
       cameraState: cameraState ?? this.cameraState,
       currentCamera: currentCamera ?? this.currentCamera,
       accelerometerDatasets:
@@ -68,6 +73,7 @@ class RecordState extends Equatable {
         isInitialised,
         isCameraPermissionGranted,
         isLocked,
+        deviceLocation,
         cameraState,
         currentCamera,
         availableCameras,

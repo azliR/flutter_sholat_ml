@@ -16,17 +16,17 @@ class Device extends Equatable {
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'authKey': authKey,
-      'deviceId': deviceId,
-      'deviceName': deviceName,
+      'auth_key': authKey,
+      'device_id': deviceId,
+      'device_name': deviceName,
     };
   }
 
   factory Device.fromJson(Map<String, dynamic> map) {
     return Device(
-      authKey: (map['authKey'] ?? '') as String,
-      deviceId: (map['deviceId'] ?? '') as String,
-      deviceName: (map['deviceName'] ?? '') as String,
+      authKey: (map['auth_key'] ?? '') as String,
+      deviceId: (map['device_id'] ?? '') as String,
+      deviceName: (map['device_name'] ?? '') as String,
     );
   }
 

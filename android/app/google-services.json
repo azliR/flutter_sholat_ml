@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1036540784262",
+    "project_id": "sholat-ml",
+    "storage_bucket": "sholat-ml.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1036540784262:android:6a5c84157df0cec510ab07",
+        "android_client_info": {
+          "package_name": "com.azlir.sholat_ml"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkhPpdabm1r2wps-yxbIZEsck7pVm7ogw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

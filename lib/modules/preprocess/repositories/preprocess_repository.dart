@@ -1,26 +1,25 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_sholat_ml/constants/directories.dart';
+import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/preprocess/preprocess.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
 class PreprocessRepository {
-  Future<(Failure?, Preprocess?)> getPreprocess(String path) async {
-    try {
-      final directory = Directory(path);
-      final entities = await directory.list().toList();
-      final csvPath = entities
-          .firstWhere((entity) => entity.path.split('.').last == 'csv')
-          .path;
-      final videoPath = entities
-          .firstWhere((entity) => entity.path.split('.').last == 'mp4')
-          .path;
+  final _firestore = FirebaseFirestore.instance;
+  final _storage = FirebaseStorage.instance;
 
-      final preprocess = Preprocess(
-        csvPath: csvPath,
-        videoPath: videoPath,
-      );
-      return (null, preprocess);
+  Future<(Failure?, List<Dataset>?)> readDatasets(String path) async {
+    try {
+      const datasetCsvPath = Paths.datasetCsv;
+
+      final datasetStrList = await File('$path/$datasetCsvPath').readAsLines();
+      final datasets = datasetStrList.map(Dataset.fromCsv).toList();
+      return (null, datasets);
     } catch (e, stackTrace) {
       const message = 'Failed getting dataset file paths';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -28,22 +27,136 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, List<Dataset>?)> readDatasets(String path) async {
+  Future<(Failure?, DatasetInfo?)> readDatasetInfo(String path) async {
     try {
-      final datasetList = await File(path).readAsLines();
-      final datasets = datasetList.map((dataset) {
-        final split = dataset.split(',');
-        return Dataset(
-          timestamp: Duration(milliseconds: int.parse(split[0])),
-          x: int.parse(split[1]),
-          y: int.parse(split[2]),
-          z: int.parse(split[3]),
-          heartRate: int.tryParse(split[4]),
-        );
-      }).toList();
-      return (null, datasets);
+      const datasetInfoPath = Paths.datasetInfo;
+
+      final datasetInfoFile = File('$path/$datasetInfoPath');
+      if (datasetInfoFile.existsSync()) {
+        final datasetInfoJson = jsonDecode(await datasetInfoFile.readAsString())
+            as Map<String, dynamic>;
+        final datasetInfo = DatasetInfo.fromJson(datasetInfoJson);
+        return (null, datasetInfo);
+      }
+      return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed getting dataset file paths';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, String?, DatasetInfo?)> saveDataset(
+    String path,
+    List<Dataset> datasets, {
+    bool isUpdating = false,
+  }) async {
+    try {
+      final datasetStr = datasets.fold('', (previousValue, dataset) {
+        return previousValue + dataset.toCsv();
+      });
+
+      const datasetCsvPath = Paths.datasetCsv;
+      const datasetVideoPath = Paths.datasetVideo;
+      const datasetInfoPath = Paths.datasetInfo;
+
+      final csvFile = File('$path/$datasetCsvPath');
+      await csvFile.writeAsString(datasetStr);
+
+      final (failure, datasetUploadInfo) = await uploadDataset(
+        dirName: path.split('/').last,
+        csvFile: csvFile,
+        videoFile: isUpdating ? null : File('$path/$datasetVideoPath'),
+      );
+      if (failure != null) return (failure, null, null);
+
+      final datasetUploadFile = File('$path/$datasetInfoPath');
+      await datasetUploadFile
+          .writeAsString(jsonEncode(datasetUploadInfo!.toJson()));
+
+      const needReviewDir = Directories.needReviewDir;
+      const reviewedDir = Directories.reviewedDir;
+
+      final fullNewDir =
+          Directory(path.replaceFirst(needReviewDir, reviewedDir));
+
+      if (!fullNewDir.existsSync()) {
+        await fullNewDir.create(recursive: true);
+      }
+
+      await Directory(path).rename(fullNewDir.path);
+
+      return (null, fullNewDir.path, datasetUploadInfo);
+    } catch (e, stackTrace) {
+      const message = 'Failed saving dataset';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null, null);
+    }
+  }
+
+  Future<(Failure?, DatasetInfo?)> uploadDataset({
+    required String dirName,
+    required File csvFile,
+    File? videoFile,
+  }) async {
+    try {
+      const datasetCsvPath = Paths.datasetCsv;
+      const datasetVideoPath = Paths.datasetVideo;
+
+      final ref = _storage.ref().child('datasets').child(dirName);
+      await ref.child(datasetCsvPath).putFile(csvFile);
+      if (videoFile != null) {
+        await ref.child(datasetVideoPath).putFile(videoFile);
+      }
+
+      final datasetUploadInfo = DatasetInfo(
+        dirName: dirName,
+        csvUrl: await ref.child(datasetCsvPath).getDownloadURL(),
+        videoUrl: await ref.child(datasetVideoPath).getDownloadURL(),
+      );
+
+      final (failure, _) =
+          await saveDatasetToDatabase(dirName, datasetUploadInfo);
+      if (failure != null) throw Exception(failure.message);
+
+      return (null, datasetUploadInfo);
+    } catch (e, stackTrace) {
+      final (deleteFailure, _) = await deleteDatasetFromCloud(dirName);
+      if (deleteFailure != null) return (deleteFailure, null);
+
+      const message = 'Failed saving dataset';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> saveDatasetToDatabase(
+    String dirName,
+    DatasetInfo datasetInfo,
+  ) async {
+    try {
+      final ref = _firestore.collection('datasets').doc(dirName);
+      await ref.set(datasetInfo.toFirestoreJson());
+
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed saving dataset to firestore';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> deleteDatasetFromCloud(String dirName) async {
+    try {
+      final dbRef = _firestore.collection('datasets').doc(dirName);
+      await dbRef.delete();
+
+      final storageRef = _storage.ref().child(dirName);
+      await storageRef.delete();
+
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed deleting dataset from cloud';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

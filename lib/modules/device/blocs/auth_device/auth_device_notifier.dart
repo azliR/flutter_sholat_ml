@@ -64,11 +64,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
   }
 
   Future<void> connectToSavedDevice(Device savedDevice) async {
-    final device = BluetoothDevice(
-      remoteId: DeviceIdentifier(savedDevice.deviceId),
-      localName: savedDevice.deviceName,
-      type: BluetoothDeviceType.le,
-    );
+    final device = BluetoothDevice.fromId(savedDevice.deviceId);
 
     final success = await connectDevice(device);
     if (!success) return;
@@ -116,7 +112,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
         final currentDevice = Device(
           authKey: authKey,
           deviceId: bluetoothDevice.remoteId.str,
-          deviceName: bluetoothDevice.localName,
+          deviceName: bluetoothDevice.platformName,
         );
         await _deviceRepository.saveDevice(currentDevice);
 
@@ -135,12 +131,6 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
         _deviceRepository.savedDevicesStream.listen((savedDevices) {
       state = state.copyWith(savedDevices: savedDevices);
     });
-
-    // _connectionSubscription ??= device.connectionState.listen((state) async {
-    //   if (state == BluetoothConnectionState.disconnected) {
-    //     await _authSubscription?.cancel();
-    //   }
-    // });
   }
 
   Future<bool> connectDevice(BluetoothDevice bluetoothDevice) async {
@@ -153,6 +143,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
 
     final (connectFailure, _) =
         await _deviceRepository.connectDevice(bluetoothDevice);
+
     if (connectFailure != null) {
       state = state.copyWith(
         presentationState: ConnectDeviceFailureState(connectFailure),
@@ -183,14 +174,28 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     return services;
   }
 
+  Future<void> authWithXiaomiAccount(String accessToken) async {
+    state = state.copyWith(
+      presentationState: const AuthWithXiaomiAccountLoadingState(),
+    );
+
+    final (failure, wearables) =
+        await _deviceRepository.loginWithXiaomiAccount(accessToken);
+    log(wearables.toString());
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: AuthWithXiaomiAccountFailureState(failure),
+      );
+      return;
+    }
+  }
+
   Future<void> auth(
     String authKey,
     BluetoothDevice device,
     List<BluetoothService> services,
   ) async {
-    state = state.copyWith(
-      presentationState: const AuthDeviceLoadingState(),
-    );
+    state = state.copyWith(presentationState: const AuthDeviceLoadingState());
 
     await initialise(authKey, device, services);
 

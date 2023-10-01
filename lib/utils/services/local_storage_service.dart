@@ -7,6 +7,7 @@ class LocalStorageService {
 
   static const String kBox = 'local_storage_box';
   static const String kSavedDevices = 'saved_devices';
+  static const String kDatasetUploadInfos = 'dataset_upload_infos';
 
   static final _box = Hive.box<List<dynamic>>(name: kBox);
 
@@ -22,15 +23,15 @@ class LocalStorageService {
       });
 
   static Future<void> setSavedDevice(Device device) async {
-    final devices = await getSavedDevices();
-    devices
+    final updatedDevices = getSavedDevices()
       ..removeWhere((savedDevice) => savedDevice.deviceId == device.deviceId)
       ..insert(0, device);
-    final devicesJson = devices.map((device) => device.toJson()).toList();
+    final devicesJson =
+        updatedDevices.map((device) => device.toJson()).toList();
     _box.put(kSavedDevices, devicesJson);
   }
 
-  static Future<List<Device>> getSavedDevices() async {
+  static List<Device> getSavedDevices() {
     final devicesJson = _box.get(kSavedDevices) ?? [];
     final devices =
         devicesJson.cast<Map<String, dynamic>>().map(Device.fromJson).toList();
@@ -38,9 +39,8 @@ class LocalStorageService {
   }
 
   static Future<void> deleteSavedDevice(Device device) async {
-    final devices = await getSavedDevices();
-    devices
-        .removeWhere((savedDevice) => savedDevice.deviceId == device.deviceId);
+    final devices = getSavedDevices()
+      ..removeWhere((savedDevice) => savedDevice.deviceId == device.deviceId);
     final devicesJson = devices.map((device) => device.toJson()).toList();
     _box.put(kSavedDevices, devicesJson);
   }

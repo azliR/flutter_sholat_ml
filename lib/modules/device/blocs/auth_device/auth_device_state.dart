@@ -104,6 +104,28 @@ final class AuthDeviceResponseFailureState extends AuthDevicePresentationState {
   const AuthDeviceResponseFailureState();
 }
 
+final class AuthWithXiaomiAccountLoadingState
+    extends AuthDevicePresentationState {
+  const AuthWithXiaomiAccountLoadingState();
+}
+
+final class AuthWithXiaomiAccountSuccessState
+    extends AuthDevicePresentationState {
+  const AuthWithXiaomiAccountSuccessState();
+}
+
+final class AuthWithXiaomiAccountFailureState
+    extends AuthDevicePresentationState {
+  const AuthWithXiaomiAccountFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class AuthWithXiaomiAccountResponseFailureState
+    extends AuthDevicePresentationState {
+  const AuthWithXiaomiAccountResponseFailureState();
+}
+
 final class DisconnectDeviceFailure extends AuthDevicePresentationState {
   const DisconnectDeviceFailure(this.failure);
 

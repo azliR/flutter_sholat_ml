@@ -30,7 +30,7 @@ class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
     _scanSubscription ??= _deviceRepository.scanResults.listen((results) {
       for (final result in results) {
         if (!state.scanResults.contains(result)) {
-          log('Device found: ${result.device.localName}');
+          log('Device found: ${result.device.platformName}');
           state = state.copyWith(
             scanResults: [...state.scanResults, result],
           );

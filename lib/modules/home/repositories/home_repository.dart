@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:path_provider/path_provider.dart';
 
 class HomeRepository {
-  Future<(Failure?, List<String>?)> loadDatasetsFromDisk(String folder) async {
+  Future<(Failure?, List<String>?)> loadDatasetsFromDisk(String dirName) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
-      const savedDir = Directories.savedDatasetDir;
-      final fullDir = Directory('${dir.path}/$savedDir/$folder');
+      final fullDir = Directory('${dir.path}/$dirName');
       if (!fullDir.existsSync()) {
         await fullDir.create(recursive: true);
       }

@@ -1,8 +1,13 @@
+import 'dart:developer';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
+import 'package:flutter_sholat_ml/constants/custom_icons_icons.dart';
+import 'package:flutter_sholat_ml/constants/urls.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -73,19 +78,23 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     ref.listen(
       authDeviceProvider,
       (previous, next) => handleAuthDeviceState(context, previous, next),
     );
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
           const SliverAppBar.large(
             title: Text('Authentication'),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
+        ],
+        body: Column(
+          children: [
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: TextFormField(
                 autofocus: true,
@@ -108,9 +117,7 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
                 ),
               ),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Align(
+            Align(
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -124,8 +131,44 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
                 ),
               ),
             ),
-          ),
-        ],
+            const Spacer(),
+            Text(
+              'Or connect with',
+              style: textTheme.bodySmall,
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onPressed: () async {
+                    await context.router.push(
+                      AuthWithXiaomiAccountRoute(
+                        uri: Uri.parse(Urls.loginXiaomi),
+                        onAuthenticated: (accessToken) async {
+                          log(accessToken);
+                          await _notifier.authWithXiaomiAccount(accessToken);
+                        },
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    CustomIcons.xiaomi_logo,
+                    color: Color(0xFFFF6900),
+                  ),
+                  label: const Text('Xiaomi Account'),
+                ),
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,5 @@
 class Dimens {
   const Dimens._();
 
-  static const kBottomListPadding = 144.0;
+  static const bottomListPadding = 144.0;
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,10 +33,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> onFailure() async {
     showErrorSnackbar(context, 'Failed to connect to saved device');
-    await context.router.pushAndPopUntil(
-      const SavedDevicesPage(),
-      predicate: (_) => false,
-    );
+    Timer(const Duration(seconds: 1), () async {
+      await context.router.pushAndPopUntil(
+        const SavedDevicesPage(),
+        predicate: (_) => false,
+      );
+    });
   }
 
   @override
@@ -104,8 +108,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     SelectDeviceFailureState() => 'Failed to select device',
                     AuthDeviceLoadingState() => 'Authenticating...',
                     AuthDeviceSuccessState() => 'Authenticated',
-                    AuthDeviceFailureState() => 'Authentication Failed',
-                    AuthDeviceResponseFailureState() => 'Authentication Failed',
+                    AuthDeviceFailureState() => 'Authentication failed',
+                    AuthDeviceResponseFailureState() => 'Authentication failed',
+                    AuthWithXiaomiAccountLoadingState() =>
+                      'Authenticating with xiaomi account...',
+                    AuthWithXiaomiAccountSuccessState() =>
+                      'Authenticated  with xiaomi account',
+                    AuthWithXiaomiAccountFailureState() =>
+                      'Authentication  with xiaomi account failed',
+                    AuthWithXiaomiAccountResponseFailureState() =>
+                      'Authentication  with xiaomi account failed',
                     DisconnectDeviceFailure() => 'Failed to disconnect device',
                     GetPrimaryDeviceFailure() => 'Failed to get primary device',
                     RemoveDeviceFailure() => 'Failed to remove device',

@@ -109,8 +109,8 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _notifier
         ..initialise()
-        ..scanDevices()
-        ..getBondedDevices();
+        ..scanDevices();
+      // ..getBondedDevices();
     });
 
     super.initState();
@@ -146,8 +146,6 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
         .watch(discoverDeviceProvider.select((value) => value.bluetoothState));
     final scanResults =
         ref.watch(discoverDeviceProvider.select((value) => value.scanResults));
-    final bondedDevices = ref
-        .watch(discoverDeviceProvider.select((value) => value.bondedDevices));
 
     return Scaffold(
       body: CustomScrollView(
@@ -227,7 +225,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
               itemCount: scanResults.length,
               itemBuilder: (context, index) {
                 final device = scanResults[index].device;
-                final name = device.localName;
+                final name = device.platformName;
                 final isSupported =
                     scanResults[index].advertisementData.serviceUuids.any(
                           (service) => service == DeviceUuids.serviceMiBand1,
@@ -241,35 +239,35 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 );
               },
             ),
-          if (bondedDevices.isNotEmpty) ...[
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              sliver: SliverToBoxAdapter(
-                child: Text(
-                  'Bonded devices',
-                  style: textTheme.titleSmall,
-                ),
-              ),
-            ),
-            SliverList.builder(
-              itemCount: bondedDevices.length,
-              itemBuilder: (context, index) {
-                final device = bondedDevices[index];
-                final name = device.localName;
-                final isSupported = device.type == BluetoothDeviceType.le;
+          // if (bondedDevices.isNotEmpty) ...[
+          //   SliverPadding(
+          //     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          //     sliver: SliverToBoxAdapter(
+          //       child: Text(
+          //         'Bonded devices',
+          //         style: textTheme.titleSmall,
+          //       ),
+          //     ),
+          //   ),
+          //   SliverList.builder(
+          //     itemCount: bondedDevices.length,
+          //     itemBuilder: (context, index) {
+          //       final device = bondedDevices[index];
+          //       final name = device.platformName;
+          //       final isSupported = true;
 
-                return RoundedListTile(
-                  title: Text(name.isEmpty ? 'Unknown device' : name),
-                  subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Symbols.bluetooth),
-                  trailing: isSupported ? null : const Text('Not Supported'),
-                  onTap: !isSupported
-                      ? null
-                      : () => _onConnectPressed(device, isBonded: true),
-                );
-              },
-            ),
-          ],
+          //       return RoundedListTile(
+          //         title: Text(name.isEmpty ? 'Unknown device' : name),
+          //         subtitle: Text(device.remoteId.str),
+          //         leading: const Icon(Symbols.bluetooth),
+          //         trailing: isSupported ? null : const Text('Not Supported'),
+          //         onTap: !isSupported
+          //             ? null
+          //             : () => _onConnectPressed(device, isBonded: true),
+          //       );
+          //     },
+          //   ),
+          // ],
         ],
       ),
     );

@@ -28,11 +28,14 @@ if (keystorePropertiesFile.exists()) {
 }
 
 apply plugin: 'com.android.application'
+// START: FlutterFire Configuration
+apply plugin: 'com.google.gms.google-services'
+// END: FlutterFire Configuration
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    namespace "com.example.verygoodcore.flutter_sholat_ml"
+    namespace "com.azlir.sholat_ml"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -51,7 +54,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.example.verygoodcore.flutter_sholat_ml"
+        applicationId "com.azlir.sholat_ml"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion 23
@@ -83,17 +86,17 @@ android {
         production {
             dimension "default"
             applicationIdSuffix ""
-            manifestPlaceholders = [appName: "Flutter Sholat Ml"]
+            manifestPlaceholders = [appName: "sholat-ml"]
         }
         staging {
             dimension "default"
-            applicationIdSuffix ".stg"
-            manifestPlaceholders = [appName: "[STG] Flutter Sholat Ml"]
+            applicationIdSuffix ""
+            manifestPlaceholders = [appName: "sholat-ml"]
         }
         development {
             dimension "default"
-            applicationIdSuffix ".dev"
-            manifestPlaceholders = [appName: "[DEV] Flutter Sholat Ml"]
+            applicationIdSuffix ""
+            manifestPlaceholders = [appName: "sholat-ml"]
         }
     }
 

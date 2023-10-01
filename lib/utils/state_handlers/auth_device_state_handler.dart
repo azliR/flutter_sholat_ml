@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
-import 'package:flutter_sholat_ml/utils/ui/dialogs.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 void handleAuthDeviceState(
   BuildContext context,
@@ -21,6 +21,10 @@ void handleAuthDeviceState(
   void Function()? onAuthDeviceSuccessState,
   void Function(Failure failure)? onAuthDeviceFailureState,
   void Function()? onAuthDeviceResponseFailureState,
+  void Function()? onAuthWithXiaomiAccountLoadingState,
+  void Function()? onAuthWithXiaomiAccountSuccessState,
+  void Function(Failure failure)? onAuthWithXiaomiAccountFailureState,
+  void Function()? onAuthWithXiaomiAccountResponseFailureState,
   void Function(Failure failure)? onDisconnectDeviceFailure,
   void Function(Failure failure)? onGetPrimaryDeviceFailure,
   void Function(Failure failure)? onRemoveDeviceFailure,
@@ -34,13 +38,13 @@ void handleAuthDeviceState(
         if (onConnectDeviceLoadingState != null) {
           onConnectDeviceLoadingState.call();
         } else {
-          showLoadingDialog(context);
+          context.loaderOverlay.show();
         }
       case ConnectDeviceSuccessState():
         if (onConnectDeviceSuccessState != null) {
           onConnectDeviceSuccessState.call();
         } else {
-          Navigator.pop(context);
+          context.loaderOverlay.hide();
         }
       case ConnectDeviceFailureState():
         if (onConnectDeviceFailureState != null) {
@@ -52,13 +56,13 @@ void handleAuthDeviceState(
         if (onSelectDeviceLoadingState != null) {
           onSelectDeviceLoadingState.call();
         } else {
-          showLoadingDialog(context);
+          context.loaderOverlay.hide();
         }
       case SelectDeviceSuccessState():
         if (onSelectDeviceSuccessState != null) {
           onSelectDeviceSuccessState.call();
         } else {
-          Navigator.pop(context);
+          context.loaderOverlay.hide();
         }
       case SelectDeviceFailureState():
         if (onSelectDeviceFailureState != null) {
@@ -70,12 +74,13 @@ void handleAuthDeviceState(
         if (onAuthDeviceLoadingState != null) {
           onAuthDeviceLoadingState.call();
         } else {
-          showLoadingDialog(context);
+          context.loaderOverlay.show();
         }
       case AuthDeviceSuccessState():
         if (onAuthDeviceSuccessState != null) {
           onAuthDeviceSuccessState.call();
         } else {
+          context.loaderOverlay.hide();
           context.router
               .pushAndPopUntil(const DatasetsPage(), predicate: (_) => false);
         }
@@ -83,14 +88,41 @@ void handleAuthDeviceState(
         if (onAuthDeviceFailureState != null) {
           onAuthDeviceFailureState.call(presentationState.failure);
         } else {
-          Navigator.pop(context);
+          context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');
         }
       case AuthDeviceResponseFailureState():
         if (onAuthDeviceResponseFailureState != null) {
           onAuthDeviceResponseFailureState.call();
         } else {
-          Navigator.pop(context);
+          context.loaderOverlay.hide();
+          showErrorSnackbar(context, 'Failed authenticating device');
+        }
+      case AuthWithXiaomiAccountLoadingState():
+        if (onAuthWithXiaomiAccountLoadingState != null) {
+          onAuthWithXiaomiAccountLoadingState.call();
+        } else {
+          context.loaderOverlay.show();
+        }
+      case AuthWithXiaomiAccountSuccessState():
+        if (onAuthWithXiaomiAccountSuccessState != null) {
+          onAuthWithXiaomiAccountSuccessState.call();
+        } else {
+          context.loaderOverlay.hide();
+          context.router
+              .pushAndPopUntil(const DatasetsPage(), predicate: (_) => false);
+        }
+      case AuthWithXiaomiAccountFailureState():
+        if (onAuthWithXiaomiAccountFailureState != null) {
+          onAuthWithXiaomiAccountFailureState.call(presentationState.failure);
+        } else {
+          showErrorSnackbar(context, 'Failed authenticating device');
+        }
+      case AuthWithXiaomiAccountResponseFailureState():
+        if (onAuthWithXiaomiAccountResponseFailureState != null) {
+          onAuthWithXiaomiAccountResponseFailureState.call();
+        } else {
+          context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');
         }
       case DisconnectDeviceFailure():

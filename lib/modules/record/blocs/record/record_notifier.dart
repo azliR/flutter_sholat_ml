@@ -90,9 +90,15 @@ class RecordNotifier extends StateNotifier<RecordState> {
     );
   }
 
+  void onDeviceLocationChanged(DeviceLocation deviceLocation) {
+    state = state.copyWith(deviceLocation: deviceLocation);
+  }
+
   void _handleAccelerometer(List<int> event) {
-    final datasets =
-        _recordRepository.handleRawSensorData(Uint8List.fromList(event));
+    final datasets = _recordRepository.handleRawSensorData(
+      Uint8List.fromList(event),
+      state.deviceLocation!,
+    );
     if (datasets != null && _stopwatch.isRunning) {
       const delay = 200;
       final lastElapsed =

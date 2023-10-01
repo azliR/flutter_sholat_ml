@@ -3,7 +3,8 @@ part of 'preprocess_notifier.dart';
 @immutable
 class PreprocessState {
   const PreprocessState({
-    required this.preprocess,
+    required this.path,
+    required this.datasetInfo,
     required this.currentSelectedIndex,
     required this.isPlaying,
     required this.datasets,
@@ -12,7 +13,8 @@ class PreprocessState {
   });
 
   factory PreprocessState.initial() => const PreprocessState(
-        preprocess: null,
+        path: '',
+        datasetInfo: null,
         currentSelectedIndex: 0,
         isPlaying: false,
         datasets: [],
@@ -20,7 +22,8 @@ class PreprocessState {
         presentationState: PreprocessInitial(),
       );
 
-  final Preprocess? preprocess;
+  final String path;
+  final DatasetInfo? datasetInfo;
   final int currentSelectedIndex;
   final bool isPlaying;
   final List<Dataset> datasets;
@@ -28,7 +31,8 @@ class PreprocessState {
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
-    Preprocess? preprocess,
+    String? path,
+    DatasetInfo? datasetInfo,
     int? currentSelectedIndex,
     bool? isPlaying,
     List<Dataset>? datasets,
@@ -37,7 +41,8 @@ class PreprocessState {
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(
-      preprocess: preprocess ?? this.preprocess,
+      path: path ?? this.path,
+      datasetInfo: datasetInfo ?? this.datasetInfo,
       currentSelectedIndex: currentSelectedIndex ?? this.currentSelectedIndex,
       isPlaying: isPlaying ?? this.isPlaying,
       datasets: datasets ?? this.datasets,
@@ -55,14 +60,28 @@ final class PreprocessInitial extends PreprocessPresentationState {
   const PreprocessInitial();
 }
 
-final class GetPreprocessFailure extends PreprocessPresentationState {
-  const GetPreprocessFailure(this.failure);
+final class GetDatasetInfoFailureState extends PreprocessPresentationState {
+  const GetDatasetInfoFailureState(this.failure);
 
   final Failure failure;
 }
 
-final class ReadDatasetsFailure extends PreprocessPresentationState {
-  const ReadDatasetsFailure(this.failure);
+final class ReadDatasetsFailureState extends PreprocessPresentationState {
+  const ReadDatasetsFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class SaveDatasetLoadingState extends PreprocessPresentationState {
+  const SaveDatasetLoadingState();
+}
+
+final class SaveDatasetSuccessState extends PreprocessPresentationState {
+  const SaveDatasetSuccessState();
+}
+
+final class SaveDatasetFailureState extends PreprocessPresentationState {
+  const SaveDatasetFailureState(this.failure);
 
   final Failure failure;
 }

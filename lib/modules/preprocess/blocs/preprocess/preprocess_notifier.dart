@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/preprocess/preprocess.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
@@ -20,9 +20,8 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   final PreprocessRepository _preprocessRepository;
 
   Future<void> initialise(String path) async {
-    final preprocessSuccess = await getPreprocessPath(path);
-    if (!preprocessSuccess) return;
-    await readDatasets(state.preprocess!.csvPath);
+    state = state.copyWith(path: path);
+    await readDatasets();
   }
 
   void onIsPlayingChanged({required bool isPlaying}) {
@@ -68,29 +67,53 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     clearSelectedDatasets();
   }
 
-  Future<bool> getPreprocessPath(String path) async {
-    final (failure, paths) = await _preprocessRepository.getPreprocess(path);
-    if (failure != null) {
+  Future<bool> readDatasets() async {
+    final (datasetsFailure, datasets) =
+        await _preprocessRepository.readDatasets(state.path);
+    if (datasetsFailure != null) {
       state = state.copyWith(
-        presentationState: GetPreprocessFailure(failure),
+        presentationState: ReadDatasetsFailureState(datasetsFailure),
       );
       return false;
     }
 
-    state = state.copyWith(preprocess: paths);
+    final (datasetInfoFailure, datasetInfo) =
+        await _preprocessRepository.readDatasetInfo(state.path);
+    if (datasetInfoFailure != null) {
+      state = state.copyWith(
+        presentationState: ReadDatasetsFailureState(datasetInfoFailure),
+      );
+      return false;
+    }
+
+    state = state.copyWith(
+      datasets: datasets,
+      datasetInfo: datasetInfo,
+    );
     return true;
   }
 
-  Future<bool> readDatasets(String path) async {
-    final (failure, datasets) = await _preprocessRepository.readDatasets(path);
+  Future<void> onSaveDataset() async {
+    state = state.copyWith(presentationState: const SaveDatasetLoadingState());
+
+    final (failure, newPath, datasetInfo) =
+        await _preprocessRepository.saveDataset(
+      state.path,
+      state.datasets,
+      isUpdating: state.datasetInfo != null,
+    );
+
     if (failure != null) {
       state = state.copyWith(
-        presentationState: ReadDatasetsFailure(failure),
+        presentationState: SaveDatasetFailureState(failure),
       );
-      return false;
+      return;
     }
 
-    state = state.copyWith(datasets: datasets);
-    return true;
+    state = state.copyWith(
+      path: newPath,
+      datasetInfo: datasetInfo,
+      presentationState: const SaveDatasetSuccessState(),
+    );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.dart';
 import 'package:flutter_sholat_ml/l10n/l10n.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 class App extends StatefulWidget {
   const App({super.key});
@@ -29,16 +30,28 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      theme: ThemeData(
-        useMaterial3: true,
-        snackBarTheme: const SnackBarThemeData(
-          behavior: SnackBarBehavior.floating,
-        ),
+    final colorScheme = ColorScheme.fromSeed(seedColor: Colors.blue);
+
+    return GlobalLoaderOverlay(
+      useDefaultLoading: false,
+      useBackButtonInterceptor: true,
+      overlayColor: colorScheme.surface.withOpacity(0.6),
+      overlayWidget: const Align(
+        alignment: Alignment.topCenter,
+        child: LinearProgressIndicator(),
       ),
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: _appRouter.config(),
+      child: MaterialApp.router(
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: colorScheme,
+          snackBarTheme: const SnackBarThemeData(
+            behavior: SnackBarBehavior.floating,
+          ),
+        ),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: _appRouter.config(),
+      ),
     );
   }
 }

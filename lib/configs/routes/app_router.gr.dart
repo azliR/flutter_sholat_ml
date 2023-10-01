@@ -8,31 +8,33 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:auto_route/auto_route.dart' as _i9;
-import 'package:flutter/material.dart' as _i11;
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i10;
-import 'package:flutter_sholat_ml/core/splash/views/splash_screen.dart' as _i8;
+import 'package:auto_route/auto_route.dart' as _i10;
+import 'package:flutter/material.dart' as _i12;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i11;
+import 'package:flutter_sholat_ml/core/splash/views/splash_screen.dart' as _i9;
 import 'package:flutter_sholat_ml/modules/device/views/auth_device_screen.dart'
     as _i1;
+import 'package:flutter_sholat_ml/modules/device/views/auth_with_xiaomi_account_screen.dart'
+    as _i2;
 import 'package:flutter_sholat_ml/modules/device/views/discover_device_screen.dart'
-    as _i3;
-import 'package:flutter_sholat_ml/modules/home/views/datasets_page.dart' as _i2;
-import 'package:flutter_sholat_ml/modules/home/views/home_screen.dart' as _i4;
+    as _i4;
+import 'package:flutter_sholat_ml/modules/home/views/datasets_page.dart' as _i3;
+import 'package:flutter_sholat_ml/modules/home/views/home_screen.dart' as _i5;
 import 'package:flutter_sholat_ml/modules/home/views/saved_devices_page.dart'
-    as _i7;
+    as _i8;
 import 'package:flutter_sholat_ml/modules/preprocess/views/preprocess_screen.dart'
-    as _i5;
-import 'package:flutter_sholat_ml/modules/record/views/record_screen.dart'
     as _i6;
+import 'package:flutter_sholat_ml/modules/record/views/record_screen.dart'
+    as _i7;
 
-abstract class $AppRouter extends _i9.RootStackRouter {
+abstract class $AppRouter extends _i10.RootStackRouter {
   $AppRouter({super.navigatorKey});
 
   @override
-  final Map<String, _i9.PageFactory> pagesMap = {
+  final Map<String, _i10.PageFactory> pagesMap = {
     AuthDeviceRoute.name: (routeData) {
       final args = routeData.argsAs<AuthDeviceRouteArgs>();
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: _i1.AuthDeviceScreen(
           device: args.device,
@@ -41,29 +43,40 @@ abstract class $AppRouter extends _i9.RootStackRouter {
         ),
       );
     },
-    DatasetsPage.name: (routeData) {
-      return _i9.AutoRoutePage<dynamic>(
+    AuthWithXiaomiAccountRoute.name: (routeData) {
+      final args = routeData.argsAs<AuthWithXiaomiAccountRouteArgs>();
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i2.DatasetsPage(),
+        child: _i2.AuthWithXiaomiAccountScreen(
+          uri: args.uri,
+          onAuthenticated: args.onAuthenticated,
+          key: args.key,
+        ),
+      );
+    },
+    DatasetsPage.name: (routeData) {
+      return _i10.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const _i3.DatasetsPage(),
       );
     },
     DiscoverDeviceRoute.name: (routeData) {
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i3.DiscoverDeviceScreen(),
+        child: const _i4.DiscoverDeviceScreen(),
       );
     },
     HomeRoute.name: (routeData) {
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i4.HomeScreen(),
+        child: const _i5.HomeScreen(),
       );
     },
     PreprocessRoute.name: (routeData) {
       final args = routeData.argsAs<PreprocessRouteArgs>();
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i5.PreprocessScreen(
+        child: _i6.PreprocessScreen(
           path: args.path,
           key: args.key,
         ),
@@ -71,25 +84,26 @@ abstract class $AppRouter extends _i9.RootStackRouter {
     },
     RecordRoute.name: (routeData) {
       final args = routeData.argsAs<RecordRouteArgs>();
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i6.RecordScreen(
+        child: _i7.RecordScreen(
           device: args.device,
           services: args.services,
+          onRecordSuccess: args.onRecordSuccess,
           key: args.key,
         ),
       );
     },
     SavedDevicesPage.name: (routeData) {
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i7.SavedDevicesPage(),
+        child: const _i8.SavedDevicesPage(),
       );
     },
     SplashRoute.name: (routeData) {
-      return _i9.AutoRoutePage<dynamic>(
+      return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i8.SplashScreen(),
+        child: const _i9.SplashScreen(),
       );
     },
   };
@@ -97,12 +111,12 @@ abstract class $AppRouter extends _i9.RootStackRouter {
 
 /// generated route for
 /// [_i1.AuthDeviceScreen]
-class AuthDeviceRoute extends _i9.PageRouteInfo<AuthDeviceRouteArgs> {
+class AuthDeviceRoute extends _i10.PageRouteInfo<AuthDeviceRouteArgs> {
   AuthDeviceRoute({
-    required _i10.BluetoothDevice device,
-    required List<_i10.BluetoothService> services,
-    _i11.Key? key,
-    List<_i9.PageRouteInfo>? children,
+    required _i11.BluetoothDevice device,
+    required List<_i11.BluetoothService> services,
+    _i12.Key? key,
+    List<_i10.PageRouteInfo>? children,
   }) : super(
           AuthDeviceRoute.name,
           args: AuthDeviceRouteArgs(
@@ -115,8 +129,8 @@ class AuthDeviceRoute extends _i9.PageRouteInfo<AuthDeviceRouteArgs> {
 
   static const String name = 'AuthDeviceRoute';
 
-  static const _i9.PageInfo<AuthDeviceRouteArgs> page =
-      _i9.PageInfo<AuthDeviceRouteArgs>(name);
+  static const _i10.PageInfo<AuthDeviceRouteArgs> page =
+      _i10.PageInfo<AuthDeviceRouteArgs>(name);
 }
 
 class AuthDeviceRouteArgs {
@@ -126,11 +140,11 @@ class AuthDeviceRouteArgs {
     this.key,
   });
 
-  final _i10.BluetoothDevice device;
+  final _i11.BluetoothDevice device;
 
-  final List<_i10.BluetoothService> services;
+  final List<_i11.BluetoothService> services;
 
-  final _i11.Key? key;
+  final _i12.Key? key;
 
   @override
   String toString() {
@@ -139,9 +153,53 @@ class AuthDeviceRouteArgs {
 }
 
 /// generated route for
-/// [_i2.DatasetsPage]
-class DatasetsPage extends _i9.PageRouteInfo<void> {
-  const DatasetsPage({List<_i9.PageRouteInfo>? children})
+/// [_i2.AuthWithXiaomiAccountScreen]
+class AuthWithXiaomiAccountRoute
+    extends _i10.PageRouteInfo<AuthWithXiaomiAccountRouteArgs> {
+  AuthWithXiaomiAccountRoute({
+    required Uri uri,
+    required void Function(String) onAuthenticated,
+    _i12.Key? key,
+    List<_i10.PageRouteInfo>? children,
+  }) : super(
+          AuthWithXiaomiAccountRoute.name,
+          args: AuthWithXiaomiAccountRouteArgs(
+            uri: uri,
+            onAuthenticated: onAuthenticated,
+            key: key,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'AuthWithXiaomiAccountRoute';
+
+  static const _i10.PageInfo<AuthWithXiaomiAccountRouteArgs> page =
+      _i10.PageInfo<AuthWithXiaomiAccountRouteArgs>(name);
+}
+
+class AuthWithXiaomiAccountRouteArgs {
+  const AuthWithXiaomiAccountRouteArgs({
+    required this.uri,
+    required this.onAuthenticated,
+    this.key,
+  });
+
+  final Uri uri;
+
+  final void Function(String) onAuthenticated;
+
+  final _i12.Key? key;
+
+  @override
+  String toString() {
+    return 'AuthWithXiaomiAccountRouteArgs{uri: $uri, onAuthenticated: $onAuthenticated, key: $key}';
+  }
+}
+
+/// generated route for
+/// [_i3.DatasetsPage]
+class DatasetsPage extends _i10.PageRouteInfo<void> {
+  const DatasetsPage({List<_i10.PageRouteInfo>? children})
       : super(
           DatasetsPage.name,
           initialChildren: children,
@@ -149,13 +207,13 @@ class DatasetsPage extends _i9.PageRouteInfo<void> {
 
   static const String name = 'DatasetsPage';
 
-  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
+  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i3.DiscoverDeviceScreen]
-class DiscoverDeviceRoute extends _i9.PageRouteInfo<void> {
-  const DiscoverDeviceRoute({List<_i9.PageRouteInfo>? children})
+/// [_i4.DiscoverDeviceScreen]
+class DiscoverDeviceRoute extends _i10.PageRouteInfo<void> {
+  const DiscoverDeviceRoute({List<_i10.PageRouteInfo>? children})
       : super(
           DiscoverDeviceRoute.name,
           initialChildren: children,
@@ -163,13 +221,13 @@ class DiscoverDeviceRoute extends _i9.PageRouteInfo<void> {
 
   static const String name = 'DiscoverDeviceRoute';
 
-  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
+  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i4.HomeScreen]
-class HomeRoute extends _i9.PageRouteInfo<void> {
-  const HomeRoute({List<_i9.PageRouteInfo>? children})
+/// [_i5.HomeScreen]
+class HomeRoute extends _i10.PageRouteInfo<void> {
+  const HomeRoute({List<_i10.PageRouteInfo>? children})
       : super(
           HomeRoute.name,
           initialChildren: children,
@@ -177,16 +235,16 @@ class HomeRoute extends _i9.PageRouteInfo<void> {
 
   static const String name = 'HomeRoute';
 
-  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
+  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i5.PreprocessScreen]
-class PreprocessRoute extends _i9.PageRouteInfo<PreprocessRouteArgs> {
+/// [_i6.PreprocessScreen]
+class PreprocessRoute extends _i10.PageRouteInfo<PreprocessRouteArgs> {
   PreprocessRoute({
     required String path,
-    _i11.Key? key,
-    List<_i9.PageRouteInfo>? children,
+    _i12.Key? key,
+    List<_i10.PageRouteInfo>? children,
   }) : super(
           PreprocessRoute.name,
           args: PreprocessRouteArgs(
@@ -198,8 +256,8 @@ class PreprocessRoute extends _i9.PageRouteInfo<PreprocessRouteArgs> {
 
   static const String name = 'PreprocessRoute';
 
-  static const _i9.PageInfo<PreprocessRouteArgs> page =
-      _i9.PageInfo<PreprocessRouteArgs>(name);
+  static const _i10.PageInfo<PreprocessRouteArgs> page =
+      _i10.PageInfo<PreprocessRouteArgs>(name);
 }
 
 class PreprocessRouteArgs {
@@ -210,7 +268,7 @@ class PreprocessRouteArgs {
 
   final String path;
 
-  final _i11.Key? key;
+  final _i12.Key? key;
 
   @override
   String toString() {
@@ -219,18 +277,20 @@ class PreprocessRouteArgs {
 }
 
 /// generated route for
-/// [_i6.RecordScreen]
-class RecordRoute extends _i9.PageRouteInfo<RecordRouteArgs> {
+/// [_i7.RecordScreen]
+class RecordRoute extends _i10.PageRouteInfo<RecordRouteArgs> {
   RecordRoute({
-    required _i10.BluetoothDevice device,
-    required List<_i10.BluetoothService> services,
-    _i11.Key? key,
-    List<_i9.PageRouteInfo>? children,
+    required _i11.BluetoothDevice device,
+    required List<_i11.BluetoothService> services,
+    required void Function() onRecordSuccess,
+    _i12.Key? key,
+    List<_i10.PageRouteInfo>? children,
   }) : super(
           RecordRoute.name,
           args: RecordRouteArgs(
             device: device,
             services: services,
+            onRecordSuccess: onRecordSuccess,
             key: key,
           ),
           initialChildren: children,
@@ -238,33 +298,36 @@ class RecordRoute extends _i9.PageRouteInfo<RecordRouteArgs> {
 
   static const String name = 'RecordRoute';
 
-  static const _i9.PageInfo<RecordRouteArgs> page =
-      _i9.PageInfo<RecordRouteArgs>(name);
+  static const _i10.PageInfo<RecordRouteArgs> page =
+      _i10.PageInfo<RecordRouteArgs>(name);
 }
 
 class RecordRouteArgs {
   const RecordRouteArgs({
     required this.device,
     required this.services,
+    required this.onRecordSuccess,
     this.key,
   });
 
-  final _i10.BluetoothDevice device;
+  final _i11.BluetoothDevice device;
 
-  final List<_i10.BluetoothService> services;
+  final List<_i11.BluetoothService> services;
 
-  final _i11.Key? key;
+  final void Function() onRecordSuccess;
+
+  final _i12.Key? key;
 
   @override
   String toString() {
-    return 'RecordRouteArgs{device: $device, services: $services, key: $key}';
+    return 'RecordRouteArgs{device: $device, services: $services, onRecordSuccess: $onRecordSuccess, key: $key}';
   }
 }
 
 /// generated route for
-/// [_i7.SavedDevicesPage]
-class SavedDevicesPage extends _i9.PageRouteInfo<void> {
-  const SavedDevicesPage({List<_i9.PageRouteInfo>? children})
+/// [_i8.SavedDevicesPage]
+class SavedDevicesPage extends _i10.PageRouteInfo<void> {
+  const SavedDevicesPage({List<_i10.PageRouteInfo>? children})
       : super(
           SavedDevicesPage.name,
           initialChildren: children,
@@ -272,13 +335,13 @@ class SavedDevicesPage extends _i9.PageRouteInfo<void> {
 
   static const String name = 'SavedDevicesPage';
 
-  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
+  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
 }
 
 /// generated route for
-/// [_i8.SplashScreen]
-class SplashRoute extends _i9.PageRouteInfo<void> {
-  const SplashRoute({List<_i9.PageRouteInfo>? children})
+/// [_i9.SplashScreen]
+class SplashRoute extends _i10.PageRouteInfo<void> {
+  const SplashRoute({List<_i10.PageRouteInfo>? children})
       : super(
           SplashRoute.name,
           initialChildren: children,
@@ -286,5 +349,5 @@ class SplashRoute extends _i9.PageRouteInfo<void> {
 
   static const String name = 'SplashRoute';
 
-  static const _i9.PageInfo<void> page = _i9.PageInfo<void>(name);
+  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
 }

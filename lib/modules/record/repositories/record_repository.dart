@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
+import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:path_provider/path_provider.dart';
@@ -125,46 +126,28 @@ class RecordRepository {
   }) async {
     final now = DateTime.now();
     final dir = await getApplicationDocumentsDirectory();
-    const savedDir =
-        '${Directories.savedDatasetDir}/${Directories.needReviewDir}';
-    final fileName = now.toIso8601String();
+    const needReviewDir = Directories.needReviewDir;
+    final dirName = now.toIso8601String();
 
-    final fullSavedDir = await Directory('${dir.path}/$savedDir/$fileName')
+    final fullSavedDir = await Directory('${dir.path}/$needReviewDir/$dirName')
         .create(recursive: true);
 
     try {
       final datasetStr =
           accelerometerDatasets.fold('', (previousValue, dataset) {
-        final x = dataset.x.toString();
-        final y = dataset.y.toString();
-        final z = dataset.z.toString();
-        final heartRate = dataset.heartRate.toString();
-        final timeStamp = dataset.timestamp!.inMilliseconds.toString();
-
-        return '$previousValue$timeStamp,$x,$y,$z,$heartRate\n';
+        return previousValue + dataset.toCsv();
       });
 
       final videoFile = await cameraController.stopVideoRecording();
 
-      await videoFile.saveTo('${fullSavedDir.path}/$fileName.mp4');
+      const datasetCsvPath = Paths.datasetCsv;
+      const datasetVideoPath = Paths.datasetVideo;
 
-      await File('${fullSavedDir.path}/$fileName.csv')
+      await videoFile.saveTo('${fullSavedDir.path}/$datasetVideoPath');
+
+      await File('${fullSavedDir.path}/$datasetCsvPath')
           .writeAsString(datasetStr);
 
-      // await FileSaver.instance.saveFile(
-      //   name: now.toIso8601String(),
-      //   mimeType: MimeType.csv,
-      //   ext: 'csv',
-      //   bytes: Uint8List.fromList(datasetStr.codeUnits),
-      // );
-
-      // await FileSaver.instance.saveFile(
-      //   name: now.toIso8601String(),
-      //   mimeType: MimeType.custom,
-      //   customMimeType: 'mp4',
-      //   ext: 'mp4',
-      //   filePath: savedPath.path,
-      // );
       return (null, null);
     } catch (e, stackTrace) {
       if (fullSavedDir.existsSync()) {
@@ -254,7 +237,10 @@ class RecordRepository {
     }
   }
 
-  List<Dataset>? handleRawSensorData(Uint8List bytes) {
+  List<Dataset>? handleRawSensorData(
+    Uint8List bytes,
+    DeviceLocation deviceLocation,
+  ) {
     final byteData = ByteData.view(bytes.buffer);
     final type = byteData.getInt8(0);
 
@@ -271,6 +257,7 @@ class RecordRepository {
           x: list[i],
           y: list[i + 1],
           z: list[i + 2],
+          deviceLocation: deviceLocation,
         );
         datasets.add(dataset);
       }

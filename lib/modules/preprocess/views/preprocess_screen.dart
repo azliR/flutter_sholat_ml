@@ -4,11 +4,14 @@ import 'dart:io';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/accelerometer_chart_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/dataset_tile_widget.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:video_player/video_player.dart';
@@ -82,7 +85,26 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   @override
   void initState() {
-    _notifier = ref.read(preprocessProvider.notifier)..initialise(widget.path);
+    _notifier = ref.read(preprocessProvider.notifier);
+
+    final path = widget.path;
+    const datasetVideoName = Paths.datasetVideo;
+
+    _videoPlayerController = VideoPlayerController.file(
+      File('$path/$datasetVideoName'),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      unawaited(_notifier.initialise(path));
+
+      await _videoPlayerController.initialize();
+
+      _videoPlayerController.addListener(_videoListener);
+
+      if (!mounted) return;
+      setState(() {});
+    });
     super.initState();
   }
 
@@ -100,22 +122,27 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     final isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
 
-    ref.listen(preprocessProvider, (previous, next) async {
-      if (previous?.preprocess != next.preprocess) {
-        _videoPlayerController = VideoPlayerController.file(
-          File(next.preprocess!.videoPath),
-          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-        );
-        await _videoPlayerController.initialize();
-        await _videoPlayerController.setPlaybackSpeed(0.5);
-        _videoPlayerController.addListener(_videoListener);
-        if (!mounted) return;
-        setState(() {});
+    ref.listen(preprocessProvider.select((value) => value.presentationState),
+        (previous, next) {
+      switch (next) {
+        case GetDatasetInfoFailureState():
+          showErrorSnackbar(context, 'Failed getting dataset info');
+        case ReadDatasetsFailureState():
+          showErrorSnackbar(context, 'Failed reading datasets');
+        case SaveDatasetLoadingState():
+          context.loaderOverlay.show();
+        case SaveDatasetSuccessState():
+          context.loaderOverlay.hide();
+          showSnackbar(context, 'Dataset saved');
+        case SaveDatasetFailureState():
+          context.loaderOverlay.hide();
+          showErrorSnackbar(context, 'Failed saving dataset');
+        case PreprocessInitial():
+          break;
       }
     });
-
-    final preprocess =
-        ref.watch(preprocessProvider.select((state) => state.preprocess));
+    final datasetInfo =
+        ref.watch(preprocessProvider.select((state) => state.datasetInfo));
     final datasets =
         ref.watch(preprocessProvider.select((state) => state.datasets));
 
@@ -132,269 +159,283 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Preprocess'),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Preprocess'),
+              Row(
+                children: [
+                  const Icon(
+                    Symbols.watch_rounded,
+                    size: 16,
+                    weight: 600,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    datasets.firstOrNull?.deviceLocation.name ?? '',
+                    style: textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ],
+          ),
           scrolledUnderElevation: 0,
           actions: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: FilledButton.tonal(
-                onPressed: () {},
-                child: const Text('Save'),
+              child: FilledButton.tonalIcon(
+                onPressed: () => _notifier.onSaveDataset(),
+                icon: datasetInfo == null
+                    ? const Icon(Symbols.upload_rounded)
+                    : const Icon(Symbols.sync_rounded),
+                label: Text(datasetInfo == null ? 'Save' : 'Update'),
               ),
             ),
           ],
         ),
-        body: SafeArea(
-          bottom: false,
-          child: () {
-            if (preprocess == null) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-            return Flex(
-              direction: isPortrait ? Axis.vertical : Axis.horizontal,
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: AccelerometerChart(
-                          datasets: datasets,
-                          trackballBehavior: _trackballBehavior,
-                          onTrackballChanged: (trackballArgs) {
-                            if (_videoPlayerController.value.isPlaying) return;
+        body: () {
+          return Flex(
+            direction: isPortrait ? Axis.vertical : Axis.horizontal,
+            children: [
+              Expanded(
+                flex: 5,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: AspectRatio(
+                        aspectRatio: _videoPlayerController.value.aspectRatio,
+                        child: VideoPlayer(_videoPlayerController),
+                      ),
+                    ),
+                    Divider(
+                      height: 0,
+                      color: colorScheme.outline,
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: AccelerometerChart(
+                        datasets: datasets,
+                        trackballBehavior: _trackballBehavior,
+                        onTrackballChanged: (trackballArgs) {
+                          if (_videoPlayerController.value.isPlaying) return;
 
-                            final index =
-                                trackballArgs.chartPointInfo.dataPointIndex ??
-                                    0;
+                          final index =
+                              trackballArgs.chartPointInfo.dataPointIndex ?? 0;
 
-                            _timer?.cancel();
-                            _timer =
-                                Timer(const Duration(milliseconds: 300), () {
-                              _videoPlayerController
-                                  .seekTo(datasets[index].timestamp!);
-                              _scrollToDatasetTile(index);
-                              _notifier.onCurrentSelectedIndexChanged(
-                                index: index,
-                              );
-                            });
-                          },
-                        ),
+                          _timer?.cancel();
+                          _timer = Timer(const Duration(milliseconds: 300), () {
+                            _videoPlayerController
+                                .seekTo(datasets[index].timestamp!);
+                            _scrollToDatasetTile(index);
+                            _notifier.onCurrentSelectedIndexChanged(
+                              index: index,
+                            );
+                          });
+                        },
                       ),
-                      Divider(
-                        height: 0,
-                        color: colorScheme.outline,
-                      ),
-                      Expanded(
-                        flex: 3,
-                        child: AspectRatio(
-                          aspectRatio: _videoPlayerController.value.aspectRatio,
-                          child: VideoPlayer(_videoPlayerController),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                if (isPortrait)
-                  Divider(
-                    height: 0,
-                    color: colorScheme.outline,
-                  )
-                else
-                  VerticalDivider(
-                    width: 0,
-                    color: colorScheme.outline,
-                  ),
-                SafeArea(
-                  bottom: !isPortrait,
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final selectedDatasets = ref.watch(
-                        preprocessProvider
-                            .select((state) => state.selectedDatasets),
-                      );
+              ),
+              if (isPortrait)
+                Divider(
+                  height: 0,
+                  color: colorScheme.outline,
+                )
+              else
+                VerticalDivider(
+                  width: 0,
+                  color: colorScheme.outline,
+                ),
+              SafeArea(
+                bottom: !isPortrait,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final selectedDatasets = ref.watch(
+                      preprocessProvider
+                          .select((state) => state.selectedDatasets),
+                    );
 
-                      return Flex(
-                        direction: isPortrait ? Axis.horizontal : Axis.vertical,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if (selectedDatasets.isNotEmpty)
-                            IconButton(
+                    return Flex(
+                      direction: isPortrait ? Axis.horizontal : Axis.vertical,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Spacer(),
+                        if (selectedDatasets.isNotEmpty)
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            style: IconButton.styleFrom(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            icon: const Icon(
+                              Symbols.new_label_rounded,
+                              weight: 300,
+                            ),
+                            onPressed: _showTagDialog,
+                          ),
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final isPlaying = ref.watch(
+                              preprocessProvider
+                                  .select((state) => state.isPlaying),
+                            );
+
+                            return IconButton(
                               visualDensity: VisualDensity.compact,
                               style: IconButton.styleFrom(
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              icon: const Icon(
-                                Symbols.new_label_rounded,
-                                weight: 300,
-                              ),
-                              onPressed: _showTagDialog,
+                              onPressed: () {
+                                if (isPlaying) {
+                                  _videoPlayerController.pause();
+                                } else {
+                                  _videoPlayerController.play();
+                                }
+                              },
+                              icon: isPlaying
+                                  ? const Icon(Symbols.pause, weight: 300)
+                                  : const Icon(
+                                      Symbols.play_arrow,
+                                      weight: 300,
+                                    ),
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              if (isPortrait)
+                Divider(
+                  height: 0,
+                  color: colorScheme.outline,
+                )
+              else
+                VerticalDivider(
+                  width: 1,
+                  color: colorScheme.outline,
+                ),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DefaultTextStyle(
+                      style: textTheme.bodyMedium!.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Center(child: Text('i')),
+                          ),
+                          const Expanded(
+                            flex: 3,
+                            child: Center(
+                              child: Text('timestamp'),
                             ),
-                          Consumer(
-                            builder: (context, ref, child) {
-                              final isPlaying = ref.watch(preprocessProvider
-                                  .select((state) => state.isPlaying));
-
-                              return IconButton(
-                                visualDensity: VisualDensity.compact,
-                                style: IconButton.styleFrom(
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                onPressed: () {
-                                  if (isPlaying) {
-                                    _videoPlayerController.pause();
-                                  } else {
-                                    _videoPlayerController.play();
-                                  }
-                                },
-                                icon: isPlaying
-                                    ? const Icon(Symbols.pause, weight: 300)
-                                    : const Icon(Symbols.play_arrow,
-                                        weight: 300),
-                              );
-                            },
+                          ),
+                          const Expanded(
+                            flex: 2,
+                            child: Center(child: Text('x')),
+                          ),
+                          const Expanded(
+                            flex: 2,
+                            child: Center(child: Text('y')),
+                          ),
+                          const Expanded(
+                            flex: 2,
+                            child: Center(child: Text('z')),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Icon(
+                                Symbols.ecg_heart_rounded,
+                                size: 16,
+                                weight: 600,
+                                color: colorScheme.error,
+                              ),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Center(child: Text('')),
                           ),
                         ],
-                      );
-                    },
-                  ),
-                ),
-                if (isPortrait)
-                  Divider(
-                    height: 0,
-                    color: colorScheme.outline,
-                  )
-                else
-                  VerticalDivider(
-                    width: 1,
-                    color: colorScheme.outline,
-                  ),
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DefaultTextStyle(
-                        style: textTheme.bodyMedium!.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
-                        ),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Center(child: Text('i')),
-                            ),
-                            const Expanded(
-                              flex: 3,
-                              child: Center(
-                                child: Text('timestamp'),
-                              ),
-                            ),
-                            const Expanded(
-                              flex: 2,
-                              child: Center(child: Text('x')),
-                            ),
-                            const Expanded(
-                              flex: 2,
-                              child: Center(child: Text('y')),
-                            ),
-                            const Expanded(
-                              flex: 2,
-                              child: Center(child: Text('z')),
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child: Center(
-                                child: Icon(
-                                  Symbols.ecg_heart_rounded,
-                                  size: 16,
-                                  weight: 600,
-                                  color: colorScheme.error,
-                                ),
-                              ),
-                            ),
-                            const Expanded(
-                              child: Center(child: Text('')),
-                            ),
-                          ],
-                        ),
                       ),
-                      Divider(
-                        height: 0,
-                        color: colorScheme.outline,
-                      ),
-                      Expanded(
-                        child: Scrollbar(
-                          child: ListView.separated(
-                            controller: _scrollController,
-                            cacheExtent: 32,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 0),
-                            itemCount: datasets.length,
-                            itemBuilder: (context, index) {
-                              final dataset = datasets[index];
-                              return Consumer(
-                                builder: (context, ref, child) {
-                                  final selectedDatasets = ref.watch(
-                                    preprocessProvider.select(
-                                      (state) => state.selectedDatasets,
-                                    ),
-                                  );
-                                  final currentSelectedIndex = ref.watch(
-                                    preprocessProvider.select(
-                                      (value) => value.currentSelectedIndex,
-                                    ),
-                                  );
-                                  final selected =
-                                      selectedDatasets.contains(dataset);
+                    ),
+                    Divider(
+                      height: 0,
+                      color: colorScheme.outline,
+                    ),
+                    Expanded(
+                      child: Scrollbar(
+                        child: ListView.separated(
+                          controller: _scrollController,
+                          cacheExtent: 32,
+                          separatorBuilder: (_, __) => const Divider(height: 0),
+                          itemCount: datasets.length,
+                          itemBuilder: (context, index) {
+                            final dataset = datasets[index];
+                            return Consumer(
+                              builder: (context, ref, child) {
+                                final selectedDatasets = ref.watch(
+                                  preprocessProvider.select(
+                                    (state) => state.selectedDatasets,
+                                  ),
+                                );
+                                final currentSelectedIndex = ref.watch(
+                                  preprocessProvider.select(
+                                    (value) => value.currentSelectedIndex,
+                                  ),
+                                );
+                                final selected =
+                                    selectedDatasets.contains(dataset);
 
-                                  return DatasetTileWidget(
-                                    index: index,
-                                    dataset: dataset,
-                                    highlighted: index == currentSelectedIndex,
-                                    selected: selected,
-                                    onTap: () async {
-                                      if (selectedDatasets.isEmpty) {
-                                        _onDatasetTilePressed(index, dataset);
-                                      } else {
-                                        if (dataset.isLabeled &&
-                                            !selected &&
-                                            _showWarning) {
-                                          final result =
-                                              await _showWarningDialog();
-                                          if (result == null || !result) return;
-                                        }
-                                        _notifier
-                                            .onSelectedDatasetChanged(dataset);
-                                      }
-                                    },
-                                    onLongPress: () async {
-                                      if (dataset.isLabeled && _showWarning) {
+                                return DatasetTileWidget(
+                                  index: index,
+                                  dataset: dataset,
+                                  highlighted: index == currentSelectedIndex,
+                                  selected: selected,
+                                  onTap: () async {
+                                    if (selectedDatasets.isEmpty) {
+                                      _onDatasetTilePressed(index, dataset);
+                                    } else {
+                                      if (dataset.isLabeled &&
+                                          !selected &&
+                                          _showWarning) {
                                         final result =
                                             await _showWarningDialog();
                                         if (result == null || !result) return;
                                       }
                                       _notifier
                                           .onSelectedDatasetChanged(dataset);
-                                    },
-                                  );
-                                },
-                              );
-                            },
-                          ),
+                                    }
+                                  },
+                                  onLongPress: () async {
+                                    if (dataset.isLabeled && _showWarning) {
+                                      final result = await _showWarningDialog();
+                                      if (result == null || !result) return;
+                                    }
+                                    _notifier.onSelectedDatasetChanged(dataset);
+                                  },
+                                );
+                              },
+                            );
+                          },
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            );
-          }(),
-        ),
+              ),
+            ],
+          );
+        }(),
       ),
     );
   }

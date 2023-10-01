@@ -37,12 +37,14 @@ class SavedDevicesPage extends ConsumerWidget {
                 return RoundedListTile(
                   title: Text(savedDevices[index].deviceName),
                   subtitle: Text(savedDevices[index].deviceId),
-                  onTap: savedDevices[index] == currentDevice
-                      ? null
-                      : () {
-                          authDeviceNotifier
-                              .connectToSavedDevice(savedDevices[index]);
-                        },
+                  onTap: () {
+                    if (savedDevices[index] == currentDevice) {
+                      AutoTabsRouter.of(context).setActiveIndex(index + 1);
+                    } else {
+                      authDeviceNotifier
+                          .connectToSavedDevice(savedDevices[index]);
+                    }
+                  },
                   trailing: savedDevices[index] == currentDevice
                       ? const Text('CONNECTED')
                       : null,

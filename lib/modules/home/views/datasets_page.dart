@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
+import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
-import 'package:flutter_sholat_ml/utils/ui/dialogs.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:intl/intl.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
@@ -97,6 +98,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     ref.listen(datasetsProvider, (previous, next) {
       if (previous?.presentationState != next.presentationState) {
         final presentationState = next.presentationState;
@@ -104,13 +107,13 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
           case LoadDatasetsFailureState():
             showErrorSnackbar(context, 'Failed to load datasets');
           case DeleteDatasetLoadingState():
-            showLoadingDialog(context);
+            context.loaderOverlay.show();
           case DeleteDatasetSuccessState():
-            Navigator.pop(context);
+            context.loaderOverlay.hide();
             _needReviewRefreshKey.currentState?.show();
             _reviewedRefreshKey.currentState?.show();
           case DeleteDatasetFailureState():
-            Navigator.pop(context);
+            context.loaderOverlay.hide();
             _needReviewRefreshKey.currentState?.show();
             _reviewedRefreshKey.currentState?.show();
             showErrorSnackbar(context, 'Failed to delete dataset');
@@ -121,7 +124,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     });
 
     final needReviewDatasetPaths = ref.watch(
-        datasetsProvider.select((state) => state.needReviewDatasetPaths));
+      datasetsProvider.select((state) => state.needReviewDatasetPaths),
+    );
     final reviewedDatasetPaths = ref
         .watch(datasetsProvider.select((state) => state.reviewedDatasetPaths));
     final isSelectMode = ref.watch(
@@ -186,13 +190,13 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             controller: _tabController,
             children: [
               _DatasetsBody(
-                folder: Directories.needReviewDir,
+                dir: Directories.needReviewDir,
                 datasetPaths: needReviewDatasetPaths ?? [],
                 refreshKey: _needReviewRefreshKey,
                 isSelectMode: isSelectMode,
               ),
               _DatasetsBody(
-                folder: Directories.reviewedDir,
+                dir: Directories.reviewedDir,
                 datasetPaths: reviewedDatasetPaths ?? [],
                 refreshKey: _reviewedRefreshKey,
                 isSelectMode: isSelectMode,
@@ -272,14 +276,14 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
 class _DatasetsBody extends ConsumerWidget {
   const _DatasetsBody({
-    required this.folder,
+    required this.dir,
     required this.datasetPaths,
     required this.refreshKey,
     required this.isSelectMode,
     super.key,
   });
 
-  final String folder;
+  final String dir;
   final List<String> datasetPaths;
   final GlobalKey<RefreshIndicatorState> refreshKey;
   final bool isSelectMode;
@@ -291,12 +295,17 @@ class _DatasetsBody extends ConsumerWidget {
     return RefreshIndicator(
       key: refreshKey,
       onRefresh: () {
-        return notifier.loadDatasetsFromDisk(folder);
+        return notifier.loadDatasetsFromDisk(dir);
       },
       child: () {
         if (datasetPaths.isEmpty) {
-          return const Center(
-            child: Text('No datasets'),
+          return IllustrationWidget(
+            type: IllustrationWidgetType.noData,
+            action: FilledButton.tonalIcon(
+              onPressed: () => refreshKey.currentState?.show(),
+              label: const Text('Refresh'),
+              icon: const Icon(Symbols.refresh_rounded),
+            ),
           );
         }
         return ListView.builder(

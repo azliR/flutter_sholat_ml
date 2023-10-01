@@ -1,10 +1,13 @@
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 enum HomeScreenNavigation { home, device }
@@ -40,6 +43,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     ref.listen(
       authDeviceProvider,
       (previous, next) => handleAuthDeviceState(
@@ -48,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         next,
         onAuthDeviceSuccessState: () {
           _onNavigationChanged(_tabsRouter, 1);
-          Navigator.pop(context);
+          context.loaderOverlay.hide();
         },
       ),
     );
@@ -107,18 +112,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ...savedDevices.map((device) {
                 return NavigationDrawerDestination(
                   icon: const Icon(Symbols.bluetooth_rounded),
-                  label: Text(device.deviceName),
+                  label: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        device.deviceName.isEmpty
+                            ? 'Unknown device'
+                            : device.deviceName,
+                      ),
+                      GestureDetector(
+                        onLongPress: () async {
+                          Navigator.pop(context);
+                          await Clipboard.setData(
+                            ClipboardData(text: device.deviceId),
+                          );
+
+                          if (!context.mounted) return;
+                          showSnackbar(context, 'Device ID Copied!');
+                        },
+                        child:
+                            Text(device.deviceId, style: textTheme.bodySmall),
+                      ),
+                    ],
+                  ),
                 );
               }),
               const Divider(),
               const NavigationDrawerDestination(
                 icon: Icon(Symbols.add_rounded),
                 label: Text('Add device'),
-              ),
-              const Divider(),
-              const NavigationDrawerDestination(
-                icon: Icon(Symbols.settings_rounded),
-                label: Text('Settings'),
               ),
             ],
           ),
@@ -131,9 +154,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 RecordRoute(
                   device: _authDeviceNotifier.bluetoothDevice!,
                   services: _authDeviceNotifier.services!,
+                  onRecordSuccess: () {
+                    _refreshKey.currentState?.show();
+                  },
                 ),
               );
-              await _refreshKey.currentState?.show();
             },
             child: const Icon(
               Symbols.videocam_rounded,
