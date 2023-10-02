@@ -13,6 +13,7 @@
 ///
 /// 
 ///
+library;
 import 'package:flutter/widgets.dart';
 
 class CustomIcons {
@@ -21,5 +22,5 @@ class CustomIcons {
   static const _kFontFam = 'CustomIcons';
   static const String? _kFontPkg = null;
 
-  static const IconData xiaomi_logo = IconData(0xe800, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData xiaomi_logo = IconData(0xe800, fontFamily: _kFontFam);
 }

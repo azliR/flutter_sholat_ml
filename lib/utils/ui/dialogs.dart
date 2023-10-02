@@ -21,22 +21,3 @@ Future<void> showErrorDialog(
     ),
   );
 }
-
-// Future<void> showLoadingDialog(BuildContext context) {
-//   final colorScheme = Theme.of(context).colorScheme;
-
-//   return showDialog(
-//     context: context,
-//     barrierColor: colorScheme.surface.withOpacity(0.6),
-//     barrierDismissible: false,
-//     builder: (context) {
-//       return WillPopScope(
-//         onWillPop: () async => false,
-//         child: const Align(
-//           alignment: Alignment.topCenter,
-//           child: LinearProgressIndicator(),
-//         ),
-//       );
-//     },
-//   );
-// }

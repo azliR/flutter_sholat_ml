@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
 part 'datasets_state.dart';
@@ -15,20 +16,21 @@ final datasetsProvider =
 class DatasetsNotifier extends StateNotifier<HomeState> {
   DatasetsNotifier()
       : _homeRepository = HomeRepository(),
+        _preprocessRepository = PreprocessRepository(),
         super(HomeState.initial());
 
   final HomeRepository _homeRepository;
+  final PreprocessRepository _preprocessRepository;
 
-  Future<void> loadDatasetsFromDisk(String folder) async {
-    if (![Directories.needReviewDir, Directories.reviewedDir]
-        .contains(folder)) {
+  Future<void> loadDatasetsFromDisk(String dir) async {
+    if (![Directories.needReviewDir, Directories.reviewedDir].contains(dir)) {
       return;
     }
 
     state = state.copyWith(isLoading: true);
 
     final (failure, savedPaths) =
-        await _homeRepository.loadDatasetsFromDisk(folder);
+        await _homeRepository.loadDatasetsFromDisk(dir);
     if (failure != null) {
       state = state.copyWith(
         isLoading: false,
@@ -37,7 +39,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       return;
     }
 
-    if (folder == Directories.needReviewDir) {
+    if (dir == Directories.needReviewDir) {
       state = state.copyWith(
         needReviewDatasetPaths: savedPaths,
         isLoading: false,
@@ -103,6 +105,22 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(
       presentationState: const DeleteDatasetSuccessState(),
     );
+    return true;
+  }
+
+  Future<bool> deleteDatasetFromCloud(String path) async {
+    state =
+        state.copyWith(presentationState: const DeleteDatasetLoadingState());
+
+    final (failure, _) = await _preprocessRepository
+        .deleteDatasetFromCloud(path.split('/').last);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: DeleteDatasetFailureState(failure),
+      );
+      return false;
+    }
+    await deleteDataset(path);
     return true;
   }
 }

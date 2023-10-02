@@ -46,6 +46,7 @@ class Dataset extends Equatable {
     this.timestamp,
     this.labelCategory,
     this.label,
+    this.note,
   });
 
   factory Dataset.fromCsv(String csv) {
@@ -58,8 +59,10 @@ class Dataset extends Equatable {
       z: int.parse(split[3]),
       heartRate: int.tryParse(split[4]),
       deviceLocation: DeviceLocation.fromCode(split[5]),
-      labelCategory: split[6].isNotEmpty ? split[6] : null,
-      label: split[7].isNotEmpty ? split[7] : null,
+      labelCategory:
+          split.elementAtOrNull(6)?.isNotEmpty ?? false ? split[6] : null,
+      label: split.elementAtOrNull(7)?.isNotEmpty ?? false ? split[7] : null,
+      note: split.elementAtOrNull(8)?.isNotEmpty ?? false ? split[8] : null,
     );
   }
 
@@ -71,6 +74,7 @@ class Dataset extends Equatable {
   final Duration? timestamp;
   final String? labelCategory;
   final String? label;
+  final String? note;
 
   bool get isLabeled => labelCategory != null && label != null;
 
@@ -83,6 +87,7 @@ class Dataset extends Equatable {
     Duration? timestamp,
     String? labelCategory,
     String? label,
+    String? note,
   }) {
     return Dataset(
       x: x ?? this.x,
@@ -93,6 +98,7 @@ class Dataset extends Equatable {
       timestamp: timestamp ?? this.timestamp,
       labelCategory: labelCategory ?? this.labelCategory,
       label: label ?? this.label,
+      note: note ?? this.note,
     );
   }
 
@@ -105,11 +111,22 @@ class Dataset extends Equatable {
     final deviceLocation = this.deviceLocation.code;
     final labelCategory = this.labelCategory ?? '';
     final label = this.label ?? '';
+    final note = this.note ?? '';
 
-    return '$timestamp,$x,$y,$z,$heartRate,$deviceLocation,$labelCategory,$label\n';
+    return '$timestamp,$x,$y,$z,$heartRate,'
+        '$deviceLocation,$labelCategory,$label,$note\n';
   }
 
   @override
-  List<Object?> get props =>
-      [x, y, z, heartRate, deviceLocation, timestamp, labelCategory, label];
+  List<Object?> get props => [
+        x,
+        y,
+        z,
+        heartRate,
+        deviceLocation,
+        timestamp,
+        labelCategory,
+        label,
+        note,
+      ];
 }

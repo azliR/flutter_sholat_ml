@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
@@ -28,25 +29,58 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(isPlaying: isPlaying);
   }
 
-  void onCurrentSelectedIndexChanged({required int index}) {
-    state = state.copyWith(currentSelectedIndex: index);
+  void onCurrentHighlightedIndexChanged({required int index}) {
+    state = state.copyWith(currentHighlightedIndex: index);
   }
 
   void onSelectedDatasetChanged(Dataset dataset) {
     final selectedDatasets = state.selectedDatasets;
-    if (selectedDatasets.contains(dataset)) {
+    final index = selectedDatasets.indexOf(dataset);
+    if (index != -1) {
       state = state.copyWith(
+        lastSelectedIndex: () => index,
         selectedDatasets: [...selectedDatasets]..remove(dataset),
       );
     } else {
       state = state.copyWith(
+        lastSelectedIndex: () => null,
         selectedDatasets: [...selectedDatasets, dataset],
       );
     }
   }
 
   void clearSelectedDatasets() {
-    state = state.copyWith(selectedDatasets: []);
+    state = state.copyWith(selectedDatasets: [], isJumpSelectMode: false);
+  }
+
+  void onJumpSelectModeChanged({required bool enable}) {
+    state = state.copyWith(isJumpSelectMode: enable);
+  }
+
+  Future<void> jumpSelect(
+    int endIndex, {
+    required Future<bool> Function() onShowWarning,
+  }) async {
+    final lastSelectedIndex = state.lastSelectedIndex;
+    if (lastSelectedIndex == null) return;
+
+    final selectedDatasets = state.datasets.sublist(
+      lastSelectedIndex,
+      endIndex + 1,
+    );
+
+    final showWarning = selectedDatasets.any((dataset) => dataset.isLabeled);
+    if (showWarning) {
+      final result = await onShowWarning();
+      if (!result) return;
+    }
+
+    state = state.copyWith(
+      selectedDatasets:
+          {...state.selectedDatasets, ...selectedDatasets}.toList(),
+      lastSelectedIndex: () => null,
+      isJumpSelectMode: false,
+    );
   }
 
   void onTaggedDatasets(

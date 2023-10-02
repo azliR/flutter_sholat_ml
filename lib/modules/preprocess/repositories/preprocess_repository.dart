@@ -147,15 +147,27 @@ class PreprocessRepository {
   }
 
   Future<(Failure?, void)> deleteDatasetFromCloud(String dirName) async {
+    DatasetInfo? datasetInfo;
     try {
       final dbRef = _firestore.collection('datasets').doc(dirName);
+      final data = (await dbRef.get()).data();
+      if (data != null) {
+        datasetInfo = DatasetInfo.fromFirestoreJson(data, dirName);
+      }
+
       await dbRef.delete();
 
-      final storageRef = _storage.ref().child(dirName);
-      await storageRef.delete();
+      final storageRef = _storage.ref().child('datasets').child(dirName);
+      await storageRef.listAll().then((value) async {
+        await Future.wait(value.items.map((e) => e.delete()));
+      });
 
       return (null, null);
     } catch (e, stackTrace) {
+      if (datasetInfo != null) {
+        final (failure, _) = await saveDatasetToDatabase(dirName, datasetInfo);
+        if (failure != null) return (failure, null);
+      }
       const message = 'Failed deleting dataset from cloud';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);

@@ -36,9 +36,11 @@ class _AppState extends State<App> {
       useDefaultLoading: false,
       useBackButtonInterceptor: true,
       overlayColor: colorScheme.surface.withOpacity(0.6),
-      overlayWidget: const Align(
-        alignment: Alignment.topCenter,
-        child: LinearProgressIndicator(),
+      overlayWidget: const SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: LinearProgressIndicator(),
+        ),
       ),
       child: MaterialApp.router(
         theme: ThemeData(

@@ -40,48 +40,45 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return WillPopScope(
-          onWillPop: () async {
-            Navigator.pop(context);
-            await context.router.pop();
-            return true;
-          },
-          child: AlertDialog(
-            title: const Text('Device location'),
-            icon: const Icon(Symbols.watch_rounded),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Where do you wear your device?'),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _notifier
-                          .onDeviceLocationChanged(DeviceLocation.leftWrist);
-                    },
-                    child: const Text('Left Wrist'),
-                  ),
+      builder: (context) => WillPopScope(
+        onWillPop: () async {
+          Navigator.pop(context);
+          await context.router.pop();
+          return true;
+        },
+        child: AlertDialog(
+          title: const Text('Device location'),
+          icon: const Icon(Symbols.watch_rounded),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Where do you wear your device?'),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _notifier.onDeviceLocationChanged(DeviceLocation.leftWrist);
+                  },
+                  child: const Text('Left Wrist'),
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _notifier
-                          .onDeviceLocationChanged(DeviceLocation.rightWrist);
-                    },
-                    child: const Text('Right Wrist'),
-                  ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _notifier
+                        .onDeviceLocationChanged(DeviceLocation.rightWrist);
+                  },
+                  child: const Text('Right Wrist'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -96,33 +93,31 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
       context: context,
       barrierColor: Colors.black,
       barrierDismissible: false,
-      builder: (context) {
-        return WillPopScope(
-          onWillPop: () async {
-            return false;
-          },
-          child: Align(
-            alignment: Alignment.topRight,
-            child: Material(
-              type: MaterialType.transparency,
-              child: InkWell(
-                borderRadius: const BorderRadius.all(Radius.circular(24)),
-                onLongPress: () {
-                  Navigator.pop(context);
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Icon(
-                    Symbols.lock_open_rounded,
-                    size: 28,
-                    color: Colors.white,
-                  ),
+      builder: (context) => WillPopScope(
+        onWillPop: () async {
+          return false;
+        },
+        child: Align(
+          alignment: Alignment.topRight,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              borderRadius: const BorderRadius.all(Radius.circular(24)),
+              onLongPress: () {
+                Navigator.pop(context);
+              },
+              child: const Padding(
+                padding: EdgeInsets.all(8),
+                child: Icon(
+                  Symbols.lock_open_rounded,
+                  size: 28,
+                  color: Colors.white,
                 ),
               ),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _notifier.onLockChanged(isLocked: false);

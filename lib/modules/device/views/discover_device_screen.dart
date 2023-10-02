@@ -31,53 +31,51 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
     var macAddress = '';
     await showDialog<void>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Input MAC address'),
-          content: TextFormField(
-            autocorrect: false,
-            autofocus: true,
-            maxLength: 17,
-            textCapitalization: TextCapitalization.sentences,
-            inputFormatters: [
-              UpperCaseTextFormatter(),
-            ],
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            validator: (value) {
-              final macAddressFormat =
-                  RegExp(r'^([0-9A-Za-z]{2}:){5}[0-9A-Za-z]{2}$');
-              if (!macAddressFormat.hasMatch(value ?? '')) {
-                return 'Mac address is not valid';
-              }
-              return null;
-            },
-            decoration: InputDecoration(
-              labelText: 'MAC address',
-              prefixIcon: const Icon(Symbols.bluetooth),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onChanged: (value) => macAddress = value,
-          ),
-          actions: [
-            OutlinedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                final bluetoothDevice = BluetoothDevice.fromId(macAddress);
-                await _onConnectPressed(bluetoothDevice);
-              },
-              child: const Text('Input'),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('Input MAC address'),
+        content: TextFormField(
+          autocorrect: false,
+          autofocus: true,
+          maxLength: 17,
+          textCapitalization: TextCapitalization.sentences,
+          inputFormatters: [
+            UpperCaseTextFormatter(),
           ],
-        );
-      },
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (value) {
+            final macAddressFormat =
+                RegExp(r'^([0-9A-Za-z]{2}:){5}[0-9A-Za-z]{2}$');
+            if (!macAddressFormat.hasMatch(value ?? '')) {
+              return 'Mac address is not valid';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            labelText: 'MAC address',
+            prefixIcon: const Icon(Symbols.bluetooth),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onChanged: (value) => macAddress = value,
+        ),
+        actions: [
+          OutlinedButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final bluetoothDevice = BluetoothDevice.fromId(macAddress);
+              await _onConnectPressed(bluetoothDevice);
+            },
+            child: const Text('Input'),
+          ),
+        ],
+      ),
     );
   }
 

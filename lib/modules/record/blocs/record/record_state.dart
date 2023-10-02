@@ -63,7 +63,7 @@ class RecordState extends Equatable {
       accelerometerDatasets:
           accelerometerDatasets ?? this.accelerometerDatasets,
       availableCameras: availableCameras ?? this.availableCameras,
-      lastDatasets: lastDatasets == null ? null : lastDatasets(),
+      lastDatasets: lastDatasets?.call() ?? this.lastDatasets,
       presentationState: presentationState ?? this.presentationState,
     );
   }

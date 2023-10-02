@@ -29,8 +29,7 @@ class AuthDeviceState extends Equatable {
   }) {
     return AuthDeviceState(
       isInitialised: isInitialised ?? this.isInitialised,
-      currentDevice:
-          currentDevice != null ? currentDevice() : this.currentDevice,
+      currentDevice: currentDevice?.call() ?? this.currentDevice,
       savedDevices: savedDevices ?? this.savedDevices,
       presentationState: presentationState ?? this.presentationState,
     );

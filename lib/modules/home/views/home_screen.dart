@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
+import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
+import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -22,10 +24,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final AuthDeviceNotifier _authDeviceNotifier;
+  late final DatasetsNotifier _datasetNotifier;
 
   late TabsRouter _tabsRouter;
-
-  final _refreshKey = GlobalKey<RefreshIndicatorState>();
 
   void _onNavigationChanged(TabsRouter tabsRouter, int index) {
     if (index != tabsRouter.activeIndex) {
@@ -37,6 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void initState() {
+    _datasetNotifier = ref.read(datasetsProvider.notifier);
     _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
     super.initState();
   }
@@ -155,7 +157,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   device: _authDeviceNotifier.bluetoothDevice!,
                   services: _authDeviceNotifier.services!,
                   onRecordSuccess: () {
-                    _refreshKey.currentState?.show();
+                    _datasetNotifier
+                      ..loadDatasetsFromDisk(Directories.needReviewDir)
+                      ..loadDatasetsFromDisk(Directories.reviewedDir);
                   },
                 ),
               );

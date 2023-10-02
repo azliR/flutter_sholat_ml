@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,29 +36,27 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
     return showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete dataset(s)?'),
-          content: const Text(
-            'These datasets will be deleted and cannot be recover.',
+      builder: (context) => AlertDialog(
+        title: const Text('Delete dataset(s)?'),
+        content: const Text(
+          'These datasets will be deleted and cannot be recover.',
+        ),
+        icon: const Icon(Symbols.delete_rounded, weight: 600),
+        iconColor: colorScheme.error,
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
           ),
-          icon: const Icon(Symbols.delete_rounded, weight: 600),
-          iconColor: colorScheme.error,
-          actions: [
-            OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
             ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.error,
-              ),
-              onPressed: action,
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
+            onPressed: action,
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -98,8 +98,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     ref.listen(datasetsProvider, (previous, next) {
       if (previous?.presentationState != next.presentationState) {
         final presentationState = next.presentationState;
@@ -194,12 +192,14 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                 datasetPaths: needReviewDatasetPaths ?? [],
                 refreshKey: _needReviewRefreshKey,
                 isSelectMode: isSelectMode,
+                isTagged: false,
               ),
               _DatasetsBody(
                 dir: Directories.reviewedDir,
                 datasetPaths: reviewedDatasetPaths ?? [],
                 refreshKey: _reviewedRefreshKey,
                 isSelectMode: isSelectMode,
+                isTagged: true,
               ),
             ],
           ),
@@ -280,16 +280,19 @@ class _DatasetsBody extends ConsumerWidget {
     required this.datasetPaths,
     required this.refreshKey,
     required this.isSelectMode,
-    super.key,
+    required this.isTagged,
   });
 
   final String dir;
   final List<String> datasetPaths;
   final GlobalKey<RefreshIndicatorState> refreshKey;
   final bool isSelectMode;
+  final bool isTagged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     final notifier = ref.read(datasetsProvider.notifier);
 
     return RefreshIndicator(
@@ -327,46 +330,39 @@ class _DatasetsBody extends ConsumerWidget {
             );
 
             return RoundedListTile(
-              title: Text(
-                formattedDatasetName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              title: Row(
+                children: [
+                  Text(
+                    formattedDatasetName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (isTagged) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      Symbols.cloud_done_rounded,
+                      size: 16,
+                      opticalSize: 20,
+                      fill: 1,
+                      color: colorScheme.primary,
+                    ),
+                  ],
+                ],
               ),
               selected: isSelected,
               leading: const Icon(Symbols.csv_rounded),
-              trailing: MenuAnchor(
-                builder: (context, controller, child) {
-                  return IconButton(
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    onPressed: () {
-                      if (controller.isOpen) {
-                        controller.close();
-                      } else {
-                        controller.open();
-                      }
-                    },
-                    icon: child!,
-                  );
-                },
-                menuChildren: [
-                  MenuItemButton(
-                    leadingIcon: const Icon(Symbols.delete_rounded),
-                    onPressed: () async {
-                      await notifier.deleteDataset(datasetPath);
-                      await refreshKey.currentState?.show();
-                    },
-                    child: const Text('Delete'),
-                  ),
-                ],
-                child: const Icon(Symbols.more_vert_rounded),
-              ),
-              onTap: () {
+              trailing: _buildMenu(notifier, datasetPath),
+              onTap: () async {
                 if (isSelectMode) {
                   notifier.onSelectedDataset(datasetPath);
                 } else {
-                  context.router.push(PreprocessRoute(path: datasetPath));
+                  await context.router.push(PreprocessRoute(path: datasetPath));
+                  unawaited(
+                    notifier.loadDatasetsFromDisk(Directories.needReviewDir),
+                  );
+                  unawaited(
+                    notifier.loadDatasetsFromDisk(Directories.reviewedDir),
+                  );
                 }
               },
               onLongPress: () => notifier.onSelectedDataset(datasetPath),
@@ -374,6 +370,46 @@ class _DatasetsBody extends ConsumerWidget {
           },
         );
       }(),
+    );
+  }
+
+  MenuAnchor _buildMenu(DatasetsNotifier notifier, String datasetPath) {
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return IconButton(
+          style: IconButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: child!,
+        );
+      },
+      menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Symbols.delete_rounded),
+          onPressed: () async {
+            await notifier.deleteDataset(datasetPath);
+            await refreshKey.currentState?.show();
+          },
+          child: const Text('Delete just from device'),
+        ),
+        if (isTagged)
+          MenuItemButton(
+            leadingIcon: const Icon(Symbols.delete_forever_rounded),
+            onPressed: () async {
+              await notifier.deleteDatasetFromCloud(datasetPath);
+              await refreshKey.currentState?.show();
+            },
+            child: const Text('Delete permanently'),
+          ),
+      ],
+      child: const Icon(Symbols.more_vert_rounded),
     );
   }
 }

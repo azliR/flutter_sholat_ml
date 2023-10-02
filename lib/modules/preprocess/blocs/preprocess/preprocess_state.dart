@@ -1,11 +1,13 @@
 part of 'preprocess_notifier.dart';
 
 @immutable
-class PreprocessState {
+class PreprocessState extends Equatable {
   const PreprocessState({
     required this.path,
     required this.datasetInfo,
-    required this.currentSelectedIndex,
+    required this.lastSelectedIndex,
+    required this.currentHighlightedIndex,
+    required this.isJumpSelectMode,
     required this.isPlaying,
     required this.datasets,
     required this.selectedDatasets,
@@ -15,7 +17,9 @@ class PreprocessState {
   factory PreprocessState.initial() => const PreprocessState(
         path: '',
         datasetInfo: null,
-        currentSelectedIndex: 0,
+        lastSelectedIndex: 0,
+        currentHighlightedIndex: 0,
+        isJumpSelectMode: false,
         isPlaying: false,
         datasets: [],
         selectedDatasets: [],
@@ -24,7 +28,9 @@ class PreprocessState {
 
   final String path;
   final DatasetInfo? datasetInfo;
-  final int currentSelectedIndex;
+  final int currentHighlightedIndex;
+  final int? lastSelectedIndex;
+  final bool isJumpSelectMode;
   final bool isPlaying;
   final List<Dataset> datasets;
   final List<Dataset> selectedDatasets;
@@ -33,7 +39,9 @@ class PreprocessState {
   PreprocessState copyWith({
     String? path,
     DatasetInfo? datasetInfo,
-    int? currentSelectedIndex,
+    int? currentHighlightedIndex,
+    ValueGetter<int?>? lastSelectedIndex,
+    bool? isJumpSelectMode,
     bool? isPlaying,
     List<Dataset>? datasets,
     List<Dataset>? selectedDatasets,
@@ -43,13 +51,29 @@ class PreprocessState {
     return PreprocessState(
       path: path ?? this.path,
       datasetInfo: datasetInfo ?? this.datasetInfo,
-      currentSelectedIndex: currentSelectedIndex ?? this.currentSelectedIndex,
+      currentHighlightedIndex:
+          currentHighlightedIndex ?? this.currentHighlightedIndex,
+      lastSelectedIndex: lastSelectedIndex?.call() ?? this.lastSelectedIndex,
+      isJumpSelectMode: isJumpSelectMode ?? this.isJumpSelectMode,
       isPlaying: isPlaying ?? this.isPlaying,
       datasets: datasets ?? this.datasets,
       selectedDatasets: selectedDatasets ?? this.selectedDatasets,
       presentationState: presentationState ?? this.presentationState,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        path,
+        datasetInfo,
+        lastSelectedIndex,
+        currentHighlightedIndex,
+        isJumpSelectMode,
+        isPlaying,
+        datasets,
+        selectedDatasets,
+        presentationState,
+      ];
 }
 
 sealed class PreprocessPresentationState {
