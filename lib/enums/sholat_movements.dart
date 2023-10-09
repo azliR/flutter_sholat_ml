@@ -217,7 +217,7 @@ enum Duduk {
       case Duduk.dudukAntaraDuaSujud:
         return 'duduk_antara_dua_sujud';
       case Duduk.dudukTasyahudAwal:
-        return 'duduk_tasyahud_awal';
+        return 'duduk';
     }
   }
 }
@@ -238,23 +238,4 @@ enum Lainnya {
         return 'lainnya';
     }
   }
-}
-
-enum SholatMovementDetail {
-  takbiratulihram,
-  berdiri,
-  berdiriDariSujudTanpaDudukTanpaTakbir,
-  berdiriDariSujudTanpaDudukDenganTakbir,
-  berdiriDariSujudDenganDudukTanpaTakbir,
-  berdiriDariSujudDenganDudukDenganTakbir,
-  rukuTanpaTakbir,
-  rukuDenganTakbir,
-  iktidalTanpaBersedekap,
-  iktidalBersedekap,
-  qunut,
-  qunutMembalikkanTangan,
-  sujudDariBerdiri,
-  sujudDariDuduk,
-  dudukAntaraDuaSujud,
-  dudukTasyahudAwal,
 }

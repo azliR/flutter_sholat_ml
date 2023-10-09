@@ -8,9 +8,8 @@ import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
+import 'package:flutter_sholat_ml/modules/home/widgets/dataset_grid_tile_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
-import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
-import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -60,39 +59,19 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     );
   }
 
-  Future<void> _tabListener() async {
-    final index = _tabController.index;
-    if (!mounted) return;
-
-    if (index == 0 || index == 1) {
-      final reviewedDatasetPaths =
-          ref.read(datasetsProvider).reviewedDatasetPaths;
-      if (reviewedDatasetPaths == null) {
-        await _reviewedRefreshKey.currentState?.show();
-      }
-    }
-  }
-
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
     _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
 
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(_tabListener);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _needReviewRefreshKey.currentState?.show();
-    });
 
     super.initState();
   }
 
   @override
   void dispose() {
-    _tabController
-      ..removeListener(_tabListener)
-      ..dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -274,7 +253,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
   }
 }
 
-class _DatasetsBody extends ConsumerWidget {
+class _DatasetsBody extends ConsumerStatefulWidget {
   const _DatasetsBody({
     required this.dir,
     required this.datasetPaths,
@@ -290,70 +269,57 @@ class _DatasetsBody extends ConsumerWidget {
   final bool isTagged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
+  ConsumerState<_DatasetsBody> createState() => _DatasetsBodyState();
+}
 
+class _DatasetsBodyState extends ConsumerState<_DatasetsBody> {
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if (widget.datasetPaths.isEmpty) {
+        widget.refreshKey.currentState?.show();
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final notifier = ref.read(datasetsProvider.notifier);
 
     return RefreshIndicator(
-      key: refreshKey,
+      key: widget.refreshKey,
       onRefresh: () {
-        return notifier.loadDatasetsFromDisk(dir);
+        return notifier.loadDatasetsFromDisk(widget.dir);
       },
       child: () {
-        if (datasetPaths.isEmpty) {
+        if (widget.datasetPaths.isEmpty) {
           return IllustrationWidget(
             type: IllustrationWidgetType.noData,
             action: FilledButton.tonalIcon(
-              onPressed: () => refreshKey.currentState?.show(),
+              onPressed: () => widget.refreshKey.currentState?.show(),
               label: const Text('Refresh'),
               icon: const Icon(Symbols.refresh_rounded),
             ),
           );
         }
-        return ListView.builder(
+        return GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.9,
+          ),
           padding:
-              const EdgeInsets.fromLTRB(0, 8, 0, kBottomNavigationBarHeight),
-          itemCount: datasetPaths.length,
+              const EdgeInsets.fromLTRB(12, 8, 12, kBottomNavigationBarHeight),
+          itemCount: widget.datasetPaths.length,
           itemBuilder: (context, index) {
-            final datasetPath = datasetPaths[index];
-            final datasetName = datasetPath.split('/').last;
-            final dateTime = DateTime.tryParse(datasetName);
-            final formattedDatasetName = dateTime == null
-                ? datasetName
-                : DateFormat("EEEE 'at' HH:mm - MMM yyy").format(dateTime);
-
-            final isSelected = ref.watch(
-              datasetsProvider.select(
-                (value) => value.selectedDatasetPaths.contains(datasetPath),
-              ),
-            );
-
-            return RoundedListTile(
-              title: Row(
-                children: [
-                  Text(
-                    formattedDatasetName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (isTagged) ...[
-                    const SizedBox(width: 8),
-                    Icon(
-                      Symbols.cloud_done_rounded,
-                      size: 16,
-                      opticalSize: 20,
-                      fill: 1,
-                      color: colorScheme.primary,
-                    ),
-                  ],
-                ],
-              ),
-              selected: isSelected,
-              leading: const Icon(Symbols.csv_rounded),
-              trailing: _buildMenu(notifier, datasetPath),
+            final datasetPath = widget.datasetPaths[index];
+            return DatasetGridTile(
+              datasetPath: datasetPath,
+              isTagged: widget.isTagged,
               onTap: () async {
-                if (isSelectMode) {
+                if (widget.isSelectMode) {
                   notifier.onSelectedDataset(datasetPath);
                 } else {
                   await context.router.push(PreprocessRoute(path: datasetPath));
@@ -366,50 +332,18 @@ class _DatasetsBody extends ConsumerWidget {
                 }
               },
               onLongPress: () => notifier.onSelectedDataset(datasetPath),
+              onDeleted: () {
+                widget.refreshKey.currentState?.show();
+              },
             );
+            // return RoundedListTile(
+            //   selected: isSelected,
+            //   leading: const Icon(Symbols.csv_rounded),
+            //   trailing: _buildMenu(notifier, path),
+            // );
           },
         );
       }(),
-    );
-  }
-
-  MenuAnchor _buildMenu(DatasetsNotifier notifier, String datasetPath) {
-    return MenuAnchor(
-      builder: (context, controller, child) {
-        return IconButton(
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          icon: child!,
-        );
-      },
-      menuChildren: [
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.delete_rounded),
-          onPressed: () async {
-            await notifier.deleteDataset(datasetPath);
-            await refreshKey.currentState?.show();
-          },
-          child: const Text('Delete just from device'),
-        ),
-        if (isTagged)
-          MenuItemButton(
-            leadingIcon: const Icon(Symbols.delete_forever_rounded),
-            onPressed: () async {
-              await notifier.deleteDatasetFromCloud(datasetPath);
-              await refreshKey.currentState?.show();
-            },
-            child: const Text('Delete permanently'),
-          ),
-      ],
-      child: const Icon(Symbols.more_vert_rounded),
     );
   }
 }

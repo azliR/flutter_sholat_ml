@@ -179,151 +179,144 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: FilledButton.tonalIcon(
                 onPressed: () => _notifier.onSaveDataset(),
-                icon: datasetInfo == null
-                    ? const Icon(Symbols.backup_rounded)
-                    : const Icon(Symbols.sync_rounded),
-                label: Text(datasetInfo == null ? 'Save' : 'Update'),
+                icon: datasetInfo?.isSubmitted ?? false
+                    ? const Icon(Symbols.sync_rounded)
+                    : const Icon(Symbols.backup_rounded),
+                label: Text(
+                  (datasetInfo?.isSubmitted ?? false) ? 'Update' : 'Save',
+                ),
               ),
             ),
           ],
         ),
-        body: () {
-          return Flex(
-            direction: isPortrait ? Axis.vertical : Axis.horizontal,
-            children: [
-              Expanded(
-                flex: 5,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: AspectRatio(
-                        aspectRatio: _videoPlayerController.value.aspectRatio,
-                        child: VideoPlayer(_videoPlayerController),
-                      ),
+        body: Flex(
+          direction: isPortrait ? Axis.vertical : Axis.horizontal,
+          children: [
+            Expanded(
+              flex: 4,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: AspectRatio(
+                      aspectRatio: _videoPlayerController.value.aspectRatio,
+                      child: VideoPlayer(_videoPlayerController),
                     ),
-                    Divider(
-                      height: 0,
-                      color: colorScheme.outline,
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: AccelerometerChart(
-                        datasets: datasets,
-                        trackballBehavior: _trackballBehavior,
-                        onTrackballChanged: (trackballArgs) {
-                          if (_videoPlayerController.value.isPlaying) return;
+                  ),
+                  Divider(
+                    height: 0,
+                    color: colorScheme.outline,
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: AccelerometerChart(
+                      datasets: datasets,
+                      trackballBehavior: _trackballBehavior,
+                      onTrackballChanged: (trackballArgs) {
+                        if (_videoPlayerController.value.isPlaying) return;
 
-                          final index =
-                              trackballArgs.chartPointInfo.dataPointIndex ?? 0;
+                        final index =
+                            trackballArgs.chartPointInfo.dataPointIndex ?? 0;
 
-                          _timer?.cancel();
-                          _timer = Timer(const Duration(milliseconds: 300), () {
-                            _videoPlayerController
-                                .seekTo(datasets[index].timestamp!);
-                            _scrollToDatasetTile(index);
-                            _notifier.onCurrentHighlightedIndexChanged(
-                                index: index,);
-                          });
-                        },
-                      ),
+                        _timer?.cancel();
+                        _timer = Timer(const Duration(milliseconds: 300), () {
+                          _videoPlayerController
+                              .seekTo(datasets[index].timestamp!);
+                          _scrollToDatasetTile(index);
+                          _notifier.onCurrentHighlightedIndexChanged(
+                            index: index,
+                          );
+                        });
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              if (isPortrait)
-                Divider(
-                  height: 0,
-                  color: colorScheme.outline,
-                )
-              else
-                VerticalDivider(
-                  width: 0,
-                  color: colorScheme.outline,
-                ),
-              SafeArea(
-                bottom: !isPortrait,
-                child: PreprocessToolbar(
-                  videoPlayerController: _videoPlayerController,
-                ),
+            ),
+            if (isPortrait)
+              Divider(
+                height: 0,
+                color: colorScheme.outline,
+              )
+            else
+              VerticalDivider(
+                width: 0,
+                color: colorScheme.outline,
               ),
-              if (isPortrait)
-                Divider(
-                  height: 0,
-                  color: colorScheme.outline,
-                )
-              else
-                VerticalDivider(
-                  width: 1,
-                  color: colorScheme.outline,
-                ),
-              Expanded(
-                flex: 4,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DefaultTextStyle(
-                      style: textTheme.bodyMedium!.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Center(child: Text('i')),
+            Expanded(
+              flex: 4,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PreprocessToolbar(
+                    videoPlayerController: _videoPlayerController,
+                  ),
+                  Divider(
+                    height: 0,
+                    color: colorScheme.outline,
+                  ),
+                  DefaultTextStyle(
+                    style: textTheme.bodyMedium!.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          flex: 2,
+                          child: Center(child: Text('i')),
+                        ),
+                        const Expanded(
+                          flex: 3,
+                          child: Center(
+                            child: Text('timestamp'),
                           ),
-                          const Expanded(
-                            flex: 3,
-                            child: Center(
-                              child: Text('timestamp'),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Center(child: Text('x')),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Center(child: Text('y')),
+                        ),
+                        const Expanded(
+                          flex: 2,
+                          child: Center(child: Text('z')),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Center(
+                            child: Icon(
+                              Symbols.ecg_heart_rounded,
+                              size: 16,
+                              weight: 600,
+                              color: colorScheme.error,
                             ),
                           ),
-                          const Expanded(
-                            flex: 2,
-                            child: Center(child: Text('x')),
-                          ),
-                          const Expanded(
-                            flex: 2,
-                            child: Center(child: Text('y')),
-                          ),
-                          const Expanded(
-                            flex: 2,
-                            child: Center(child: Text('z')),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Center(
-                              child: Icon(
-                                Symbols.ecg_heart_rounded,
-                                size: 16,
-                                weight: 600,
-                                color: colorScheme.error,
-                              ),
-                            ),
-                          ),
-                          const Expanded(
-                            child: Center(child: Text('')),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const Expanded(
+                          child: Center(child: Text('')),
+                        ),
+                      ],
                     ),
-                    Divider(
-                      height: 0,
-                      color: colorScheme.outline,
+                  ),
+                  Divider(
+                    height: 0,
+                    color: colorScheme.outline,
+                  ),
+                  Expanded(
+                    child: PreprocessDatasetList(
+                      scrollController: _scrollController,
+                      trackballBehavior: _trackballBehavior,
+                      datasets: datasets,
                     ),
-                    Expanded(
-                      child: PreprocessDatasetList(
-                        scrollController: _scrollController,
-                        trackballBehavior: _trackballBehavior,
-                        datasets: datasets,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          );
-        }(),
+            ),
+          ],
+        ),
       ),
     );
   }

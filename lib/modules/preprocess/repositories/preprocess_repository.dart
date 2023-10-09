@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
@@ -16,9 +17,34 @@ class PreprocessRepository {
   Future<(Failure?, List<Dataset>?)> readDatasets(String path) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
+      const datasetInfoPath = Paths.datasetInfo;
 
       final datasetStrList = await File('$path/$datasetCsvPath').readAsLines();
-      final datasets = datasetStrList.map(Dataset.fromCsv).toList();
+      final datasetInfoFile = File('$path/$datasetInfoPath');
+
+      final DatasetInfo datasetInfo;
+      if (!datasetInfoFile.existsSync()) {
+        datasetInfo = DatasetInfo(
+          dirName: path.split('/').last,
+          datasetVersion: DatasetVersion.v1,
+        );
+        datasetInfoFile.writeAsStringSync(jsonEncode(datasetInfo.toJson()));
+      } else {
+        final datasetInfoStr = await datasetInfoFile.readAsString();
+        datasetInfo = DatasetInfo.fromJson(
+          jsonDecode(datasetInfoStr) as Map<String, dynamic>,
+        );
+      }
+
+      final datasets = datasetStrList
+          .map(
+            (datasetStr) => Dataset.fromCsv(
+              datasetStr,
+              version: datasetInfo.datasetVersion,
+            ),
+          )
+          .toList();
+
       return (null, datasets);
     } catch (e, stackTrace) {
       const message = 'Failed getting dataset file paths';
@@ -113,6 +139,7 @@ class PreprocessRepository {
         dirName: dirName,
         csvUrl: await ref.child(datasetCsvPath).getDownloadURL(),
         videoUrl: await ref.child(datasetVideoPath).getDownloadURL(),
+        datasetVersion: DatasetVersion.values.last,
       );
 
       final (failure, _) =

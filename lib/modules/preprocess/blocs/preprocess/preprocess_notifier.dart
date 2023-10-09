@@ -5,6 +5,7 @@ import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:uuid/uuid.dart';
 
 part 'preprocess_state.dart';
 
@@ -91,6 +92,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
       datasets: state.datasets.map((dataset) {
         if (state.selectedDatasets.contains(dataset)) {
           return dataset.copyWith(
+            movementSetId: const Uuid().v1(),
             labelCategory: labelCategory,
             label: label,
           );
@@ -102,20 +104,20 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   }
 
   Future<bool> readDatasets() async {
-    final (datasetsFailure, datasets) =
-        await _preprocessRepository.readDatasets(state.path);
-    if (datasetsFailure != null) {
-      state = state.copyWith(
-        presentationState: ReadDatasetsFailureState(datasetsFailure),
-      );
-      return false;
-    }
-
     final (datasetInfoFailure, datasetInfo) =
         await _preprocessRepository.readDatasetInfo(state.path);
     if (datasetInfoFailure != null) {
       state = state.copyWith(
         presentationState: ReadDatasetsFailureState(datasetInfoFailure),
+      );
+      return false;
+    }
+
+    final (datasetsFailure, datasets) =
+        await _preprocessRepository.readDatasets(state.path);
+    if (datasetsFailure != null) {
+      state = state.copyWith(
+        presentationState: ReadDatasetsFailureState(datasetsFailure),
       );
       return false;
     }
@@ -134,7 +136,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
         await _preprocessRepository.saveDataset(
       state.path,
       state.datasets,
-      isUpdating: state.datasetInfo != null,
+      isUpdating: state.datasetInfo!.isSubmitted,
     );
 
     if (failure != null) {

@@ -60,6 +60,7 @@ class DatasetTileWidget extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
+                flex: 2,
                 child: Center(child: Text(index.toString())),
               ),
               Expanded(

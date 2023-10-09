@@ -6,6 +6,7 @@ class HomeState extends Equatable {
     required this.needReviewDatasetPaths,
     required this.reviewedDatasetPaths,
     required this.selectedDatasetPaths,
+    required this.datasetThumbnails,
     required this.presentationState,
   });
 
@@ -14,6 +15,7 @@ class HomeState extends Equatable {
         needReviewDatasetPaths: null,
         reviewedDatasetPaths: null,
         selectedDatasetPaths: [],
+        datasetThumbnails: [],
         presentationState: DatasetsInitial(),
       );
 
@@ -21,6 +23,7 @@ class HomeState extends Equatable {
   final List<String>? needReviewDatasetPaths;
   final List<String>? reviewedDatasetPaths;
   final List<String> selectedDatasetPaths;
+  final List<DatasetThumbnail> datasetThumbnails;
   final DatasetsPresentationState presentationState;
 
   HomeState copyWith({
@@ -28,6 +31,7 @@ class HomeState extends Equatable {
     List<String>? needReviewDatasetPaths,
     List<String>? reviewedDatasetPaths,
     List<String>? selectedDatasetPaths,
+    List<DatasetThumbnail>? datasetThumbnails,
     DatasetsPresentationState? presentationState,
   }) {
     return HomeState(
@@ -36,6 +40,7 @@ class HomeState extends Equatable {
           needReviewDatasetPaths ?? this.needReviewDatasetPaths,
       reviewedDatasetPaths: reviewedDatasetPaths ?? this.reviewedDatasetPaths,
       selectedDatasetPaths: selectedDatasetPaths ?? this.selectedDatasetPaths,
+      datasetThumbnails: datasetThumbnails ?? this.datasetThumbnails,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -46,6 +51,7 @@ class HomeState extends Equatable {
         needReviewDatasetPaths,
         reviewedDatasetPaths,
         selectedDatasetPaths,
+        datasetThumbnails,
         presentationState,
       ];
 }

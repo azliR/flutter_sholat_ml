@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/record/blocs/record/record_notifier.dart';
 import 'package:flutter_sholat_ml/modules/record/widgets/accelerometer_chart_widget.dart';
 import 'package:flutter_sholat_ml/modules/record/widgets/heart_rate_chart_widget.dart';

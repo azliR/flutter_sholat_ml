@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
+import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';

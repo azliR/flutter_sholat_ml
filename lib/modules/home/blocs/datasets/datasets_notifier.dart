@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset_thumbnail/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
@@ -50,6 +51,34 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
         isLoading: false,
       );
     }
+  }
+
+  Future<void> datasetThumbnail(String path) async {
+    final (failure, thumbnail) = await _homeRepository.datasetThumbnail(path);
+    if (failure != null) {
+      state = state.copyWith(
+        datasetThumbnails: [
+          ...state.datasetThumbnails,
+          DatasetThumbnail(
+            datasetDir: path.split('/').last,
+            thumbnailPath: thumbnail,
+            error: null,
+          ),
+        ],
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      datasetThumbnails: [
+        ...state.datasetThumbnails,
+        DatasetThumbnail(
+          datasetDir: path.split('/').last,
+          thumbnailPath: thumbnail,
+          error: null,
+        ),
+      ],
+    );
   }
 
   void onSelectedDataset(String path) {

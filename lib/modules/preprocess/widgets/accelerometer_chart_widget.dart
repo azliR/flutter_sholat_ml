@@ -30,14 +30,19 @@ class AccelerometerChart extends StatelessWidget {
     return SfCartesianChart(
       legend: const Legend(isVisible: true),
       primaryXAxis: NumericAxis(
-        visibleMaximum: 100,
+        visibleMaximum: 400,
       ),
       zoomPanBehavior: ZoomPanBehavior(
         enablePanning: true,
         enablePinching: true,
+        zoomMode: ZoomMode.x,
+        enableSelectionZooming: true,
       ),
-      trackballBehavior: trackballBehavior,
-      onTrackballPositionChanging: onTrackballChanged,
+      onSelectionChanged: (selectionArgs) {
+        print(selectionArgs);
+      },
+      // trackballBehavior: trackballBehavior,
+      // onTrackballPositionChanging: onTrackballChanged,
       series: [
         SplineSeries(
           width: 1.4,

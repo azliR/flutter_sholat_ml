@@ -167,9 +167,6 @@ class PreprocessToolbar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(preprocessProvider.notifier);
 
-    final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
-
     final selectedDatasets = ref.watch(
       preprocessProvider.select((state) => state.selectedDatasets),
     );
@@ -183,14 +180,16 @@ class PreprocessToolbar extends ConsumerWidget {
       preprocessProvider.select((state) => state.lastSelectedIndex),
     );
 
-    return Flex(
-      direction: isPortrait ? Axis.horizontal : Axis.vertical,
+    return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (isJumpSelectMode)
-          Text(
-            'Select end index (start index: ${lastSelectedIndex! + 1}))',
-            style: Theme.of(context).textTheme.labelMedium,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              'Select end index (start index: ${lastSelectedIndex! + 1}))',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ),
         const Spacer(),
         if (selectedDatasets.isNotEmpty && !isJumpSelectMode) ...[
