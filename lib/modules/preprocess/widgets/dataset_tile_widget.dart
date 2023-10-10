@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sholat_ml/constants/asset_images.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class DatasetTileWidget extends StatelessWidget {
@@ -29,13 +32,13 @@ class DatasetTileWidget extends StatelessWidget {
 
     var color = Colors.transparent;
     if (highlighted) {
-      color = colorScheme.outline.withOpacity(0.3);
+      color = colorScheme.outline.withOpacity(0.1);
     }
     if (selected) {
       color = Color.alphaBlend(color, colorScheme.primaryContainer);
     }
 
-    Icon? icon;
+    Widget? icon;
     if (tagged && selected) {
       icon = Icon(
         Symbols.warning_rounded,
@@ -43,10 +46,26 @@ class DatasetTileWidget extends StatelessWidget {
         weight: 300,
       );
     } else if (tagged) {
-      icon = Icon(
-        Symbols.label_rounded,
-        color: colorScheme.onSurface,
-        weight: 300,
+      final category = SholatMovementCategory.fromCode(dataset.labelCategory!);
+      final iconPath = switch (category) {
+        SholatMovementCategory.persiapan => AssetImages.persiapan,
+        SholatMovementCategory.takbir => AssetImages.takbir,
+        SholatMovementCategory.berdiri => AssetImages.berdiri,
+        SholatMovementCategory.ruku => AssetImages.ruku,
+        SholatMovementCategory.iktidal => AssetImages.iktidal,
+        SholatMovementCategory.qunut => AssetImages.qunut,
+        SholatMovementCategory.sujud => AssetImages.sujud,
+        SholatMovementCategory.duduk => AssetImages.duduk,
+        SholatMovementCategory.lainnya => AssetImages.persiapan,
+      };
+      icon = SvgPicture.asset(
+        iconPath,
+        width: 24,
+        height: 24,
+        colorFilter: ColorFilter.mode(
+          colorScheme.primary,
+          BlendMode.srcIn,
+        ),
       );
     }
 

@@ -39,6 +39,14 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       markerVisibility: TrackballVisibilityMode.visible,
     ),
   );
+  final _zoomPanBehavior = ZoomPanBehavior(
+    enablePanning: true,
+    enablePinching: true,
+    zoomMode: ZoomMode.x,
+  );
+  final _primaryXAxis = NumericAxis(
+    visibleMaximum: 400,
+  );
 
   Timer? _timer;
 
@@ -63,9 +71,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       }
     }
 
-    _notifier.onCurrentHighlightedIndexChanged(index: index);
-    _scrollToDatasetTile(index);
+    _notifier.onCurrentHighlightedIndexChanged(index);
     _trackballBehavior.showByIndex(index);
+    if (ref.read(preprocessProvider).isFollowHighlightedMode) {
+      _scrollToDatasetTile(index);
+    }
   }
 
   void _scrollToDatasetTile(int index) {
@@ -198,7 +208,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Expanded(
-                    flex: 3,
                     child: AspectRatio(
                       aspectRatio: _videoPlayerController.value.aspectRatio,
                       child: VideoPlayer(_videoPlayerController),
@@ -209,9 +218,10 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     color: colorScheme.outline,
                   ),
                   Expanded(
-                    flex: 2,
                     child: AccelerometerChart(
                       datasets: datasets,
+                      primaryXAxis: _primaryXAxis,
+                      zoomPanBehavior: _zoomPanBehavior,
                       trackballBehavior: _trackballBehavior,
                       onTrackballChanged: (trackballArgs) {
                         if (_videoPlayerController.value.isPlaying) return;
@@ -223,10 +233,12 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                         _timer = Timer(const Duration(milliseconds: 300), () {
                           _videoPlayerController
                               .seekTo(datasets[index].timestamp!);
-                          _scrollToDatasetTile(index);
-                          _notifier.onCurrentHighlightedIndexChanged(
-                            index: index,
-                          );
+                          _notifier.onCurrentHighlightedIndexChanged(index);
+                          if (ref
+                              .read(preprocessProvider)
+                              .isFollowHighlightedMode) {
+                            _scrollToDatasetTile(index);
+                          }
                         });
                       },
                     ),
@@ -251,6 +263,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                 children: [
                   PreprocessToolbar(
                     videoPlayerController: _videoPlayerController,
+                    onFollowHighlighted: () {
+                      _scrollToDatasetTile(
+                        ref.read(preprocessProvider).currentHighlightedIndex,
+                      );
+                    },
                   ),
                   Divider(
                     height: 0,

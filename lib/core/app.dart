@@ -43,6 +43,7 @@ class _AppState extends State<App> {
         ),
       ),
       child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: colorScheme,

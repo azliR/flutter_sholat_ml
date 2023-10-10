@@ -1,4 +1,5 @@
 enum SholatMovementCategory {
+  persiapan,
   takbir,
   berdiri,
   ruku,
@@ -8,8 +9,35 @@ enum SholatMovementCategory {
   duduk,
   lainnya;
 
+  factory SholatMovementCategory.fromCode(String code) {
+    switch (code) {
+      case 'persiapan':
+        return SholatMovementCategory.persiapan;
+      case 'takbir':
+        return SholatMovementCategory.takbir;
+      case 'berdiri':
+        return SholatMovementCategory.berdiri;
+      case 'ruku':
+        return SholatMovementCategory.ruku;
+      case 'iktidal':
+        return SholatMovementCategory.iktidal;
+      case 'qunut':
+        return SholatMovementCategory.qunut;
+      case 'sujud':
+        return SholatMovementCategory.sujud;
+      case 'duduk':
+        return SholatMovementCategory.duduk;
+      case 'lainnya':
+        return SholatMovementCategory.lainnya;
+      default:
+        throw Exception('Unknown SholatMovementCategory code: $code');
+    }
+  }
+
   String get name {
     switch (this) {
+      case SholatMovementCategory.persiapan:
+        return 'Persiapan';
       case SholatMovementCategory.takbir:
         return 'Takbir';
       case SholatMovementCategory.berdiri:
@@ -31,6 +59,8 @@ enum SholatMovementCategory {
 
   String get code {
     switch (this) {
+      case SholatMovementCategory.persiapan:
+        return 'persiapan';
       case SholatMovementCategory.takbir:
         return 'takbir';
       case SholatMovementCategory.berdiri:
@@ -47,6 +77,24 @@ enum SholatMovementCategory {
         return 'duduk';
       case SholatMovementCategory.lainnya:
         return 'lainnya';
+    }
+  }
+}
+
+enum Persiapan {
+  persiapan;
+
+  String get name {
+    switch (this) {
+      case Persiapan.persiapan:
+        return 'Persiapan';
+    }
+  }
+
+  String get code {
+    switch (this) {
+      case Persiapan.persiapan:
+        return 'persiapan';
     }
   }
 }
@@ -201,7 +249,8 @@ enum Sujud {
 
 enum Duduk {
   dudukAntaraDuaSujud,
-  dudukTasyahudAwal;
+  dudukTasyahudAwal,
+  dudukTasyahudAkhir;
 
   String get name {
     switch (this) {
@@ -209,6 +258,8 @@ enum Duduk {
         return 'Duduk antara dua Sujud';
       case Duduk.dudukTasyahudAwal:
         return 'Duduk Tasyahud Awal';
+      case Duduk.dudukTasyahudAkhir:
+        return 'Duduk Tasyahud Akhir';
     }
   }
 
@@ -217,7 +268,9 @@ enum Duduk {
       case Duduk.dudukAntaraDuaSujud:
         return 'duduk_antara_dua_sujud';
       case Duduk.dudukTasyahudAwal:
-        return 'duduk';
+        return 'dudu_tasyahud_awal';
+      case Duduk.dudukTasyahudAkhir:
+        return 'duduk_tasyahud_akhir';
     }
   }
 }

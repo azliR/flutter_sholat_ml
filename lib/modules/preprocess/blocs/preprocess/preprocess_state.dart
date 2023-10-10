@@ -8,6 +8,7 @@ class PreprocessState extends Equatable {
     required this.lastSelectedIndex,
     required this.currentHighlightedIndex,
     required this.isJumpSelectMode,
+    required this.isFollowHighlightedMode,
     required this.isPlaying,
     required this.datasets,
     required this.selectedDatasets,
@@ -20,6 +21,7 @@ class PreprocessState extends Equatable {
         lastSelectedIndex: 0,
         currentHighlightedIndex: 0,
         isJumpSelectMode: false,
+        isFollowHighlightedMode: false,
         isPlaying: false,
         datasets: [],
         selectedDatasets: [],
@@ -31,6 +33,7 @@ class PreprocessState extends Equatable {
   final int currentHighlightedIndex;
   final int? lastSelectedIndex;
   final bool isJumpSelectMode;
+  final bool isFollowHighlightedMode;
   final bool isPlaying;
   final List<Dataset> datasets;
   final List<Dataset> selectedDatasets;
@@ -42,6 +45,7 @@ class PreprocessState extends Equatable {
     int? currentHighlightedIndex,
     ValueGetter<int?>? lastSelectedIndex,
     bool? isJumpSelectMode,
+    bool? isFollowHighlightedMode,
     bool? isPlaying,
     List<Dataset>? datasets,
     List<Dataset>? selectedDatasets,
@@ -55,6 +59,8 @@ class PreprocessState extends Equatable {
           currentHighlightedIndex ?? this.currentHighlightedIndex,
       lastSelectedIndex: lastSelectedIndex?.call() ?? this.lastSelectedIndex,
       isJumpSelectMode: isJumpSelectMode ?? this.isJumpSelectMode,
+      isFollowHighlightedMode:
+          isFollowHighlightedMode ?? this.isFollowHighlightedMode,
       isPlaying: isPlaying ?? this.isPlaying,
       datasets: datasets ?? this.datasets,
       selectedDatasets: selectedDatasets ?? this.selectedDatasets,
@@ -69,6 +75,7 @@ class PreprocessState extends Equatable {
         lastSelectedIndex,
         currentHighlightedIndex,
         isJumpSelectMode,
+        isFollowHighlightedMode,
         isPlaying,
         datasets,
         selectedDatasets,

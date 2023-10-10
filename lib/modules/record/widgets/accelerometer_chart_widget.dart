@@ -43,45 +43,51 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
       }
     });
 
-    return SfCartesianChart(
-      legend: const Legend(
-        isVisible: true,
-        textStyle: TextStyle(
-          color: Colors.grey,
+    return ColoredBox(
+      color: Colors.black26,
+      child: SfCartesianChart(
+        legend: const Legend(
+          isVisible: true,
+          textStyle: TextStyle(
+            color: Colors.grey,
+          ),
         ),
+        primaryXAxis: NumericAxis(
+          majorGridLines: const MajorGridLines(width: 0),
+        ),
+        series: [
+          SplineSeries(
+            width: 1.4,
+            animationDelay: 0,
+            animationDuration: 0,
+            dataSource: xDatasets,
+            xValueMapper: (data, index) => indexes[index],
+            yValueMapper: (data, index) => data,
+            color: Colors.red,
+            legendItemText: 'x',
+          ),
+          SplineSeries(
+            width: 1.4,
+            animationDelay: 0,
+            animationDuration: 0,
+            dataSource: yDatasets,
+            xValueMapper: (data, index) => indexes[index],
+            yValueMapper: (data, index) => data,
+            color: Colors.green,
+            legendItemText: 'y',
+          ),
+          SplineSeries(
+            width: 1.4,
+            animationDelay: 0,
+            animationDuration: 0,
+            dataSource: zDatasets,
+            xValueMapper: (data, index) => indexes[index],
+            yValueMapper: (data, index) => data,
+            color: Colors.blue,
+            legendItemText: 'z',
+          ),
+        ],
       ),
-      series: [
-        SplineSeries(
-          width: 1.4,
-          animationDelay: 0,
-          animationDuration: 0,
-          dataSource: xDatasets,
-          xValueMapper: (data, index) => indexes[index],
-          yValueMapper: (data, index) => data,
-          color: Colors.red,
-          legendItemText: 'x',
-        ),
-        SplineSeries(
-          width: 1.4,
-          animationDelay: 0,
-          animationDuration: 0,
-          dataSource: yDatasets,
-          xValueMapper: (data, index) => indexes[index],
-          yValueMapper: (data, index) => data,
-          color: Colors.green,
-          legendItemText: 'y',
-        ),
-        SplineSeries(
-          width: 1.4,
-          animationDelay: 0,
-          animationDuration: 0,
-          dataSource: zDatasets,
-          xValueMapper: (data, index) => indexes[index],
-          yValueMapper: (data, index) => data,
-          color: Colors.blue,
-          legendItemText: 'z',
-        ),
-      ],
     );
   }
 }

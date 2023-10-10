@@ -50,6 +50,9 @@ class _HeartRateChartState extends ConsumerState<HeartRateChart> {
           ),
           position: LegendPosition.bottom,
         ),
+        primaryXAxis: NumericAxis(
+          majorGridLines: const MajorGridLines(width: 0),
+        ),
         series: [
           SplineSeries(
             width: 1.4,

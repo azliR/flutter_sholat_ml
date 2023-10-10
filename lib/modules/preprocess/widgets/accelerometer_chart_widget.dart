@@ -5,13 +5,17 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 class AccelerometerChart extends StatelessWidget {
   const AccelerometerChart({
     required this.datasets,
+    required this.primaryXAxis,
     required this.onTrackballChanged,
     required this.trackballBehavior,
+    required this.zoomPanBehavior,
     super.key,
   });
 
   final List<Dataset> datasets;
+  final ChartAxis primaryXAxis;
   final TrackballBehavior trackballBehavior;
+  final ZoomPanBehavior zoomPanBehavior;
   final void Function(TrackballArgs trackballArgs) onTrackballChanged;
 
   @override
@@ -28,21 +32,19 @@ class AccelerometerChart extends StatelessWidget {
     }
 
     return SfCartesianChart(
-      legend: const Legend(isVisible: true),
+      legend: const Legend(
+        isVisible: true,
+        position: LegendPosition.top,
+        height: '10%',
+      ),
       primaryXAxis: NumericAxis(
         visibleMaximum: 400,
+        decimalPlaces: 0,
+        majorGridLines: const MajorGridLines(width: 0),
       ),
-      zoomPanBehavior: ZoomPanBehavior(
-        enablePanning: true,
-        enablePinching: true,
-        zoomMode: ZoomMode.x,
-        enableSelectionZooming: true,
-      ),
-      onSelectionChanged: (selectionArgs) {
-        print(selectionArgs);
-      },
-      // trackballBehavior: trackballBehavior,
-      // onTrackballPositionChanging: onTrackballChanged,
+      zoomPanBehavior: zoomPanBehavior,
+      trackballBehavior: trackballBehavior,
+      onTrackballPositionChanging: onTrackballChanged,
       series: [
         SplineSeries(
           width: 1.4,

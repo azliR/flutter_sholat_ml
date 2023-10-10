@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,21 +32,22 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(isPlaying: isPlaying);
   }
 
-  void onCurrentHighlightedIndexChanged({required int index}) {
+  void onCurrentHighlightedIndexChanged(int index) {
     state = state.copyWith(currentHighlightedIndex: index);
   }
 
-  void onSelectedDatasetChanged(Dataset dataset) {
+  void onSelectedDatasetChanged(int index) {
+    final datasets = state.datasets;
     final selectedDatasets = state.selectedDatasets;
-    final index = selectedDatasets.indexOf(dataset);
-    if (index != -1) {
+    final dataset = datasets[index];
+    if (selectedDatasets.contains(dataset)) {
       state = state.copyWith(
         lastSelectedIndex: () => index,
         selectedDatasets: [...selectedDatasets]..remove(dataset),
       );
     } else {
       state = state.copyWith(
-        lastSelectedIndex: () => null,
+        lastSelectedIndex: () => index,
         selectedDatasets: [...selectedDatasets, dataset],
       );
     }
@@ -58,6 +61,10 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(isJumpSelectMode: enable);
   }
 
+  void onFollowHighlightedModeChanged({required bool enable}) {
+    state = state.copyWith(isFollowHighlightedMode: enable);
+  }
+
   Future<void> jumpSelect(
     int endIndex, {
     required Future<bool> Function() onShowWarning,
@@ -66,8 +73,8 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     if (lastSelectedIndex == null) return;
 
     final selectedDatasets = state.datasets.sublist(
-      lastSelectedIndex,
-      endIndex + 1,
+      min(lastSelectedIndex, endIndex),
+      max(lastSelectedIndex, endIndex + 1),
     );
 
     final showWarning = selectedDatasets.any((dataset) => dataset.isLabeled);
@@ -79,20 +86,21 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(
       selectedDatasets:
           {...state.selectedDatasets, ...selectedDatasets}.toList(),
-      lastSelectedIndex: () => null,
+      lastSelectedIndex: () => endIndex,
       isJumpSelectMode: false,
     );
   }
 
-  void onTaggedDatasets(
+  String onTaggedDatasets(
     String labelCategory,
     String label,
   ) {
+    final movementSetId = const Uuid().v1();
     state = state.copyWith(
       datasets: state.datasets.map((dataset) {
         if (state.selectedDatasets.contains(dataset)) {
           return dataset.copyWith(
-            movementSetId: const Uuid().v1(),
+            movementSetId: movementSetId,
             labelCategory: labelCategory,
             label: label,
           );
@@ -101,6 +109,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
       }).toList(),
     );
     clearSelectedDatasets();
+    return movementSetId;
   }
 
   Future<bool> readDatasets() async {

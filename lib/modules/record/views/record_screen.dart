@@ -110,7 +110,6 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
                 padding: EdgeInsets.all(8),
                 child: Icon(
                   Symbols.lock_open_rounded,
-                  size: 28,
                   color: Colors.white,
                 ),
               ),

@@ -29,12 +29,6 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
 
   var _showWarning = true;
 
-  int? lastSelectedIndex;
-
-  void _onDatasetTilePressed(int index, Dataset dataset) {
-    widget.trackballBehavior.showByIndex(index);
-  }
-
   Future<bool?> _showWarningDialog() {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -102,10 +96,10 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
   @override
   Widget build(BuildContext context) {
     return Scrollbar(
-      child: ListView.separated(
+      child: ListView.builder(
         controller: widget.scrollController,
         cacheExtent: 32,
-        separatorBuilder: (_, __) => const Divider(height: 0),
+        itemExtent: 32,
         itemCount: widget.datasets.length,
         itemBuilder: (context, index) {
           return Consumer(
@@ -117,9 +111,6 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
               final selectedDatasets = ref.watch(
                 preprocessProvider.select((state) => state.selectedDatasets),
               );
-              final isJumpSelectMode = ref.watch(
-                preprocessProvider.select((value) => value.isJumpSelectMode),
-              );
 
               final dataset = widget.datasets[index];
               final selected = selectedDatasets.contains(dataset);
@@ -130,9 +121,11 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                 highlighted: index == currentHighlightedIndex,
                 selected: selected,
                 onTap: () async {
-                  if (selectedDatasets.isEmpty) {
-                    _onDatasetTilePressed(index, dataset);
-                  } else {
+                  if (selectedDatasets.isNotEmpty) {
+                    final isJumpSelectMode = ref.read(
+                      preprocessProvider
+                          .select((value) => value.isJumpSelectMode),
+                    );
                     if (isJumpSelectMode) {
                       await _notifier.jumpSelect(
                         index,
@@ -150,17 +143,21 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                         final result = await _showWarningDialog();
                         if (result == null || !result) return;
                       }
-                      _notifier.onSelectedDatasetChanged(dataset);
-                      lastSelectedIndex = index;
+                      _notifier.onSelectedDatasetChanged(index);
                     }
                   }
+                  _notifier.onCurrentHighlightedIndexChanged(index);
+                  widget.trackballBehavior.showByIndex(index);
                 },
                 onLongPress: () async {
                   if (dataset.isLabeled && _showWarning) {
                     final result = await _showWarningDialog();
                     if (result == null || !result) return;
                   }
-                  _notifier.onSelectedDatasetChanged(dataset);
+                  _notifier
+                    ..onSelectedDatasetChanged(index)
+                    ..onCurrentHighlightedIndexChanged(index);
+                  widget.trackballBehavior.showByIndex(index);
                 },
               );
             },
