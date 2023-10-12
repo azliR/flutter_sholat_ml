@@ -5,9 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
 class PreprocessRepository {
@@ -17,22 +18,23 @@ class PreprocessRepository {
   Future<(Failure?, List<Dataset>?)> readDatasets(String path) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
-      const datasetInfoPath = Paths.datasetInfo;
+      const datasetPropPath = Paths.datasetProp;
 
       final datasetStrList = await File('$path/$datasetCsvPath').readAsLines();
-      final datasetInfoFile = File('$path/$datasetInfoPath');
+      final datasetPropFile = File('$path/$datasetPropPath');
 
-      final DatasetInfo datasetInfo;
-      if (!datasetInfoFile.existsSync()) {
-        datasetInfo = DatasetInfo(
+      final DatasetProp datasetProp;
+      if (!datasetPropFile.existsSync()) {
+        datasetProp = DatasetProp(
           dirName: path.split('/').last,
           datasetVersion: DatasetVersion.v1,
+          datasetPropVersion: DatasetPropVersion.values.last,
         );
-        datasetInfoFile.writeAsStringSync(jsonEncode(datasetInfo.toJson()));
+        datasetPropFile.writeAsStringSync(jsonEncode(datasetProp.toJson()));
       } else {
-        final datasetInfoStr = await datasetInfoFile.readAsString();
-        datasetInfo = DatasetInfo.fromJson(
-          jsonDecode(datasetInfoStr) as Map<String, dynamic>,
+        final datasetPropStr = await datasetPropFile.readAsString();
+        datasetProp = DatasetProp.fromJson(
+          jsonDecode(datasetPropStr) as Map<String, dynamic>,
         );
       }
 
@@ -40,7 +42,7 @@ class PreprocessRepository {
           .map(
             (datasetStr) => Dataset.fromCsv(
               datasetStr,
-              version: datasetInfo.datasetVersion,
+              version: datasetProp.datasetVersion,
             ),
           )
           .toList();
@@ -53,16 +55,16 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, DatasetInfo?)> readDatasetInfo(String path) async {
+  Future<(Failure?, DatasetProp?)> readDatasetProp(String path) async {
     try {
-      const datasetInfoPath = Paths.datasetInfo;
+      const datasetPropPath = Paths.datasetProp;
 
-      final datasetInfoFile = File('$path/$datasetInfoPath');
-      if (datasetInfoFile.existsSync()) {
-        final datasetInfoJson = jsonDecode(await datasetInfoFile.readAsString())
+      final datasetPropFile = File('$path/$datasetPropPath');
+      if (datasetPropFile.existsSync()) {
+        final datasetPropJson = jsonDecode(await datasetPropFile.readAsString())
             as Map<String, dynamic>;
-        final datasetInfo = DatasetInfo.fromJson(datasetInfoJson);
-        return (null, datasetInfo);
+        final datasetProp = DatasetProp.fromJson(datasetPropJson);
+        return (null, datasetProp);
       }
       return (null, null);
     } catch (e, stackTrace) {
@@ -72,7 +74,7 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, String?, DatasetInfo?)> saveDataset(
+  Future<(Failure?, String?, DatasetProp?)> saveDataset(
     String path,
     List<Dataset> datasets, {
     bool isUpdating = false,
@@ -84,27 +86,30 @@ class PreprocessRepository {
 
       const datasetCsvPath = Paths.datasetCsv;
       const datasetVideoPath = Paths.datasetVideo;
-      const datasetInfoPath = Paths.datasetInfo;
+      const datasetThumbnailPath = Paths.datasetThumbnail;
+      const datasetPropPath = Paths.datasetProp;
 
       final csvFile = File('$path/$datasetCsvPath');
       await csvFile.writeAsString(datasetStr);
 
-      final (failure, datasetUploadInfo) = await uploadDataset(
+      final (failure, datasetPropInfo) = await uploadDataset(
         dirName: path.split('/').last,
         csvFile: csvFile,
         videoFile: isUpdating ? null : File('$path/$datasetVideoPath'),
+        thumbnailFile: isUpdating ? null : File('$path/$datasetThumbnailPath'),
       );
       if (failure != null) return (failure, null, null);
 
-      final datasetUploadFile = File('$path/$datasetInfoPath');
-      await datasetUploadFile
-          .writeAsString(jsonEncode(datasetUploadInfo!.toJson()));
+      final datasetPropFile = File('$path/$datasetPropPath');
+      await datasetPropFile
+          .writeAsString(jsonEncode(datasetPropInfo!.toJson()));
 
-      const needReviewDir = Directories.needReviewDir;
-      const reviewedDir = Directories.reviewedDir;
-
-      final fullNewDir =
-          Directory(path.replaceFirst(needReviewDir, reviewedDir));
+      final fullNewDir = Directory(
+        path.replaceFirst(
+          Directories.needReviewDir,
+          Directories.reviewedDir,
+        ),
+      );
 
       if (!fullNewDir.existsSync()) {
         await fullNewDir.create(recursive: true);
@@ -112,7 +117,7 @@ class PreprocessRepository {
 
       await Directory(path).rename(fullNewDir.path);
 
-      return (null, fullNewDir.path, datasetUploadInfo);
+      return (null, fullNewDir.path, datasetPropInfo);
     } catch (e, stackTrace) {
       const message = 'Failed saving dataset';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -120,33 +125,58 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, DatasetInfo?)> uploadDataset({
+  Future<(Failure?, DatasetProp?)> uploadDataset({
     required String dirName,
     required File csvFile,
     File? videoFile,
+    File? thumbnailFile,
   }) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
       const datasetVideoPath = Paths.datasetVideo;
+      const datasetThumbnail = Paths.datasetThumbnail;
 
       final ref = _storage.ref().child('datasets').child(dirName);
-      await ref.child(datasetCsvPath).putFile(csvFile);
+      final datasetCsvRef = ref.child(datasetCsvPath);
+      final datasetVideoRef = ref.child(datasetVideoPath);
+      final datasetThumbnailRef = ref.child(datasetThumbnail);
+
+      await datasetCsvRef.putFile(
+        csvFile,
+        SettableMetadata(
+          contentType: 'text/csv',
+          customMetadata: <String, String>{
+            'version': DatasetVersion.values.last.code.toString(),
+          },
+        ),
+      );
       if (videoFile != null) {
-        await ref.child(datasetVideoPath).putFile(videoFile);
+        await datasetVideoRef.putFile(
+          videoFile,
+          SettableMetadata(contentType: 'video/mp4'),
+        );
+      }
+      if (thumbnailFile != null) {
+        await datasetThumbnailRef.putFile(
+          thumbnailFile,
+          SettableMetadata(contentType: 'image/webp'),
+        );
       }
 
-      final datasetUploadInfo = DatasetInfo(
+      final datasetPropInfo = DatasetProp(
         dirName: dirName,
-        csvUrl: await ref.child(datasetCsvPath).getDownloadURL(),
-        videoUrl: await ref.child(datasetVideoPath).getDownloadURL(),
+        csvUrl: await datasetCsvRef.getDownloadURL(),
+        videoUrl: await datasetVideoRef.getDownloadURL(),
+        thumbnailUrl: await datasetThumbnailRef.getDownloadURL(),
         datasetVersion: DatasetVersion.values.last,
+        datasetPropVersion: DatasetPropVersion.values.last,
       );
 
       final (failure, _) =
-          await saveDatasetToDatabase(dirName, datasetUploadInfo);
+          await saveDatasetToDatabase(dirName, datasetPropInfo);
       if (failure != null) throw Exception(failure.message);
 
-      return (null, datasetUploadInfo);
+      return (null, datasetPropInfo);
     } catch (e, stackTrace) {
       final (deleteFailure, _) = await deleteDatasetFromCloud(dirName);
       if (deleteFailure != null) return (deleteFailure, null);
@@ -159,11 +189,11 @@ class PreprocessRepository {
 
   Future<(Failure?, void)> saveDatasetToDatabase(
     String dirName,
-    DatasetInfo datasetInfo,
+    DatasetProp datasetProp,
   ) async {
     try {
       final ref = _firestore.collection('datasets').doc(dirName);
-      await ref.set(datasetInfo.toFirestoreJson());
+      await ref.set(datasetProp.toFirestoreJson());
 
       return (null, null);
     } catch (e, stackTrace) {
@@ -174,12 +204,12 @@ class PreprocessRepository {
   }
 
   Future<(Failure?, void)> deleteDatasetFromCloud(String dirName) async {
-    DatasetInfo? datasetInfo;
+    DatasetProp? datasetProp;
     try {
       final dbRef = _firestore.collection('datasets').doc(dirName);
       final data = (await dbRef.get()).data();
       if (data != null) {
-        datasetInfo = DatasetInfo.fromFirestoreJson(data, dirName);
+        datasetProp = DatasetProp.fromFirestoreJson(data, dirName);
       }
 
       await dbRef.delete();
@@ -191,8 +221,8 @@ class PreprocessRepository {
 
       return (null, null);
     } catch (e, stackTrace) {
-      if (datasetInfo != null) {
-        final (failure, _) = await saveDatasetToDatabase(dirName, datasetInfo);
+      if (datasetProp != null) {
+        final (failure, _) = await saveDatasetToDatabase(dirName, datasetProp);
         if (failure != null) return (failure, null);
       }
       const message = 'Failed deleting dataset from cloud';

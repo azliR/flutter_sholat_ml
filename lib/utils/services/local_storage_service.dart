@@ -7,7 +7,6 @@ class LocalStorageService {
 
   static const String kBox = 'local_storage_box';
   static const String kSavedDevices = 'saved_devices';
-  static const String kDatasetUploadInfos = 'dataset_upload_infos';
 
   static final _box = Hive.box<List<dynamic>>(name: kBox);
 

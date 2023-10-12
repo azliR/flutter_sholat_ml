@@ -4,7 +4,7 @@ part of 'preprocess_notifier.dart';
 class PreprocessState extends Equatable {
   const PreprocessState({
     required this.path,
-    required this.datasetInfo,
+    required this.datasetProp,
     required this.lastSelectedIndex,
     required this.currentHighlightedIndex,
     required this.isJumpSelectMode,
@@ -17,7 +17,7 @@ class PreprocessState extends Equatable {
 
   factory PreprocessState.initial() => const PreprocessState(
         path: '',
-        datasetInfo: null,
+        datasetProp: null,
         lastSelectedIndex: 0,
         currentHighlightedIndex: 0,
         isJumpSelectMode: false,
@@ -29,7 +29,7 @@ class PreprocessState extends Equatable {
       );
 
   final String path;
-  final DatasetInfo? datasetInfo;
+  final DatasetProp? datasetProp;
   final int currentHighlightedIndex;
   final int? lastSelectedIndex;
   final bool isJumpSelectMode;
@@ -41,7 +41,7 @@ class PreprocessState extends Equatable {
 
   PreprocessState copyWith({
     String? path,
-    DatasetInfo? datasetInfo,
+    DatasetProp? datasetProp,
     int? currentHighlightedIndex,
     ValueGetter<int?>? lastSelectedIndex,
     bool? isJumpSelectMode,
@@ -54,7 +54,7 @@ class PreprocessState extends Equatable {
   }) {
     return PreprocessState(
       path: path ?? this.path,
-      datasetInfo: datasetInfo ?? this.datasetInfo,
+      datasetProp: datasetProp ?? this.datasetProp,
       currentHighlightedIndex:
           currentHighlightedIndex ?? this.currentHighlightedIndex,
       lastSelectedIndex: lastSelectedIndex?.call() ?? this.lastSelectedIndex,
@@ -71,7 +71,7 @@ class PreprocessState extends Equatable {
   @override
   List<Object?> get props => [
         path,
-        datasetInfo,
+        datasetProp,
         lastSelectedIndex,
         currentHighlightedIndex,
         isJumpSelectMode,
@@ -91,8 +91,8 @@ final class PreprocessInitial extends PreprocessPresentationState {
   const PreprocessInitial();
 }
 
-final class GetDatasetInfoFailureState extends PreprocessPresentationState {
-  const GetDatasetInfoFailureState(this.failure);
+final class GetDatasetPropFailureState extends PreprocessPresentationState {
+  const GetDatasetPropFailureState(this.failure);
 
   final Failure failure;
 }

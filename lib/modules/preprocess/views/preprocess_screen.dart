@@ -128,7 +128,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     ref.listen(preprocessProvider.select((value) => value.presentationState),
         (previous, next) {
       switch (next) {
-        case GetDatasetInfoFailureState():
+        case GetDatasetPropFailureState():
           showErrorSnackbar(context, 'Failed getting dataset info');
         case ReadDatasetsFailureState():
           showErrorSnackbar(context, 'Failed reading datasets');
@@ -144,8 +144,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           break;
       }
     });
-    final datasetInfo =
-        ref.watch(preprocessProvider.select((state) => state.datasetInfo));
+    final datasetProp =
+        ref.watch(preprocessProvider.select((state) => state.datasetProp));
     final datasets =
         ref.watch(preprocessProvider.select((state) => state.datasets));
 
@@ -189,11 +189,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: FilledButton.tonalIcon(
                 onPressed: () => _notifier.onSaveDataset(),
-                icon: datasetInfo?.isSubmitted ?? false
+                icon: datasetProp?.isSubmitted ?? false
                     ? const Icon(Symbols.sync_rounded)
                     : const Icon(Symbols.backup_rounded),
                 label: Text(
-                  (datasetInfo?.isSubmitted ?? false) ? 'Update' : 'Save',
+                  (datasetProp?.isSubmitted ?? false) ? 'Update' : 'Save',
                 ),
               ),
             ),

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset_thumbnail/dataset_thumbnail.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -48,7 +48,7 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
         ),
       );
       if (thumbnail == null || !File(thumbnail.thumbnailPath!).existsSync()) {
-        notifier.getDatasetInfoAndThumbnail(widget.datasetPath);
+        notifier.getDatasetPropAndThumbnail(widget.datasetPath);
       }
     });
     super.initState();
@@ -70,9 +70,9 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
         (value) => value.selectedDatasetPaths.contains(widget.datasetPath),
       ),
     );
-    final datasetInfo = ref.watch(
+    final datasetProp = ref.watch(
       datasetsProvider.select(
-        (value) => value.datasetInfos.cast<DatasetInfo?>().firstWhere(
+        (value) => value.datasetProps.cast<DatasetProp?>().firstWhere(
               (info) => info?.dirName == name,
               orElse: () => null,
             ),
@@ -167,7 +167,7 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
               ],
             ),
             const SizedBox(height: 6),
-            if (datasetInfo != null)
+            if (datasetProp != null)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
@@ -181,7 +181,7 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Dataset ${datasetInfo.datasetVersion.name}${DatasetVersion.values.last == datasetInfo.datasetVersion ? ' (latest)' : ''}',
+                        'Dataset ${datasetProp.datasetVersion.name}${DatasetVersion.values.last == datasetProp.datasetVersion ? ' (latest)' : ''}',
                         style: textTheme.bodySmall,
                       ),
                     ),

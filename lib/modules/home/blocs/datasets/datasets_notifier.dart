@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset_thumbnail/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
@@ -54,16 +54,16 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
   }
 
-  Future<void> getDatasetInfoAndThumbnail(String path) async {
-    final (_, datasetInfo) = await _homeRepository.getDatasetInfo(path);
+  Future<void> getDatasetPropAndThumbnail(String path) async {
+    final (_, datasetProp) = await _homeRepository.getDatasetProp(path);
 
     final (thumbnailFailure, thumbnailPath) =
         await _homeRepository.getDatasetThumbnail(path);
 
     if (thumbnailFailure == null) {
       state = state.copyWith(
-        datasetInfos:
-            datasetInfo != null ? [...state.datasetInfos, datasetInfo] : null,
+        datasetProps:
+            datasetProp != null ? [...state.datasetProps, datasetProp] : null,
         datasetThumbnails: [
           ...state.datasetThumbnails,
           DatasetThumbnail(
@@ -75,8 +75,8 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
     } else {
       state = state.copyWith(
-        datasetInfos:
-            datasetInfo != null ? [...state.datasetInfos, datasetInfo] : null,
+        datasetProps:
+            datasetProp != null ? [...state.datasetProps, datasetProp] : null,
         datasetThumbnails: [
           ...state.datasetThumbnails,
           DatasetThumbnail(

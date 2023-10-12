@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_sholat_ml/constants/paths.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
@@ -36,17 +36,17 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, DatasetInfo?)> getDatasetInfo(String path) async {
+  Future<(Failure?, DatasetProp?)> getDatasetProp(String path) async {
     try {
-      final datasetInfoFile = File('$path/${Paths.datasetInfo}');
-      if (!datasetInfoFile.existsSync()) {
+      final datasetPropFile = File('$path/${Paths.datasetProp}');
+      if (!datasetPropFile.existsSync()) {
         return (null, null);
       }
-      final datasetInfoStr = await datasetInfoFile.readAsString();
-      final datasetInfoJson = DatasetInfo.fromJson(
-        jsonDecode(datasetInfoStr) as Map<String, dynamic>,
+      final datasetPropStr = await datasetPropFile.readAsString();
+      final datasetPropJson = DatasetProp.fromJson(
+        jsonDecode(datasetPropStr) as Map<String, dynamic>,
       );
-      return (null, datasetInfoJson);
+      return (null, datasetPropJson);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);

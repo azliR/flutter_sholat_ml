@@ -4,7 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:uuid/uuid.dart';
@@ -113,11 +113,11 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   }
 
   Future<bool> readDatasets() async {
-    final (datasetInfoFailure, datasetInfo) =
-        await _preprocessRepository.readDatasetInfo(state.path);
-    if (datasetInfoFailure != null) {
+    final (datasetPropFailure, datasetProp) =
+        await _preprocessRepository.readDatasetProp(state.path);
+    if (datasetPropFailure != null) {
       state = state.copyWith(
-        presentationState: ReadDatasetsFailureState(datasetInfoFailure),
+        presentationState: ReadDatasetsFailureState(datasetPropFailure),
       );
       return false;
     }
@@ -133,7 +133,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
 
     state = state.copyWith(
       datasets: datasets,
-      datasetInfo: datasetInfo,
+      datasetProp: datasetProp,
     );
     return true;
   }
@@ -141,11 +141,11 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   Future<void> onSaveDataset() async {
     state = state.copyWith(presentationState: const SaveDatasetLoadingState());
 
-    final (failure, newPath, datasetInfo) =
+    final (failure, newPath, datasetProp) =
         await _preprocessRepository.saveDataset(
       state.path,
       state.datasets,
-      isUpdating: state.datasetInfo!.isSubmitted,
+      isUpdating: state.datasetProp!.isSubmitted,
     );
 
     if (failure != null) {
@@ -157,7 +157,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
 
     state = state.copyWith(
       path: newPath,
-      datasetInfo: datasetInfo,
+      datasetProp: datasetProp,
       presentationState: const SaveDatasetSuccessState(),
     );
   }

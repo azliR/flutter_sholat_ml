@@ -9,10 +9,11 @@ import 'package:camera/camera.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -142,23 +143,24 @@ class RecordRepository {
         return previousValue + dataset.toCsv();
       });
 
-      final datasetInfo = DatasetInfo(
+      final datasetProp = DatasetProp(
         dirName: dirName,
         datasetVersion: DatasetVersion.values.last,
+        datasetPropVersion: DatasetPropVersion.values.last,
       );
 
       final videoFile = await cameraController.stopVideoRecording();
 
       const datasetCsvPath = Paths.datasetCsv;
       const datasetVideoPath = Paths.datasetVideo;
-      const datasetInfoPath = Paths.datasetInfo;
+      const datasetPropPath = Paths.datasetProp;
 
       await videoFile.saveTo('${fullSavedDir.path}/$datasetVideoPath');
 
       await File('${fullSavedDir.path}/$datasetCsvPath')
           .writeAsString(datasetStr);
-      await File('${fullSavedDir.path}/$datasetInfoPath')
-          .writeAsString(jsonEncode(datasetInfo.toJson()));
+      await File('${fullSavedDir.path}/$datasetPropPath')
+          .writeAsString(jsonEncode(datasetProp.toJson()));
 
       return (null, null);
     } catch (e, stackTrace) {
