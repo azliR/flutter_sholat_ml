@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset_thumbnail/dataset_thumbnail.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -40,13 +42,13 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
         datasetsProvider.select(
           (value) =>
               value.datasetThumbnails.cast<DatasetThumbnail?>().firstWhere(
-                    (thumbnail) => thumbnail?.datasetDir == name,
+                    (thumbnail) => thumbnail?.dirName == name,
                     orElse: () => null,
                   ),
         ),
       );
-      if (thumbnail == null) {
-        notifier.datasetThumbnail(widget.datasetPath);
+      if (thumbnail == null || !File(thumbnail.thumbnailPath!).existsSync()) {
+        notifier.getDatasetInfoAndThumbnail(widget.datasetPath);
       }
     });
     super.initState();
@@ -68,10 +70,18 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
         (value) => value.selectedDatasetPaths.contains(widget.datasetPath),
       ),
     );
+    final datasetInfo = ref.watch(
+      datasetsProvider.select(
+        (value) => value.datasetInfos.cast<DatasetInfo?>().firstWhere(
+              (info) => info?.dirName == name,
+              orElse: () => null,
+            ),
+      ),
+    );
     final thumbnail = ref.watch(
       datasetsProvider.select(
         (value) => value.datasetThumbnails.cast<DatasetThumbnail?>().firstWhere(
-              (thumbnail) => thumbnail?.datasetDir == name,
+              (thumbnail) => thumbnail?.dirName == name,
               orElse: () => null,
             ),
       ),
@@ -98,41 +108,44 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              height: 120,
-              child: Stack(
-                alignment: Alignment.topRight,
-                children: [
-                  if (thumbnail == null)
-                    const Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  else if (thumbnail.error != null)
-                    Center(
-                      child: Text(thumbnail.error!),
-                    )
-                  else
-                    Image.file(
-                      File(thumbnail.thumbnailPath!),
-                      width: double.infinity,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  if (isSelected)
-                    Container(
-                      padding: const EdgeInsets.all(1),
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary,
-                        shape: BoxShape.circle,
+              height: 100,
+              child: ColoredBox(
+                color: colorScheme.outlineVariant,
+                child: Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    if (thumbnail == null)
+                      const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    else if (thumbnail.error != null)
+                      const Center(
+                        child: Icon(Symbols.broken_image_rounded),
+                      )
+                    else
+                      Image.file(
+                        File(thumbnail.thumbnailPath!),
+                        width: double.infinity,
+                        height: 120,
+                        fit: BoxFit.cover,
                       ),
-                      child: Icon(
-                        Symbols.check_rounded,
-                        color: colorScheme.onPrimary,
-                        size: 20,
-                        weight: 600,
+                    if (isSelected)
+                      Container(
+                        padding: const EdgeInsets.all(1),
+                        margin: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Symbols.check_rounded,
+                          color: colorScheme.onPrimary,
+                          size: 20,
+                          weight: 600,
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -153,6 +166,28 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
                 _buildMenu(widget.datasetPath),
               ],
             ),
+            const SizedBox(height: 6),
+            if (datasetInfo != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Symbols.csv_rounded,
+                      size: 16,
+                      weight: 600,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Dataset ${datasetInfo.datasetVersion.name}${DatasetVersion.values.last == datasetInfo.datasetVersion ? ' (latest)' : ''}',
+                        style: textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 4),
             if (widget.isTagged)
               Padding(
@@ -165,8 +200,10 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
                       opticalSize: 20,
                       color: colorScheme.primary,
                     ),
-                    const SizedBox(width: 4),
-                    Text('Uploaded', style: textTheme.labelSmall),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text('Uploaded', style: textTheme.bodySmall),
+                    ),
                   ],
                 ),
               ),

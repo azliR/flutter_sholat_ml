@@ -116,7 +116,9 @@ void handleAuthDeviceState(
         if (onAuthWithXiaomiAccountFailureState != null) {
           onAuthWithXiaomiAccountFailureState.call(presentationState.failure);
         } else {
-          showErrorSnackbar(context, 'Failed authenticating device');
+          context.loaderOverlay.hide();
+          showErrorSnackbar(
+              context, 'Failed authenticating with xiaomi account');
         }
       case AuthWithXiaomiAccountResponseFailureState():
         if (onAuthWithXiaomiAccountResponseFailureState != null) {

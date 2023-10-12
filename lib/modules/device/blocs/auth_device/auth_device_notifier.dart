@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:convert/convert.dart';
+import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -112,7 +113,9 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
         final currentDevice = Device(
           authKey: authKey,
           deviceId: bluetoothDevice.remoteId.str,
-          deviceName: bluetoothDevice.platformName,
+          deviceName: bluetoothDevice.platformName.isNullOrBlank
+              ? 'Unknown device'
+              : bluetoothDevice.platformName,
         );
         await _deviceRepository.saveDevice(currentDevice);
 
@@ -188,6 +191,9 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
       );
       return;
     }
+    state = state.copyWith(
+      presentationState: const AuthWithXiaomiAccountSuccessState(),
+    );
   }
 
   Future<void> auth(

@@ -168,14 +168,14 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             children: [
               _DatasetsBody(
                 dir: Directories.needReviewDir,
-                datasetPaths: needReviewDatasetPaths ?? [],
+                datasetPaths: needReviewDatasetPaths,
                 refreshKey: _needReviewRefreshKey,
                 isSelectMode: isSelectMode,
                 isTagged: false,
               ),
               _DatasetsBody(
                 dir: Directories.reviewedDir,
-                datasetPaths: reviewedDatasetPaths ?? [],
+                datasetPaths: reviewedDatasetPaths,
                 refreshKey: _reviewedRefreshKey,
                 isSelectMode: isSelectMode,
                 isTagged: true,
@@ -304,17 +304,18 @@ class _DatasetsBodyState extends ConsumerState<_DatasetsBody> {
           );
         }
         return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.9,
+            childAspectRatio: widget.isTagged ? 0.87 : 0.97,
           ),
           padding:
               const EdgeInsets.fromLTRB(12, 8, 12, kBottomNavigationBarHeight),
           itemCount: widget.datasetPaths.length,
           itemBuilder: (context, index) {
             final datasetPath = widget.datasetPaths[index];
+
             return DatasetGridTile(
               datasetPath: datasetPath,
               isTagged: widget.isTagged,
@@ -323,12 +324,10 @@ class _DatasetsBodyState extends ConsumerState<_DatasetsBody> {
                   notifier.onSelectedDataset(datasetPath);
                 } else {
                   await context.router.push(PreprocessRoute(path: datasetPath));
-                  unawaited(
+                  await Future.wait([
                     notifier.loadDatasetsFromDisk(Directories.needReviewDir),
-                  );
-                  unawaited(
                     notifier.loadDatasetsFromDisk(Directories.reviewedDir),
-                  );
+                  ]);
                 }
               },
               onLongPress: () => notifier.onSelectedDataset(datasetPath),

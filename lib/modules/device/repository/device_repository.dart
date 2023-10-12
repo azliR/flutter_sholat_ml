@@ -14,7 +14,11 @@ import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
 class DeviceRepository {
-  final _dio = Dio();
+  final _dio = Dio(
+    BaseOptions(
+      contentType: Headers.jsonContentType,
+    ),
+  );
 
   Stream<List<ScanResult>> get scanResults => FlutterBluePlus.scanResults;
 
@@ -138,8 +142,10 @@ class DeviceRepository {
       body['code'] = accessToken;
       body['grant_type'] = 'request_token';
 
-      final response = await _dio.postUri<String>(
-        Uri.parse(url),
+      log(body.toString());
+
+      final response = await _dio.post(
+        url,
         data: body,
         options: Options(
           followRedirects: false,
@@ -149,14 +155,14 @@ class DeviceRepository {
       );
       final statusCode = response.statusCode;
       final data = response.data;
-      log(data ?? 'no data');
+      log(data?.toString() ?? 'no data');
 
       if ((statusCode != null && statusCode >= 400) || data == null) {
         final failure = Failure('Failed logging in with xiaomi account');
         return (failure, null);
       }
 
-      final loginResult = jsonDecode(data) as Map<String, dynamic>;
+      final loginResult = jsonDecode(data as String) as Map<String, dynamic>;
 
       if (loginResult.containsKey('error_code')) {
         final errorCode = loginResult['error_code'] as String;

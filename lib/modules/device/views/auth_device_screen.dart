@@ -148,6 +148,9 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
                     ),
                   ),
                   onPressed: () async {
+                    await _notifier.authWithXiaomiAccount(
+                        'ALSG_CLOUDSRV_7E295D13FCBFA43B2120F90342153C20');
+                    return;
                     await context.router.push(
                       AuthWithXiaomiAccountRoute(
                         uri: Uri.parse(Urls.loginXiaomi),

@@ -11,9 +11,10 @@
 ///      fonts:
 ///       - asset: fonts/CustomIcons.ttf
 ///
-/// 
+///
 ///
 library;
+
 import 'package:flutter/widgets.dart';
 
 class CustomIcons {

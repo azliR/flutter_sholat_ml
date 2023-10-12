@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:get_thumbnail_video/index.dart';
+import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 class HomeRepository {
   Future<(Failure?, List<String>?)> loadDatasetsFromDisk(String dirName) async {
@@ -33,13 +36,36 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, String?)> datasetThumbnail(String path) async {
+  Future<(Failure?, DatasetInfo?)> getDatasetInfo(String path) async {
     try {
-      final thumbnailPath = await VideoThumbnail.thumbnailFile(
+      final datasetInfoFile = File('$path/${Paths.datasetInfo}');
+      if (!datasetInfoFile.existsSync()) {
+        return (null, null);
+      }
+      final datasetInfoStr = await datasetInfoFile.readAsString();
+      final datasetInfoJson = DatasetInfo.fromJson(
+        jsonDecode(datasetInfoStr) as Map<String, dynamic>,
+      );
+      return (null, datasetInfoJson);
+    } catch (e, stackTrace) {
+      const message = 'Failed getting saved datasets';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, String?)> getDatasetThumbnail(String path) async {
+    try {
+      final thumbnailFile = File('$path/${Paths.datasetThumbnail}');
+      if (thumbnailFile.existsSync()) {
+        return (null, thumbnailFile.path);
+      }
+      await VideoThumbnail.thumbnailFile(
         video: '$path/${Paths.datasetVideo}',
+        thumbnailPath: thumbnailFile.path,
         imageFormat: ImageFormat.WEBP,
       );
-      return (null, thumbnailPath);
+      return (null, thumbnailFile.path);
     } catch (e, stackTrace) {
       const message = 'Failed getting dataset thumbnail';
       final failure = Failure(message, error: e, stackTrace: stackTrace);

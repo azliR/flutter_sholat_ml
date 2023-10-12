@@ -1,6 +1,6 @@
 name: flutter_sholat_ml
 description: A Very Good Project created by Very Good CLI.
-version: 0.6.0+1
+version: 0.7.0+1
 publish_to: none
 
 environment:
@@ -12,10 +12,12 @@ dependencies:
   camera: ^0.10.5+4
   cloud_firestore: ^4.9.2
   convert: ^3.1.1
+  dartx: ^1.2.0
   dio: ^5.3.3
   encrypt: ^5.0.2
   equatable: ^2.0.5
   file_saver: ^0.2.8
+  firebase_app_check: ^0.2.0+1
   firebase_core: ^2.16.0
   firebase_storage: ^11.2.7
   flutter:
@@ -25,6 +27,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.4.0
   flutter_svg: ^2.0.7
+  get_thumbnail_video: ^0.6.1
   hive: ^4.0.0-dev.2
   intl: ^0.18.0
   isar_flutter_libs: ^4.0.0-dev.13
@@ -38,7 +41,6 @@ dependencies:
   syncfusion_flutter_core: ^23.1.39
   uuid: ^3.0.7
   video_player: ^2.7.2
-  video_thumbnail: ^0.5.3
   wakelock: ^0.6.2
   webview_flutter: ^4.3.0
 

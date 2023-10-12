@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -92,6 +94,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               } else if (index - 1 < savedDevices.length) {
                 final deviceIndex = index - 1;
                 final device = savedDevices[deviceIndex];
+                log('device:${device.toJson()}');
+                log('current:${currentDevice?.toJson()}');
                 if (device == currentDevice) {
                   _onNavigationChanged(_tabsRouter, index);
                   Navigator.pop(context);
@@ -118,11 +122,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        device.deviceName.isEmpty
-                            ? 'Unknown device'
-                            : device.deviceName,
-                      ),
+                      Text(device.deviceName),
                       GestureDetector(
                         onLongPress: () async {
                           Navigator.pop(context);

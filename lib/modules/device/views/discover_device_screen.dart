@@ -198,12 +198,9 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(bluetoothState.toString()),
                     FilledButton(
-                      onPressed: () async {
-                        await FlutterBluePlus.turnOn();
-                      },
-                      child: const Text('Turn on'),
+                      onPressed: () => _notifier.turnOnBluetooth(),
+                      child: const Text('Turn on bluetooth'),
                     ),
                   ],
                 ),
@@ -229,7 +226,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                           (service) => service == DeviceUuids.serviceMiBand1,
                         );
                 return RoundedListTile(
-                  title: Text(name.isEmpty ? 'Unknown device' : name),
+                  title: Text(name),
                   subtitle: Text(device.remoteId.str),
                   leading: const Icon(Symbols.bluetooth),
                   trailing: isSupported ? null : const Text('Not Supported'),
@@ -255,7 +252,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
           //       final isSupported = true;
 
           //       return RoundedListTile(
-          //         title: Text(name.isEmpty ? 'Unknown device' : name),
+          //         title: Text(name),
           //         subtitle: Text(device.remoteId.str),
           //         leading: const Icon(Symbols.bluetooth),
           //         trailing: isSupported ? null : const Text('Not Supported'),

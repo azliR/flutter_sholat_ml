@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset_thumbnail/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_info/dataset_info.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
@@ -53,32 +54,39 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
   }
 
-  Future<void> datasetThumbnail(String path) async {
-    final (failure, thumbnail) = await _homeRepository.datasetThumbnail(path);
-    if (failure != null) {
+  Future<void> getDatasetInfoAndThumbnail(String path) async {
+    final (_, datasetInfo) = await _homeRepository.getDatasetInfo(path);
+
+    final (thumbnailFailure, thumbnailPath) =
+        await _homeRepository.getDatasetThumbnail(path);
+
+    if (thumbnailFailure == null) {
       state = state.copyWith(
+        datasetInfos:
+            datasetInfo != null ? [...state.datasetInfos, datasetInfo] : null,
         datasetThumbnails: [
           ...state.datasetThumbnails,
           DatasetThumbnail(
-            datasetDir: path.split('/').last,
-            thumbnailPath: thumbnail,
+            dirName: path.split('/').last,
+            thumbnailPath: thumbnailPath,
             error: null,
           ),
         ],
       );
-      return;
+    } else {
+      state = state.copyWith(
+        datasetInfos:
+            datasetInfo != null ? [...state.datasetInfos, datasetInfo] : null,
+        datasetThumbnails: [
+          ...state.datasetThumbnails,
+          DatasetThumbnail(
+            dirName: path.split('/').last,
+            thumbnailPath: null,
+            error: thumbnailFailure.message,
+          ),
+        ],
+      );
     }
-
-    state = state.copyWith(
-      datasetThumbnails: [
-        ...state.datasetThumbnails,
-        DatasetThumbnail(
-          datasetDir: path.split('/').last,
-          thumbnailPath: thumbnail,
-          error: null,
-        ),
-      ],
-    );
   }
 
   void onSelectedDataset(String path) {

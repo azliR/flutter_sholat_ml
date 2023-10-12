@@ -46,6 +46,16 @@ class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
     state = state.copyWith(isInitialised: true);
   }
 
+  Future<void> turnOnBluetooth() async {
+    final (failure, _) = await _deviceRepository.turnOnBluetooth();
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: TurnOnBluetoothFailureState(failure),
+      );
+      return;
+    }
+  }
+
   Future<void> scanDevices() async {
     state = state.copyWith(isScanning: true);
     if (state.bluetoothState == BluetoothAdapterState.off) {

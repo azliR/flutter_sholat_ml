@@ -7,23 +7,26 @@ class HomeState extends Equatable {
     required this.reviewedDatasetPaths,
     required this.selectedDatasetPaths,
     required this.datasetThumbnails,
+    required this.datasetInfos,
     required this.presentationState,
   });
 
   factory HomeState.initial() => const HomeState(
         isLoading: false,
-        needReviewDatasetPaths: null,
-        reviewedDatasetPaths: null,
+        needReviewDatasetPaths: [],
+        reviewedDatasetPaths: [],
         selectedDatasetPaths: [],
         datasetThumbnails: [],
+        datasetInfos: [],
         presentationState: DatasetsInitial(),
       );
 
   final bool isLoading;
-  final List<String>? needReviewDatasetPaths;
-  final List<String>? reviewedDatasetPaths;
+  final List<String> needReviewDatasetPaths;
+  final List<String> reviewedDatasetPaths;
   final List<String> selectedDatasetPaths;
   final List<DatasetThumbnail> datasetThumbnails;
+  final List<DatasetInfo> datasetInfos;
   final DatasetsPresentationState presentationState;
 
   HomeState copyWith({
@@ -32,6 +35,7 @@ class HomeState extends Equatable {
     List<String>? reviewedDatasetPaths,
     List<String>? selectedDatasetPaths,
     List<DatasetThumbnail>? datasetThumbnails,
+    List<DatasetInfo>? datasetInfos,
     DatasetsPresentationState? presentationState,
   }) {
     return HomeState(
@@ -41,6 +45,7 @@ class HomeState extends Equatable {
       reviewedDatasetPaths: reviewedDatasetPaths ?? this.reviewedDatasetPaths,
       selectedDatasetPaths: selectedDatasetPaths ?? this.selectedDatasetPaths,
       datasetThumbnails: datasetThumbnails ?? this.datasetThumbnails,
+      datasetInfos: datasetInfos ?? this.datasetInfos,
       presentationState: presentationState ?? this.presentationState,
     );
   }
