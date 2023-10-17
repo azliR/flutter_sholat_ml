@@ -35,8 +35,8 @@ class PreprocessState extends Equatable {
   final bool isJumpSelectMode;
   final bool isFollowHighlightedMode;
   final bool isPlaying;
-  final List<Dataset> datasets;
-  final List<Dataset> selectedDatasets;
+  final List<DataItem> datasets;
+  final List<DataItem> selectedDatasets;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -47,9 +47,9 @@ class PreprocessState extends Equatable {
     bool? isJumpSelectMode,
     bool? isFollowHighlightedMode,
     bool? isPlaying,
-    List<Dataset>? datasets,
-    List<Dataset>? selectedDatasets,
-    List<Dataset>? taggedDatasets,
+    List<DataItem>? datasets,
+    List<DataItem>? selectedDatasets,
+    List<DataItem>? taggedDatasets,
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(

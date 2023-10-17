@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/dataset_tile_widget.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -17,7 +17,7 @@ class PreprocessDatasetList extends ConsumerStatefulWidget {
 
   final ScrollController scrollController;
   final TrackballBehavior trackballBehavior;
-  final List<Dataset> datasets;
+  final List<DataItem> datasets;
 
   @override
   ConsumerState<PreprocessDatasetList> createState() =>

@@ -12,8 +12,8 @@ import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -127,11 +127,11 @@ class RecordRepository {
 
   Future<(Failure?, void)> saveRecording({
     required CameraController cameraController,
-    required List<Dataset> accelerometerDatasets,
+    required List<DataItem> accelerometerDatasets,
   }) async {
     final now = DateTime.now();
     final dir = await getApplicationDocumentsDirectory();
-    const needReviewDir = Directories.needReviewDir;
+    const needReviewDir = Directories.needReviewDirPath;
     final dirName = now.toIso8601String();
 
     final fullSavedDir = await Directory('${dir.path}/$needReviewDir/$dirName')
@@ -251,7 +251,7 @@ class RecordRepository {
     }
   }
 
-  List<Dataset>? handleRawSensorData(
+  List<DataItem>? handleRawSensorData(
     Uint8List bytes,
     DeviceLocation deviceLocation,
   ) {
@@ -259,7 +259,7 @@ class RecordRepository {
     final type = byteData.getInt8(0);
 
     if (type == 0x00) {
-      final datasets = <Dataset>[];
+      final datasets = <DataItem>[];
       final list = byteData.buffer.asInt16List();
 
       for (var i = 1; i < list.length; i = i + 3) {
@@ -267,7 +267,7 @@ class RecordRepository {
         // final gy = (y * gravity) / scaleFactor;
         // final gz = (z * gravity) / scaleFactor;
 
-        final dataset = Dataset(
+        final dataset = DataItem(
           x: list[i],
           y: list[i + 1],
           z: list[i + 2],

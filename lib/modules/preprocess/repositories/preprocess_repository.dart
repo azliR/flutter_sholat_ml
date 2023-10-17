@@ -7,15 +7,15 @@ import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 
 class PreprocessRepository {
   final _firestore = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
 
-  Future<(Failure?, List<Dataset>?)> readDatasets(String path) async {
+  Future<(Failure?, List<DataItem>?)> readDatasets(String path) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
       const datasetPropPath = Paths.datasetProp;
@@ -40,7 +40,7 @@ class PreprocessRepository {
 
       final datasets = datasetStrList
           .map(
-            (datasetStr) => Dataset.fromCsv(
+            (datasetStr) => DataItem.fromCsv(
               datasetStr,
               version: datasetProp.datasetVersion,
             ),
@@ -76,7 +76,7 @@ class PreprocessRepository {
 
   Future<(Failure?, String?, DatasetProp?)> saveDataset(
     String path,
-    List<Dataset> datasets, {
+    List<DataItem> datasets, {
     bool isUpdating = false,
   }) async {
     try {
@@ -106,8 +106,8 @@ class PreprocessRepository {
 
       final fullNewDir = Directory(
         path.replaceFirst(
-          Directories.needReviewDir,
-          Directories.reviewedDir,
+          Directories.needReviewDirPath,
+          Directories.reviewedDirPath,
         ),
       );
 

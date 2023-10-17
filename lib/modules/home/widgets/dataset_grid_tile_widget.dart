@@ -1,55 +1,40 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
-import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset_thumbnail/dataset_thumbnail.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/models/dataset_prop/dataset_prop.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class DatasetGridTile extends ConsumerStatefulWidget {
+class DatasetGridTile extends StatefulWidget {
   const DatasetGridTile({
-    required this.datasetPath,
-    required this.isTagged,
+    required this.dataset,
+    required this.selected,
+    required this.tagged,
+    required this.action,
+    required this.onInitialise,
     required this.onTap,
     required this.onLongPress,
-    required this.onDeleted,
     super.key,
   });
 
-  final String datasetPath;
-  final bool isTagged;
+  final Dataset dataset;
+  final bool selected;
+  final bool tagged;
+  final Widget? action;
+  final void Function() onInitialise;
   final void Function() onTap;
   final void Function() onLongPress;
-  final void Function() onDeleted;
 
   @override
-  ConsumerState<DatasetGridTile> createState() => _DatasetGridTileState();
+  State<DatasetGridTile> createState() => _DatasetGridTileState();
 }
 
-class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
-  late final DatasetsNotifier notifier;
-
+class _DatasetGridTileState extends State<DatasetGridTile> {
   @override
   void initState() {
-    notifier = ref.read(datasetsProvider.notifier);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final name = widget.datasetPath.split('/').last;
-      final thumbnail = ref.read(
-        datasetsProvider.select(
-          (value) =>
-              value.datasetThumbnails.cast<DatasetThumbnail?>().firstWhere(
-                    (thumbnail) => thumbnail?.dirName == name,
-                    orElse: () => null,
-                  ),
-        ),
-      );
-      if (thumbnail == null || !File(thumbnail.thumbnailPath!).existsSync()) {
-        notifier.getDatasetPropAndThumbnail(widget.datasetPath);
-      }
+      widget.onInitialise();
     });
     super.initState();
   }
@@ -59,42 +44,23 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final name = widget.datasetPath.split('/').last;
+    final name = widget.dataset.property.dirName;
     final dateTime = DateTime.tryParse(name);
     final formattedDatasetName = dateTime == null
         ? name
-        : DateFormat("EEEE 'at' HH:mm - MMM yyy").format(dateTime);
-
-    final isSelected = ref.watch(
-      datasetsProvider.select(
-        (value) => value.selectedDatasetPaths.contains(widget.datasetPath),
-      ),
-    );
-    final datasetProp = ref.watch(
-      datasetsProvider.select(
-        (value) => value.datasetProps.cast<DatasetProp?>().firstWhere(
-              (info) => info?.dirName == name,
-              orElse: () => null,
-            ),
-      ),
-    );
-    final thumbnail = ref.watch(
-      datasetsProvider.select(
-        (value) => value.datasetThumbnails.cast<DatasetThumbnail?>().firstWhere(
-              (thumbnail) => thumbnail?.dirName == name,
-              orElse: () => null,
-            ),
-      ),
-    );
+        : DateFormat("EEEE 'at' HH:mm - d MMM yyy").format(dateTime);
+    final datasetVersion = widget.dataset.property.datasetVersion;
+    final datasetVersionName = '${datasetVersion.name}'
+        '${DatasetVersion.values.last == datasetVersion ? ' (latest)' : ''}';
 
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      elevation: isSelected ? 0 : null,
-      color: isSelected ? colorScheme.primaryContainer : null,
+      elevation: widget.selected ? 0 : null,
+      color: widget.selected ? colorScheme.primaryContainer : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: isSelected
+        side: widget.selected
             ? BorderSide(
                 color: colorScheme.primary,
                 width: 2,
@@ -114,22 +80,27 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
                 child: Stack(
                   alignment: Alignment.topRight,
                   children: [
-                    if (thumbnail == null)
+                    if (widget.dataset.thumbnail == null)
                       const Center(
                         child: CircularProgressIndicator(),
                       )
-                    else if (thumbnail.error != null)
+                    else if (widget.dataset.thumbnail!.error != null)
                       const Center(
                         child: Icon(Symbols.broken_image_rounded),
                       )
                     else
                       Image.file(
-                        File(thumbnail.thumbnailPath!),
+                        File(widget.dataset.thumbnail!.thumbnailPath!),
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(Symbols.broken_image_rounded),
+                          );
+                        },
                         width: double.infinity,
                         height: 120,
                         fit: BoxFit.cover,
                       ),
-                    if (isSelected)
+                    if (widget.selected)
                       Container(
                         padding: const EdgeInsets.all(1),
                         margin: const EdgeInsets.all(8),
@@ -163,33 +134,32 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
                     ),
                   ),
                 ),
-                _buildMenu(widget.datasetPath),
+                if (widget.action != null) widget.action!,
               ],
             ),
             const SizedBox(height: 6),
-            if (datasetProp != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.csv_rounded,
-                      size: 16,
-                      weight: 600,
-                      color: colorScheme.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    Symbols.csv_rounded,
+                    size: 16,
+                    weight: 600,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Dataset $datasetVersionName',
+                      style: textTheme.bodySmall,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Dataset ${datasetProp.datasetVersion.name}${DatasetVersion.values.last == datasetProp.datasetVersion ? ' (latest)' : ''}',
-                        style: textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
             const SizedBox(height: 4),
-            if (widget.isTagged)
+            if (widget.tagged)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
@@ -210,47 +180,6 @@ class _DatasetGridTileState extends ConsumerState<DatasetGridTile> {
           ],
         ),
       ),
-    );
-  }
-
-  MenuAnchor _buildMenu(String datasetPath) {
-    return MenuAnchor(
-      builder: (context, controller, child) {
-        return IconButton(
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          iconSize: 20,
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          icon: child!,
-        );
-      },
-      menuChildren: [
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.delete_rounded),
-          onPressed: () async {
-            await notifier.deleteDataset(datasetPath);
-            widget.onDeleted();
-          },
-          child: const Text('Delete just from device'),
-        ),
-        if (widget.isTagged)
-          MenuItemButton(
-            leadingIcon: const Icon(Symbols.delete_forever_rounded),
-            onPressed: () async {
-              await notifier.deleteDatasetFromCloud(datasetPath);
-              widget.onDeleted();
-            },
-            child: const Text('Delete permanently'),
-          ),
-      ],
-      child: const Icon(Symbols.more_vert_rounded),
     );
   }
 }

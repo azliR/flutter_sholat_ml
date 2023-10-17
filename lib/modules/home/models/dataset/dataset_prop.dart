@@ -1,9 +1,10 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 
 @immutable
-class DatasetProp {
+class DatasetProp extends Equatable {
   const DatasetProp({
     required this.dirName,
     required this.datasetVersion,
@@ -73,4 +74,14 @@ class DatasetProp {
       ),
     );
   }
+
+  @override
+  List<Object?> get props => [
+        dirName,
+        csvUrl,
+        videoUrl,
+        thumbnailUrl,
+        datasetVersion,
+        datasetPropVersion,
+      ];
 }

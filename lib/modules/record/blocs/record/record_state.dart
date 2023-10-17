@@ -36,8 +36,8 @@ class RecordState extends Equatable {
   final CameraState cameraState;
   final CameraDescription? currentCamera;
   final List<CameraDescription> availableCameras;
-  final List<Dataset> accelerometerDatasets;
-  final List<Dataset>? lastDatasets;
+  final List<DataItem> accelerometerDatasets;
+  final List<DataItem>? lastDatasets;
   final RecordPresentationState presentationState;
 
   RecordState copyWith({
@@ -47,9 +47,9 @@ class RecordState extends Equatable {
     DeviceLocation? deviceLocation,
     CameraState? cameraState,
     CameraDescription? currentCamera,
-    List<Dataset>? accelerometerDatasets,
+    List<DataItem>? accelerometerDatasets,
     List<CameraDescription>? availableCameras,
-    ValueGetter<List<Dataset>?>? lastDatasets,
+    ValueGetter<List<DataItem>?>? lastDatasets,
     RecordPresentationState? presentationState,
   }) {
     return RecordState(

@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
-import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
@@ -157,9 +156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   device: _authDeviceNotifier.bluetoothDevice!,
                   services: _authDeviceNotifier.services!,
                   onRecordSuccess: () {
-                    _datasetNotifier
-                      ..loadDatasetsFromDisk(Directories.needReviewDir)
-                      ..loadDatasetsFromDisk(Directories.reviewedDir);
+                    _datasetNotifier.loadDatasetsFromDisk();
                   },
                 ),
               );

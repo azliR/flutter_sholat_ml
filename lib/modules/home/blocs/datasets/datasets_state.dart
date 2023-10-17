@@ -3,49 +3,38 @@ part of 'datasets_notifier.dart';
 class HomeState extends Equatable {
   const HomeState({
     required this.isLoading,
-    required this.needReviewDatasetPaths,
-    required this.reviewedDatasetPaths,
-    required this.selectedDatasetPaths,
-    required this.datasetThumbnails,
-    required this.datasetProps,
+    required this.needReviewDatasets,
+    required this.reviewedDatasets,
+    required this.selectedDatasets,
     required this.presentationState,
   });
 
   factory HomeState.initial() => const HomeState(
         isLoading: false,
-        needReviewDatasetPaths: [],
-        reviewedDatasetPaths: [],
-        selectedDatasetPaths: [],
-        datasetThumbnails: [],
-        datasetProps: [],
+        needReviewDatasets: [],
+        reviewedDatasets: [],
+        selectedDatasets: [],
         presentationState: DatasetsInitial(),
       );
 
   final bool isLoading;
-  final List<String> needReviewDatasetPaths;
-  final List<String> reviewedDatasetPaths;
-  final List<String> selectedDatasetPaths;
-  final List<DatasetThumbnail> datasetThumbnails;
-  final List<DatasetProp> datasetProps;
+  final List<Dataset> needReviewDatasets;
+  final List<Dataset> reviewedDatasets;
+  final List<Dataset> selectedDatasets;
   final DatasetsPresentationState presentationState;
 
   HomeState copyWith({
     bool? isLoading,
-    List<String>? needReviewDatasetPaths,
-    List<String>? reviewedDatasetPaths,
-    List<String>? selectedDatasetPaths,
-    List<DatasetThumbnail>? datasetThumbnails,
-    List<DatasetProp>? datasetProps,
+    List<Dataset>? needReviewDatasets,
+    List<Dataset>? reviewedDatasets,
+    List<Dataset>? selectedDatasets,
     DatasetsPresentationState? presentationState,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
-      needReviewDatasetPaths:
-          needReviewDatasetPaths ?? this.needReviewDatasetPaths,
-      reviewedDatasetPaths: reviewedDatasetPaths ?? this.reviewedDatasetPaths,
-      selectedDatasetPaths: selectedDatasetPaths ?? this.selectedDatasetPaths,
-      datasetThumbnails: datasetThumbnails ?? this.datasetThumbnails,
-      datasetProps: datasetProps ?? this.datasetProps,
+      needReviewDatasets: needReviewDatasets ?? this.needReviewDatasets,
+      reviewedDatasets: reviewedDatasets ?? this.reviewedDatasets,
+      selectedDatasets: selectedDatasets ?? this.selectedDatasets,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -53,10 +42,9 @@ class HomeState extends Equatable {
   @override
   List<Object?> get props => [
         isLoading,
-        needReviewDatasetPaths,
-        reviewedDatasetPaths,
-        selectedDatasetPaths,
-        datasetThumbnails,
+        needReviewDatasets,
+        reviewedDatasets,
+        selectedDatasets,
         presentationState,
       ];
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class AccelerometerChart extends StatelessWidget {
@@ -12,7 +12,7 @@ class AccelerometerChart extends StatelessWidget {
     super.key,
   });
 
-  final List<Dataset> datasets;
+  final List<DataItem> datasets;
   final ChartAxis primaryXAxis;
   final TrackballBehavior trackballBehavior;
   final ZoomPanBehavior zoomPanBehavior;

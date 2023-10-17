@@ -1,7 +1,8 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 @immutable
-class DatasetThumbnail {
+class DatasetThumbnail extends Equatable {
   const DatasetThumbnail({
     required this.dirName,
     required this.thumbnailPath,
@@ -11,4 +12,7 @@ class DatasetThumbnail {
   final String dirName;
   final String? thumbnailPath;
   final String? error;
+
+  @override
+  List<Object?> get props => [dirName, thumbnailPath, error];
 }

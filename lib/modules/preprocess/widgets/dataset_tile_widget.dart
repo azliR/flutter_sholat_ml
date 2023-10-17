@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -18,7 +18,7 @@ class DatasetTileWidget extends StatelessWidget {
   });
 
   final int index;
-  final Dataset dataset;
+  final DataItem dataset;
   final void Function() onTap;
   final void Function() onLongPress;
   final bool highlighted;

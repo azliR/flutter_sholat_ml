@@ -1,7 +1,7 @@
 class Directories {
   const Directories._();
 
-  static const String savedDatasetDir = 'saved_datasets';
-  static const String needReviewDir = '$savedDatasetDir/need_review';
-  static const String reviewedDir = '$savedDatasetDir/reviewed';
+  static const String savedDatasetDirPath = 'saved_datasets';
+  static const String needReviewDirPath = '$savedDatasetDirPath/need_review';
+  static const String reviewedDirPath = '$savedDatasetDirPath/reviewed';
 }
