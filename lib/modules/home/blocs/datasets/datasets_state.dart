@@ -64,6 +64,22 @@ final class LoadDatasetsFailureState extends DatasetsPresentationState {
   final Failure? failure;
 }
 
+final class DownloadDatasetProgressState extends DatasetsPresentationState {
+  const DownloadDatasetProgressState(this.progress);
+
+  final double progress;
+}
+
+final class DownloadDatasetSuccessState extends DatasetsPresentationState {
+  const DownloadDatasetSuccessState();
+}
+
+final class DownloadDatasetFailureState extends DatasetsPresentationState {
+  const DownloadDatasetFailureState([this.failure]);
+
+  final Failure? failure;
+}
+
 final class DeleteDatasetLoadingState extends DatasetsPresentationState {
   const DeleteDatasetLoadingState();
 }

@@ -95,7 +95,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     String labelCategory,
     String label,
   ) {
-    final movementSetId = const Uuid().v1();
+    final movementSetId = const Uuid().v7();
     state = state.copyWith(
       datasets: state.datasets.map((dataset) {
         if (state.selectedDatasets.contains(dataset)) {

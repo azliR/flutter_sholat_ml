@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,6 +29,8 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
 
   final HomeRepository _homeRepository;
   final PreprocessRepository _preprocessRepository;
+
+  StreamSubscription<TaskSnapshot>? _downloadSubscription;
 
   Query<Dataset> get reviewedDatasetsQuery =>
       _homeRepository.reviewedDatasetsQuery;
@@ -71,8 +76,8 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
   }
 
-  Future<String?> loadDatasetFromDisk(Dataset dataset) async {
-    final (failure, datasetPath) = await _homeRepository.loadDatasetFromDisk(
+  Future<Dataset?> loadDatasetFromDisk(Dataset dataset) async {
+    final (failure, updatedDataset) = await _homeRepository.loadDatasetFromDisk(
       dataset: dataset,
       isReviewedDataset: true,
     );
@@ -84,9 +89,68 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
 
     state = state.copyWith(
-      reviewedDatasets: [...state.reviewedDatasets]..addOrUpdate(dataset),
+      reviewedDatasets: [...state.reviewedDatasets]
+        ..addOrUpdate(updatedDataset!),
     );
-    return datasetPath;
+    return updatedDataset;
+  }
+
+  Future<void> downloadDataset(
+    Dataset dataset, {
+    bool forceDownload = false,
+  }) async {
+    state = state.copyWith(
+      presentationState: const DownloadDatasetProgressState(0),
+    );
+    final (failure, streamGroup) = await _homeRepository.downloadDataset(
+      dataset,
+      forceDownload: forceDownload,
+    );
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: DownloadDatasetFailureState(failure),
+      );
+      return;
+    }
+    if (streamGroup == null) {
+      state = state.copyWith(
+        presentationState: const DownloadDatasetSuccessState(),
+      );
+      return;
+    }
+
+    _downloadSubscription = streamGroup.listen((event) {
+      switch (event.state) {
+        case TaskState.success:
+          state = state.copyWith(
+            presentationState: const DownloadDatasetSuccessState(),
+          );
+        case TaskState.canceled:
+        case TaskState.error:
+          state = state.copyWith(
+            presentationState: const DownloadDatasetFailureState(),
+          );
+        case TaskState.paused:
+          break;
+        case TaskState.running:
+          final double progress;
+          if (event.totalBytes > 0 && event.bytesTransferred > 0) {
+            progress = event.bytesTransferred /
+                (event.metadata?.size ?? event.totalBytes);
+          } else {
+            progress = 0;
+          }
+
+          state = state.copyWith(
+            presentationState: DownloadDatasetProgressState(progress),
+          );
+      }
+    })
+      ..onError((e, stackTrace) {
+        state = state.copyWith(
+          presentationState: const DownloadDatasetFailureState(),
+        );
+      });
   }
 
   Future<void> getThumbnail({
@@ -197,5 +261,11 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
     if (dataset.path != null) await deleteDataset(dataset.path!);
     return true;
+  }
+
+  @override
+  void dispose() {
+    _downloadSubscription?.cancel();
+    super.dispose();
   }
 }

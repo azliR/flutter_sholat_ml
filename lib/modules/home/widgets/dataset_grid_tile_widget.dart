@@ -14,7 +14,7 @@ class DatasetGridTile extends StatefulWidget {
     required this.action,
     required this.onInitialise,
     required this.onTap,
-    required this.onLongPress,
+    this.onLongPress,
     super.key,
   });
 
@@ -24,7 +24,7 @@ class DatasetGridTile extends StatefulWidget {
   final Widget? action;
   final void Function() onInitialise;
   final void Function() onTap;
-  final void Function() onLongPress;
+  final void Function()? onLongPress;
 
   @override
   State<DatasetGridTile> createState() => _DatasetGridTileState();
@@ -52,6 +52,7 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
     final datasetVersion = widget.dataset.property.datasetVersion;
     final datasetVersionName = '${datasetVersion.name}'
         '${DatasetVersion.values.last == datasetVersion ? ' (latest)' : ''}';
+    final downloaded = widget.dataset.downloaded;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -137,7 +138,7 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
                 if (widget.action != null) widget.action!,
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
@@ -159,20 +160,45 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
               ),
             ),
             const SizedBox(height: 4),
-            if (widget.tagged)
+            //   Padding(
+            //     padding: const EdgeInsets.symmetric(horizontal: 8),
+            //     child: Row(
+            //       children: [
+            //         Icon(
+            //           Symbols.cloud_done_rounded,
+            //           size: 16,
+            //           opticalSize: 20,
+            //           color: colorScheme.primary,
+            //         ),
+            //         const SizedBox(width: 6),
+            //         Expanded(
+            //           child: Text('Uploaded', style: textTheme.bodySmall),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+
+            if (widget.tagged && (downloaded != null && !downloaded))
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: [
                     Icon(
-                      Symbols.cloud_done_rounded,
+                      downloaded
+                          ? Symbols.offline_pin_rounded
+                          : Symbols.download_rounded,
                       size: 16,
                       opticalSize: 20,
                       color: colorScheme.primary,
                     ),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text('Uploaded', style: textTheme.bodySmall),
+                      child: Text(
+                        downloaded
+                            ? 'Available offline'
+                            : 'Available to download',
+                        style: textTheme.bodySmall,
+                      ),
                     ),
                   ],
                 ),

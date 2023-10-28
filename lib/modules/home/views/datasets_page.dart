@@ -64,6 +64,11 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
 
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index != _tabController.previousIndex) {
+        _notifier.clearSelections();
+      }
+    });
 
     super.initState();
   }
@@ -93,6 +98,30 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             _needReviewRefreshKey.currentState?.show();
             _reviewedRefreshKey.currentState?.show();
             showErrorSnackbar(context, 'Failed to delete dataset');
+          case DownloadDatasetProgressState():
+            final progressPercent = (presentationState.progress * 100).round();
+            context.loaderOverlay.show(
+              widget: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      value: presentationState.progress == 0
+                          ? null
+                          : presentationState.progress,
+                    ),
+                    const SizedBox(height: 12),
+                    Text('Downloading dataset: $progressPercent%'),
+                  ],
+                ),
+              ),
+            );
+          // context.loaderOverlay.overlayController;
+          case DownloadDatasetSuccessState():
+            context.loaderOverlay.hide();
+            showSnackbar(context, 'Dataset downloaded succesfully!');
+          case DownloadDatasetFailureState():
+            showErrorSnackbar(context, 'Failed to download dataset!');
           case DatasetsInitial():
             break;
         }

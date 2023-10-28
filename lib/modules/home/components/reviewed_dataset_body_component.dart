@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
@@ -28,6 +30,8 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
   late final DatasetsNotifier _notifier;
   FirestoreQueryBuilderSnapshot<Dataset>? _snapshot;
 
+  var _datasetsKey = UniqueKey();
+
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
@@ -40,10 +44,13 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
     return RefreshIndicator(
       key: widget.refreshKey,
       onRefresh: () async {
-        _snapshot?.fetchMore();
+        setState(() {
+          _datasetsKey = UniqueKey();
+        });
         return Future.delayed(const Duration(seconds: 1));
       },
       child: FirestoreQueryBuilder<Dataset>(
+        key: _datasetsKey,
         query: _notifier.reviewedDatasetsQuery,
         builder: (context, snapshot, _) {
           _snapshot ??= snapshot;
@@ -108,25 +115,24 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                     selected: selected,
                     tagged: true,
                     onTap: () async {
-                      if (widget.isSelectMode) {
-                        _notifier.onSelectedDataset(dataset);
-                      } else {
-                        // await context.router.push(PreprocessRoute(path: datasetPath));
-                        // await Future.wait([
-                        //   notifier.loadDatasetsFromDisk(Directories.needReviewDirPath),
-                        //   notifier.loadDatasetsFromDisk(Directories.reviewedDirPath),
-                        // ]);
+                      if (dataset.downloaded ?? false) {
+                        await context.router
+                            .push(PreprocessRoute(path: dataset.path!));
+                        return;
                       }
+                      await _notifier.downloadDataset(dataset);
                     },
-                    onLongPress: () => _notifier.onSelectedDataset(dataset),
                     onInitialise: () async {
-                      String? path;
+                      var updatedDataset = dataset;
                       if (dataset.path == null) {
-                        path = await _notifier.loadDatasetFromDisk(dataset);
+                        updatedDataset =
+                            await _notifier.loadDatasetFromDisk(dataset) ??
+                                dataset;
                       }
-                      if (dataset.thumbnail == null && path != null) {
+                      if (dataset.thumbnail == null &&
+                          updatedDataset.path != null) {
                         await _notifier.getThumbnail(
-                          dataset: dataset.copyWith(path: path),
+                          dataset: updatedDataset,
                           isReviewedDatasets: true,
                         );
                       }
@@ -163,6 +169,13 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
         );
       },
       menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Symbols.download_rounded),
+          onPressed: () async {
+            await _notifier.downloadDataset(dataset, forceDownload: true);
+          },
+          child: const Text('Force download dataset'),
+        ),
         if (datasetPath != null)
           MenuItemButton(
             leadingIcon: const Icon(Symbols.delete_rounded),

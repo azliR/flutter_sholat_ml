@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:async/async.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -23,7 +24,10 @@ class HomeRepository {
         fromFirestore: (snapshot, options) {
           final property =
               DatasetProp.fromFirestoreJson(snapshot.data()!, snapshot.id);
-          return Dataset(property: property);
+          return Dataset(
+            downloaded: null,
+            property: property,
+          );
         },
         toFirestore: (value, options) {
           return value.property.toFirestoreJson();
@@ -46,7 +50,8 @@ class HomeRepository {
         final type = FileSystemEntity.typeSync(entity.path);
 
         if (type == FileSystemEntityType.directory) {
-          final datasetPropFile = File('${entity.path}/${Paths.datasetProp}');
+          final fullDir = Directory(entity.path);
+          final datasetPropFile = fullDir.file(Paths.datasetProp);
 
           if (!datasetPropFile.existsSync()) return previous;
 
@@ -54,7 +59,11 @@ class HomeRepository {
             jsonDecode(datasetPropFile.readAsStringSync())
                 as Map<String, dynamic>,
           );
-          final dataset = Dataset(path: entity.path, property: datasetProp);
+          final dataset = Dataset(
+            downloaded: true,
+            path: entity.path,
+            property: datasetProp,
+          );
           return [...previous, dataset];
         }
         return previous;
@@ -68,22 +77,32 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, String?)> loadDatasetFromDisk({
+  Future<(Failure?, Dataset?)> loadDatasetFromDisk({
     required Dataset dataset,
     required bool isReviewedDataset,
   }) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final datasetDir = isReviewedDataset
+      final datasetDirPath = isReviewedDataset
           ? Directories.reviewedDirPath
           : Directories.needReviewDirPath;
       final fullDir =
-          dir.directory(datasetDir).directory(dataset.property.dirName);
+          dir.directory(datasetDirPath).directory(dataset.property.dirName);
 
       if (!fullDir.existsSync()) {
         await fullDir.create(recursive: true);
       }
-      return (null, fullDir.path);
+
+      final datasetCsvFile = fullDir.file(Paths.datasetCsv);
+      final datasetVideoFile = fullDir.file(Paths.datasetVideo);
+
+      final updatedDataset = dataset.copyWith(
+        path: fullDir.path,
+        downloaded:
+            datasetCsvFile.existsSync() && datasetVideoFile.existsSync(),
+      );
+
+      return (null, updatedDataset);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -98,7 +117,7 @@ class HomeRepository {
     try {
       final baseDir = await getApplicationDocumentsDirectory();
       final fullDir = baseDir
-          .directory(Directories.needReviewDirPath)
+          .directory(Directories.reviewedDirPath)
           .directory(dataset.property.dirName);
 
       if (!fullDir.existsSync()) {
@@ -108,14 +127,23 @@ class HomeRepository {
       final datasetPropStr = jsonEncode(dataset.property.toJson());
       await fullDir.file(Paths.datasetProp).writeAsString(datasetPropStr);
 
+      final streamGroup = StreamGroup<TaskSnapshot>();
+
+      final csvUrl = dataset.property.csvUrl;
+      final csvFile = fullDir.file(Paths.datasetCsv);
+      if (csvUrl != null && (!csvFile.existsSync() || forceDownload)) {
+        final ref = _storage.refFromURL(csvUrl);
+        final snapshotStream = ref.writeToFile(csvFile).snapshotEvents;
+        await streamGroup.add(snapshotStream);
+      }
       final videoUrl = dataset.property.videoUrl;
       final videoFile = fullDir.file(Paths.datasetVideo);
       if (videoUrl != null && (!videoFile.existsSync() || forceDownload)) {
         final ref = _storage.refFromURL(videoUrl);
-        final snapshotStream = ref.writeToFile(videoFile).asStream();
-        return (null, snapshotStream);
+        final snapshotStream = ref.writeToFile(videoFile).snapshotEvents;
+        await streamGroup.add(snapshotStream);
       }
-      return (null, const Stream<TaskSnapshot>.empty());
+      return (null, streamGroup.isIdle ? null : streamGroup.stream);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
