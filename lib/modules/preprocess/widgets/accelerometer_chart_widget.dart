@@ -41,6 +41,18 @@ class AccelerometerChart extends StatelessWidget {
         visibleMaximum: 400,
         decimalPlaces: 0,
         majorGridLines: const MajorGridLines(width: 0),
+        axisLine: const AxisLine(width: 0.4),
+        borderWidth: 0,
+      ),
+      plotAreaBorderWidth: 0,
+      primaryYAxis: NumericAxis(
+        axisLine: const AxisLine(width: 0),
+        majorTickLines: const MajorTickLines(width: 0),
+        majorGridLines: const MajorGridLines(
+          width: 0.4,
+          dashArray: [5, 5],
+          color: Colors.grey,
+        ),
       ),
       zoomPanBehavior: zoomPanBehavior,
       trackballBehavior: trackballBehavior,

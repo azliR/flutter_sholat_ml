@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +13,7 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-enum HomeScreenNavigation { home, device }
+enum HomeScreenNavigation { savedDevice, datasets }
 
 @RoutePage()
 class HomeScreen extends ConsumerStatefulWidget {
@@ -25,7 +27,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final AuthDeviceNotifier _authDeviceNotifier;
   late final DatasetsNotifier _datasetNotifier;
 
-  late TabsRouter _tabsRouter;
+  final _tabsRouterCompleter = Completer<TabsRouter>();
+
+  var _currentPage = 0;
+
+  List<PageRouteInfo<void>> get _routes =>
+      HomeScreenNavigation.values.map((section) {
+        return switch (section) {
+          HomeScreenNavigation.savedDevice => const SavedDevicesPage(),
+          HomeScreenNavigation.datasets => const DatasetsPage(),
+        };
+      }).toList();
 
   void _onNavigationChanged(TabsRouter tabsRouter, int index) {
     if (index != tabsRouter.activeIndex) {
@@ -37,6 +49,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void initState() {
+    _tabsRouterCompleter.future.then((value) {
+      value.addListener(() {
+        if (!context.mounted) return;
+        setState(() {
+          _currentPage = value.activeIndex;
+        });
+      });
+    });
     _datasetNotifier = ref.read(datasetsProvider.notifier);
     _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
     super.initState();
@@ -52,8 +72,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         context,
         previous,
         next,
-        onAuthDeviceSuccessState: () {
-          _onNavigationChanged(_tabsRouter, 1);
+        onAuthDeviceSuccessState: () async {
+          _onNavigationChanged(await _tabsRouterCompleter.future, 1);
+          if (!context.mounted) return;
           context.loaderOverlay.hide();
         },
       ),
@@ -65,13 +86,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.watch(authDeviceProvider.select((state) => state.savedDevices));
 
     return AutoTabsRouter(
-      curve: Curves.easeIn,
-      routes: HomeScreenNavigation.values.map((section) {
-        return switch (section) {
-          HomeScreenNavigation.home => const SavedDevicesPage(),
-          HomeScreenNavigation.device => const DatasetsPage(),
-        };
-      }).toList(),
+      curve: Curves.easeInOut,
+      routes: _routes,
       transitionBuilder: (context, child, animation) => FadeThroughTransition(
         animation: animation,
         secondaryAnimation: ReverseAnimation(animation),
@@ -79,21 +95,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: child,
       ),
       builder: (context, child) {
-        _tabsRouter = AutoTabsRouter.of(context);
+        final tabRouter = context.tabsRouter;
+        if (!_tabsRouterCompleter.isCompleted) {
+          _tabsRouterCompleter.complete(tabRouter);
+        }
+        _currentPage = tabRouter.activeIndex;
 
         return Scaffold(
           drawer: NavigationDrawer(
-            selectedIndex: _tabsRouter.activeIndex,
+            selectedIndex: tabRouter.activeIndex,
             onDestinationSelected: (index) async {
               if (index == 0) {
-                _onNavigationChanged(_tabsRouter, index);
+                _onNavigationChanged(tabRouter, index);
                 Navigator.pop(context);
               } else if (index - 1 < savedDevices.length) {
                 final deviceIndex = index - 1;
                 final device = savedDevices[deviceIndex];
 
                 if (device == currentDevice) {
-                  _onNavigationChanged(_tabsRouter, index);
+                  _onNavigationChanged(tabRouter, index);
                   Navigator.pop(context);
                   return;
                 }
@@ -105,7 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               const SizedBox(height: 16),
               NavigationDrawerDestination(
-                icon: _tabsRouter.activeIndex == 0
+                icon: tabRouter.activeIndex == 0
                     ? const Icon(Symbols.home_rounded, fill: 1)
                     : const Icon(Symbols.home_rounded),
                 label: const Text('Home'),
@@ -146,22 +166,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           body: child,
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: FloatingActionButton.large(
-            onPressed: () async {
-              await context.router.push(
-                RecordRoute(
-                  device: _authDeviceNotifier.bluetoothDevice!,
-                  services: _authDeviceNotifier.services!,
-                  onRecordSuccess: () {
-                    _datasetNotifier.loadDatasetsFromDisk();
+          floatingActionButton: HomeScreenNavigation.values[_currentPage] !=
+                  HomeScreenNavigation.datasets
+              ? null
+              : FloatingActionButton.large(
+                  onPressed: () async {
+                    await context.router.push(
+                      RecordRoute(
+                        device: _authDeviceNotifier.bluetoothDevice!,
+                        services: _authDeviceNotifier.services!,
+                        onRecordSuccess: () {
+                          _datasetNotifier.loadDatasetsFromDisk();
+                        },
+                      ),
+                    );
                   },
+                  child: const Icon(
+                    Symbols.videocam_rounded,
+                  ),
                 ),
-              );
-            },
-            child: const Icon(
-              Symbols.videocam_rounded,
-            ),
-          ),
         );
       },
     );

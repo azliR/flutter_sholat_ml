@@ -19,7 +19,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class RecordRepository {
-  final hextChars = '0123456789ABCDEF'.split('');
   Timer? _timer;
 
   Future<(Failure?, CameraController?)> initialiseCameraController(

@@ -20,6 +20,8 @@ class PreprocessRepository {
       const datasetCsvPath = Paths.datasetCsv;
       const datasetPropPath = Paths.datasetProp;
 
+      // log((await Directory(path).list().toList()).toString());
+
       final datasetStrList = await File('$path/$datasetCsvPath').readAsLines();
       final datasetPropFile = File('$path/$datasetPropPath');
 

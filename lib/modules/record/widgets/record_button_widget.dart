@@ -11,8 +11,10 @@ class RecordButton extends StatefulWidget {
     required this.onLockPressed,
     required this.onSwitchPressed,
     super.key,
+    this.leading,
   });
 
+  final Widget? leading;
   final CameraState cameraState;
   final CameraController cameraController;
   final void Function() onRecordPressed;
@@ -30,105 +32,113 @@ class __RecordButtonState extends State<RecordButton> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(36),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          IconButton.outlined(
-            iconSize: 36,
-            style: IconButton.styleFrom(
-              foregroundColor: Colors.white,
-              side: const BorderSide(
-                color: Colors.white,
-                width: 2,
-              ),
-            ),
-            onPressed: widget.onLockPressed,
-            icon: const Icon(Symbols.lock_rounded, grade: -25),
-          ),
-          GestureDetector(
-            onTap: () {
-              _isButtonPressed = false;
-              widget.onRecordPressed();
-            },
-            onTapDown: (details) {
-              if (widget.cameraState == CameraState.recording ||
-                  widget.cameraState == CameraState.saving) return;
-              setState(() {
-                _isButtonPressed = true;
-              });
-            },
-            onTapCancel: () {
-              if (widget.cameraState == CameraState.recording ||
-                  widget.cameraState == CameraState.saving) return;
-              setState(() {
-                _isButtonPressed = false;
-              });
-            },
-            onTapUp: (details) {
-              if (widget.cameraState == CameraState.recording ||
-                  widget.cameraState == CameraState.saving) return;
-              setState(() {
-                _isButtonPressed = false;
-              });
-            },
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
+          if (widget.leading != null) widget.leading!,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton.outlined(
+                iconSize: 36,
+                style: IconButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(
                     color: Colors.white,
-                    shape: BoxShape.circle,
+                    width: 2,
                   ),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.bounceInOut,
-                    margin: EdgeInsets.all(
-                      widget.cameraState == CameraState.recording
-                          ? 24
-                          : (_isButtonPressed ? 10 : 5),
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.all(
-                        Radius.circular(
-                          widget.cameraState == CameraState.recording ? 6 : 36,
+                ),
+                onPressed: widget.onLockPressed,
+                icon: const Icon(Symbols.lock_rounded, grade: -25),
+              ),
+              GestureDetector(
+                onTap: () {
+                  _isButtonPressed = false;
+                  widget.onRecordPressed();
+                },
+                onTapDown: (details) {
+                  if (widget.cameraState == CameraState.recording ||
+                      widget.cameraState == CameraState.saving) return;
+                  setState(() {
+                    _isButtonPressed = true;
+                  });
+                },
+                onTapCancel: () {
+                  if (widget.cameraState == CameraState.recording ||
+                      widget.cameraState == CameraState.saving) return;
+                  setState(() {
+                    _isButtonPressed = false;
+                  });
+                },
+                onTapUp: (details) {
+                  if (widget.cameraState == CameraState.recording ||
+                      widget.cameraState == CameraState.saving) return;
+                  setState(() {
+                    _isButtonPressed = false;
+                  });
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.bounceInOut,
+                        margin: EdgeInsets.all(
+                          widget.cameraState == CameraState.recording
+                              ? 24
+                              : (_isButtonPressed ? 10 : 5),
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(
+                              widget.cameraState == CameraState.recording
+                                  ? 6
+                                  : 36,
+                            ),
+                          ),
+                          color: Colors.red,
                         ),
                       ),
-                      color: Colors.red,
                     ),
-                  ),
-                ),
-                if (widget.cameraState == CameraState.preparing ||
-                    widget.cameraState == CameraState.saving)
-                  const SizedBox(
-                    height: 72,
-                    width: 72,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 6,
-                      strokeAlign: -1,
-                      strokeCap: StrokeCap.round,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (widget.onSwitchPressed != null &&
-              widget.cameraState == CameraState.ready)
-            IconButton.outlined(
-              iconSize: 36,
-              style: IconButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(
-                  color: Colors.white,
-                  width: 2,
+                    if (widget.cameraState == CameraState.preparing ||
+                        widget.cameraState == CameraState.saving)
+                      const SizedBox(
+                        height: 72,
+                        width: 72,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 6,
+                          strokeAlign: -1,
+                          strokeCap: StrokeCap.round,
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              onPressed: widget.onSwitchPressed,
-              icon: const Icon(Symbols.sync_rounded),
-            )
-          else
-            const SizedBox(width: 48),
+              if (widget.onSwitchPressed != null &&
+                  widget.cameraState == CameraState.ready)
+                IconButton.outlined(
+                  iconSize: 36,
+                  style: IconButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                  onPressed: widget.onSwitchPressed,
+                  icon: const Icon(Symbols.sync_rounded),
+                )
+              else
+                const SizedBox(width: 48),
+            ],
+          ),
         ],
       ),
     );

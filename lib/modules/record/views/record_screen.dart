@@ -202,6 +202,9 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
         ref.watch(recordProvider.select((value) => value.cameraState));
     final isLocked =
         ref.watch(recordProvider.select((value) => value.isLocked));
+    final availableCameras = ref.watch(
+      recordProvider.select((value) => value.availableCameras),
+    );
 
     return Scaffold(
       backgroundColor: !isCameraPermissionGranted ||
@@ -283,50 +286,42 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
               ),
               Align(
                 alignment: Alignment.bottomCenter,
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final availableCameras = ref.watch(
-                      recordProvider.select((value) => value.availableCameras),
-                    );
-
-                    return RecordButton(
-                      cameraState: cameraState,
-                      cameraController: _cameraController!,
-                      onRecordPressed: () {
-                        if (cameraState == CameraState.ready) {
-                          notifier.startRecording(_cameraController!);
-                        } else if (cameraState == CameraState.recording) {
-                          notifier.stopRecording(_cameraController!);
-                        }
-                      },
-                      onLockPressed: _onLockPressed,
-                      onSwitchPressed: availableCameras.every(
-                        (camera) => [
-                          CameraLensDirection.back,
-                          CameraLensDirection.front,
-                        ].contains(camera.lensDirection),
-                      )
-                          ? () async {
-                              final currentCamera =
-                                  ref.read(recordProvider).currentCamera!;
-                              final switchCamera =
-                                  availableCameras.firstWhere((camera) {
-                                if (currentCamera.lensDirection ==
-                                    CameraLensDirection.back) {
-                                  return camera.lensDirection ==
-                                      CameraLensDirection.front;
-                                } else {
-                                  return camera.lensDirection ==
-                                      CameraLensDirection.back;
-                                }
-                              });
-                              _cameraController = await _notifier
-                                  .initialiseCameraController(switchCamera);
-                              setState(() {});
-                            }
-                          : null,
-                    );
+                child: RecordButton(
+                  cameraState: cameraState,
+                  cameraController: _cameraController!,
+                  onRecordPressed: () {
+                    if (cameraState == CameraState.ready) {
+                      notifier.startRecording(_cameraController!);
+                    } else if (cameraState == CameraState.recording) {
+                      notifier.stopRecording(_cameraController!);
+                    }
                   },
+                  onLockPressed: _onLockPressed,
+                  onSwitchPressed: availableCameras.every(
+                    (camera) => [
+                      CameraLensDirection.back,
+                      CameraLensDirection.front,
+                    ].contains(camera.lensDirection),
+                  )
+                      ? () async {
+                          final currentCamera =
+                              ref.read(recordProvider).currentCamera!;
+                          final switchCamera =
+                              availableCameras.firstWhere((camera) {
+                            if (currentCamera.lensDirection ==
+                                CameraLensDirection.back) {
+                              return camera.lensDirection ==
+                                  CameraLensDirection.front;
+                            } else {
+                              return camera.lensDirection ==
+                                  CameraLensDirection.back;
+                            }
+                          });
+                          _cameraController = await _notifier
+                              .initialiseCameraController(switchCamera);
+                          setState(() {});
+                        }
+                      : null,
                 ),
               ),
             ],

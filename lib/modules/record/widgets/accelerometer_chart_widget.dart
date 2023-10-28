@@ -53,7 +53,19 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           ),
         ),
         primaryXAxis: NumericAxis(
+          axisLine: const AxisLine(width: 0.4),
           majorGridLines: const MajorGridLines(width: 0),
+          borderWidth: 0,
+        ),
+        plotAreaBorderWidth: 0,
+        primaryYAxis: NumericAxis(
+          axisLine: const AxisLine(width: 0),
+          majorTickLines: const MajorTickLines(width: 0),
+          majorGridLines: const MajorGridLines(
+            width: 0.4,
+            dashArray: [5, 5],
+            color: Colors.grey,
+          ),
         ),
         series: [
           SplineSeries(
