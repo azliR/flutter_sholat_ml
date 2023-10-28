@@ -1,7 +1,11 @@
+import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
+import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 
 @immutable
 class DataItem extends Equatable {
@@ -16,46 +20,8 @@ class DataItem extends Equatable {
     this.note,
     this.labelCategory,
     this.label,
+    this.noiseMovement,
   });
-
-  factory DataItem.fromCsv(
-    String csv, {
-    required DatasetVersion version,
-  }) {
-    final split = csv.split(',');
-
-    switch (version) {
-      case DatasetVersion.v1:
-        return DataItem(
-          timestamp: Duration(milliseconds: int.parse(split[0])),
-          x: int.parse(split[1]),
-          y: int.parse(split[2]),
-          z: int.parse(split[3]),
-          heartRate: int.tryParse(split[4]),
-          deviceLocation: DeviceLocation.fromCode(split[5]),
-          labelCategory:
-              split.elementAtOrNull(6)?.isNotEmpty ?? false ? split[6] : null,
-          label:
-              split.elementAtOrNull(7)?.isNotEmpty ?? false ? split[7] : null,
-        );
-      case DatasetVersion.v2:
-        return DataItem(
-          timestamp: Duration(milliseconds: int.parse(split[0])),
-          x: int.parse(split[1]),
-          y: int.parse(split[2]),
-          z: int.parse(split[3]),
-          heartRate: int.tryParse(split[4]),
-          movementSetId:
-              split.elementAtOrNull(5)?.isNotEmpty ?? false ? split[5] : null,
-          deviceLocation: DeviceLocation.fromCode(split[6]),
-          note: split.elementAtOrNull(7)?.isNotEmpty ?? false ? split[7] : null,
-          labelCategory:
-              split.elementAtOrNull(8)?.isNotEmpty ?? false ? split[8] : null,
-          label:
-              split.elementAtOrNull(9)?.isNotEmpty ?? false ? split[9] : null,
-        );
-    }
-  }
 
   final Duration? timestamp;
   final num x;
@@ -65,8 +31,9 @@ class DataItem extends Equatable {
   final String? movementSetId;
   final DeviceLocation deviceLocation;
   final String? note;
-  final String? labelCategory;
-  final String? label;
+  final SholatMovementCategory? labelCategory;
+  final SholatMovement? label;
+  final SholatNoiseMovement? noiseMovement;
 
   bool get isLabeled =>
       movementSetId != null && labelCategory != null && label != null;
@@ -82,8 +49,9 @@ class DataItem extends Equatable {
     String? movementSetId,
     DeviceLocation? deviceLocation,
     String? note,
-    String? labelCategory,
-    String? label,
+    SholatMovementCategory? labelCategory,
+    SholatMovement? label,
+    SholatNoiseMovement? noiseMovement,
   }) {
     return DataItem(
       timestamp: timestamp ?? this.timestamp,
@@ -96,7 +64,72 @@ class DataItem extends Equatable {
       note: note ?? this.note,
       labelCategory: labelCategory ?? this.labelCategory,
       label: label ?? this.label,
+      noiseMovement: noiseMovement ?? this.noiseMovement,
     );
+  }
+
+  factory DataItem.fromCsv(
+    String csv, {
+    required DatasetVersion version,
+  }) {
+    final split = csv.split(',');
+
+    switch (version) {
+      case DatasetVersion.v1:
+        return DataItem(
+          timestamp: Duration(milliseconds: int.parse(split[0])),
+          x: int.parse(split[1]),
+          y: int.parse(split[2]),
+          z: int.parse(split[3]),
+          heartRate: int.tryParse(split[4]),
+          deviceLocation: DeviceLocation.fromValue(split[5]),
+          labelCategory: split.elementAtOrNull(6).isNotNullOrBlank
+              ? SholatMovementCategory.fromValue(split[6])
+              : null,
+          label: split.elementAtOrNull(7).isNotNullOrBlank
+              ? SholatMovement.fromValue(split[7])
+              : null,
+        );
+      case DatasetVersion.v2:
+        return DataItem(
+          timestamp: Duration(milliseconds: int.parse(split[0])),
+          x: int.parse(split[1]),
+          y: int.parse(split[2]),
+          z: int.parse(split[3]),
+          heartRate: int.tryParse(split[4]),
+          movementSetId:
+              split.elementAtOrNull(5).isNotNullOrBlank ? split[5] : null,
+          deviceLocation: DeviceLocation.fromValue(split[6]),
+          note: split.elementAtOrNull(7).isNotNullOrBlank ? split[7] : null,
+          labelCategory: split.elementAtOrNull(8).isNotNullOrBlank
+              ? SholatMovementCategory.fromValue(split[8])
+              : null,
+          label: split.elementAtOrNull(9).isNotNullOrBlank
+              ? SholatMovement.fromValue(split[9])
+              : null,
+        );
+      case DatasetVersion.v3:
+        return DataItem(
+          timestamp: Duration(milliseconds: int.parse(split[0])),
+          x: int.parse(split[1]),
+          y: int.parse(split[2]),
+          z: int.parse(split[3]),
+          heartRate: int.tryParse(split[4]),
+          movementSetId:
+              split.elementAtOrNull(5).isNotNullOrBlank ? split[5] : null,
+          deviceLocation: DeviceLocation.fromValue(split[6]),
+          note: split.elementAtOrNull(7).isNotNullOrBlank ? split[7] : null,
+          labelCategory: split.elementAtOrNull(8).isNotNullOrBlank
+              ? SholatMovementCategory.fromValue(split[8])
+              : null,
+          label: split.elementAtOrNull(9).isNotNullOrBlank
+              ? SholatMovement.fromValue(split[9])
+              : null,
+          noiseMovement: split.elementAtOrNull(10).isNotNullOrBlank
+              ? SholatNoiseMovement.fromValue(split[10])
+              : null,
+        );
+    }
   }
 
   String toCsv() {
@@ -106,13 +139,14 @@ class DataItem extends Equatable {
     final z = this.z.toString();
     final heartRate = this.heartRate ?? '';
     final movementSetId = this.movementSetId ?? '';
-    final deviceLocation = this.deviceLocation.code;
+    final deviceLocation = this.deviceLocation.value;
     final note = this.note ?? '';
     final labelCategory = this.labelCategory ?? '';
     final label = this.label ?? '';
+    final noiseMovement = this.noiseMovement?.value ?? '';
 
     return '$timestamp,$x,$y,$z,$heartRate,$movementSetId,'
-        '$deviceLocation,$note,$labelCategory,$label,\n';
+        '$deviceLocation,$note,$labelCategory,$label,$noiseMovement\n';
   }
 
   @override

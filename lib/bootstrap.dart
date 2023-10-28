@@ -17,7 +17,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
       stackTrace: details.stack,
     );
   };
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

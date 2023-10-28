@@ -148,7 +148,7 @@ class PreprocessRepository {
         SettableMetadata(
           contentType: 'text/csv',
           customMetadata: <String, String>{
-            'version': DatasetVersion.values.last.code.toString(),
+            'version': DatasetVersion.values.last.value.toString(),
           },
         ),
       );

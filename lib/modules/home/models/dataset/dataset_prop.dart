@@ -29,8 +29,8 @@ class DatasetProp extends Equatable {
       'csv_url': csvUrl,
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
-      'dataset_version': datasetVersion.code,
-      'dataset_prop_version': datasetPropVersion.code,
+      'dataset_version': datasetVersion.value,
+      'dataset_prop_version': datasetPropVersion.value,
     };
   }
 
@@ -39,8 +39,8 @@ class DatasetProp extends Equatable {
       'csv_url': csvUrl,
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
-      'dataset_version': datasetVersion.code,
-      'dataset_prop_version': datasetPropVersion.code,
+      'dataset_version': datasetVersion.value,
+      'dataset_prop_version': datasetPropVersion.value,
     };
   }
 
@@ -52,10 +52,10 @@ class DatasetProp extends Equatable {
       thumbnailUrl: json['thumbnail_url'] as String?,
       datasetVersion: json['dataset_version'] == null
           ? DatasetVersion.v1
-          : DatasetVersion.fromCode(json['dataset_version'] as int),
+          : DatasetVersion.fromValue(json['dataset_version'] as int),
       datasetPropVersion: json['dataset_prop_version'] == null
           ? DatasetPropVersion.v1
-          : DatasetPropVersion.fromCode(json['dataset_prop_version'] as int),
+          : DatasetPropVersion.fromValue(json['dataset_prop_version'] as int),
     );
   }
 
@@ -68,9 +68,9 @@ class DatasetProp extends Equatable {
       csvUrl: json['csv_url'] as String,
       videoUrl: json['video_url'] as String,
       thumbnailUrl: json['thumbnail_url'] as String?,
-      datasetVersion: DatasetVersion.fromCode(json['dataset_version'] as int),
-      datasetPropVersion: DatasetPropVersion.fromCode(
-        json['dataset_prop_version'] as int? ?? DatasetPropVersion.v1.code,
+      datasetVersion: DatasetVersion.fromValue(json['dataset_version'] as int),
+      datasetPropVersion: DatasetPropVersion.fromValue(
+        json['dataset_prop_version'] as int? ?? DatasetPropVersion.v1.value,
       ),
     );
   }

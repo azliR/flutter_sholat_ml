@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
@@ -92,8 +94,8 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   }
 
   String onTaggedDatasets(
-    String labelCategory,
-    String label,
+    SholatMovementCategory labelCategory,
+    SholatMovement label,
   ) {
     final movementSetId = const Uuid().v7();
     state = state.copyWith(

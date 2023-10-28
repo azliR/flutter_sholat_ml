@@ -23,15 +23,8 @@ enum DatasetPropVersion {
   /// ```
   v2;
 
-  factory DatasetPropVersion.fromCode(int value) {
-    switch (value) {
-      case 1:
-        return DatasetPropVersion.v1;
-      case 2:
-        return DatasetPropVersion.v2;
-      default:
-        throw Exception('Unknown DatasetPropVersion: $value');
-    }
+  factory DatasetPropVersion.fromValue(int value) {
+    return DatasetPropVersion.values.firstWhere((e) => e.value == value);
   }
 
   String get name {
@@ -43,7 +36,7 @@ enum DatasetPropVersion {
     }
   }
 
-  int get code {
+  int get value {
     switch (this) {
       case DatasetPropVersion.v1:
         return 1;

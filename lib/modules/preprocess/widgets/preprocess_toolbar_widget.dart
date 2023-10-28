@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -8,7 +9,8 @@ import 'package:video_player/video_player.dart';
 
 final categoryProvider =
     StateProvider.autoDispose<SholatMovementCategory?>((ref) => null);
-final movementProvider = StateProvider.autoDispose<String?>((ref) => null);
+final movementProvider =
+    StateProvider.autoDispose<SholatMovement?>((ref) => null);
 
 class PreprocessToolbar extends ConsumerWidget {
   const PreprocessToolbar({
@@ -42,7 +44,7 @@ class PreprocessToolbar extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    DropdownMenu(
+                    DropdownMenu<SholatMovementCategory>(
                       width: size.width - 24,
                       label: const Text('Category'),
                       onSelected: (value) {
@@ -56,17 +58,17 @@ class PreprocessToolbar extends ConsumerWidget {
                         }
                       },
                       dropdownMenuEntries: SholatMovementCategory.values.map(
-                        (e) {
+                        (category) {
                           return DropdownMenuEntry(
-                            label: e.name,
-                            value: e,
+                            label: category.name,
+                            value: category,
                           );
                         },
                       ).toList(),
                     ),
                     if (selectedCategory != null) ...[
                       const SizedBox(height: 12),
-                      DropdownMenu(
+                      DropdownMenu<SholatMovement>(
                         width: size.width - 24,
                         label: const Text('Movement'),
                         errorText: movement == null
@@ -75,73 +77,15 @@ class PreprocessToolbar extends ConsumerWidget {
                         onSelected: (value) => ref
                             .read(movementProvider.notifier)
                             .update((state) => value),
-                        dropdownMenuEntries: () {
-                          switch (selectedCategory) {
-                            case SholatMovementCategory.persiapan:
-                              return Persiapan.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.takbir:
-                              return Takbir.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.berdiri:
-                              return Berdiri.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.ruku:
-                              return Ruku.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.iktidal:
-                              return Iktidal.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.qunut:
-                              return Qunut.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.sujud:
-                              return Sujud.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.duduk:
-                              return Duduk.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                            case SholatMovementCategory.lainnya:
-                              return Lainnya.values.map((e) {
-                                return DropdownMenuEntry(
-                                  label: e.name,
-                                  value: e.code,
-                                );
-                              }).toList();
-                          }
-                        }(),
+                        dropdownMenuEntries:
+                            SholatMovement.getByCategory(selectedCategory).map(
+                          (movement) {
+                            return DropdownMenuEntry(
+                              value: movement,
+                              label: movement.name,
+                            );
+                          },
+                        ).toList(),
                       ),
                     ],
                     const SizedBox(height: 16),
@@ -164,12 +108,13 @@ class PreprocessToolbar extends ConsumerWidget {
                                     Navigator.pop(context);
                                     final movementSetId =
                                         notifier.onTaggedDatasets(
-                                      selectedCategory!.code,
+                                      selectedCategory!,
                                       movement,
                                     );
                                     showSnackbar(
                                       context,
-                                      'Datasets tagged with movement id $movementSetId',
+                                      'Datasets tagged with movement ID: \n'
+                                      '$movementSetId',
                                     );
                                   }
                                 : null,

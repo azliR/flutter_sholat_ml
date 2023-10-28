@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
-import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -46,7 +46,7 @@ class DatasetTileWidget extends StatelessWidget {
         weight: 300,
       );
     } else if (tagged) {
-      final category = SholatMovementCategory.fromCode(dataset.labelCategory!);
+      final category = dataset.labelCategory!;
       final iconPath = switch (category) {
         SholatMovementCategory.persiapan => AssetImages.persiapan,
         SholatMovementCategory.takbir => AssetImages.takbir,
@@ -114,7 +114,11 @@ class DatasetTileWidget extends StatelessWidget {
                     onTap: () {
                       if (tagged) {
                         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        showSnackbar(context, dataset.label!);
+                        showSnackbar(
+                          context,
+                          '${dataset.label!.name} with movement ID:\n'
+                          '${dataset.movementSetId!}',
+                        );
                       }
                     },
                     child: icon,

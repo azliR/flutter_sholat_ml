@@ -2,6 +2,10 @@ enum DeviceLocation {
   leftWrist,
   rightWrist;
 
+  factory DeviceLocation.fromValue(String value) {
+    return DeviceLocation.values.firstWhere((e) => e.value == value);
+  }
+
   String get name {
     switch (this) {
       case DeviceLocation.leftWrist:
@@ -11,23 +15,12 @@ enum DeviceLocation {
     }
   }
 
-  String get code {
+  String get value {
     switch (this) {
       case DeviceLocation.leftWrist:
         return 'left_wrist';
       case DeviceLocation.rightWrist:
         return 'right_wrist';
-    }
-  }
-
-  static DeviceLocation fromCode(String name) {
-    switch (name) {
-      case 'left_wrist':
-        return DeviceLocation.leftWrist;
-      case 'right_wrist':
-        return DeviceLocation.rightWrist;
-      default:
-        throw ArgumentError('Invalid device location name: $name');
     }
   }
 }
