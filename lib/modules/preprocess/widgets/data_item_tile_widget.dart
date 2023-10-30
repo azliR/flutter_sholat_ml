@@ -6,8 +6,8 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class DatasetTileWidget extends StatelessWidget {
-  const DatasetTileWidget({
+class DataItemTile extends StatelessWidget {
+  const DataItemTile({
     required this.index,
     required this.dataset,
     required this.onTap,
@@ -104,8 +104,9 @@ class DatasetTileWidget extends StatelessWidget {
               ),
               Expanded(
                 flex: 2,
-                child:
-                    Center(child: Text(dataset.heartRate?.toString() ?? '-')),
+                child: Center(
+                  child: Text(dataset.noiseMovement?.toString() ?? ''),
+                ),
               ),
               Expanded(
                 child: Center(

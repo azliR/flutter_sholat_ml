@@ -10,8 +10,8 @@ class PreprocessState extends Equatable {
     required this.isJumpSelectMode,
     required this.isFollowHighlightedMode,
     required this.isPlaying,
-    required this.datasets,
-    required this.selectedDatasets,
+    required this.dataItems,
+    required this.selectedDataItems,
     required this.presentationState,
   });
 
@@ -23,8 +23,8 @@ class PreprocessState extends Equatable {
         isJumpSelectMode: false,
         isFollowHighlightedMode: false,
         isPlaying: false,
-        datasets: [],
-        selectedDatasets: [],
+        dataItems: [],
+        selectedDataItems: [],
         presentationState: PreprocessInitial(),
       );
 
@@ -35,8 +35,8 @@ class PreprocessState extends Equatable {
   final bool isJumpSelectMode;
   final bool isFollowHighlightedMode;
   final bool isPlaying;
-  final List<DataItem> datasets;
-  final List<DataItem> selectedDatasets;
+  final List<DataItem> dataItems;
+  final List<DataItem> selectedDataItems;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -47,9 +47,8 @@ class PreprocessState extends Equatable {
     bool? isJumpSelectMode,
     bool? isFollowHighlightedMode,
     bool? isPlaying,
-    List<DataItem>? datasets,
-    List<DataItem>? selectedDatasets,
-    List<DataItem>? taggedDatasets,
+    List<DataItem>? dataItems,
+    List<DataItem>? selectedDataItems,
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(
@@ -62,8 +61,8 @@ class PreprocessState extends Equatable {
       isFollowHighlightedMode:
           isFollowHighlightedMode ?? this.isFollowHighlightedMode,
       isPlaying: isPlaying ?? this.isPlaying,
-      datasets: datasets ?? this.datasets,
-      selectedDatasets: selectedDatasets ?? this.selectedDatasets,
+      dataItems: dataItems ?? this.dataItems,
+      selectedDataItems: selectedDataItems ?? this.selectedDataItems,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -77,8 +76,8 @@ class PreprocessState extends Equatable {
         isJumpSelectMode,
         isFollowHighlightedMode,
         isPlaying,
-        datasets,
-        selectedDatasets,
+        dataItems,
+        selectedDataItems,
         presentationState,
       ];
 }

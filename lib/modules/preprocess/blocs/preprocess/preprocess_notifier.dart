@@ -39,24 +39,24 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   }
 
   void onSelectedDatasetChanged(int index) {
-    final datasets = state.datasets;
-    final selectedDatasets = state.selectedDatasets;
+    final datasets = state.dataItems;
+    final selectedDatasets = state.selectedDataItems;
     final dataset = datasets[index];
     if (selectedDatasets.contains(dataset)) {
       state = state.copyWith(
         lastSelectedIndex: () => index,
-        selectedDatasets: [...selectedDatasets]..remove(dataset),
+        selectedDataItems: [...selectedDatasets]..remove(dataset),
       );
     } else {
       state = state.copyWith(
         lastSelectedIndex: () => index,
-        selectedDatasets: [...selectedDatasets, dataset],
+        selectedDataItems: [...selectedDatasets, dataset],
       );
     }
   }
 
-  void clearSelectedDatasets() {
-    state = state.copyWith(selectedDatasets: [], isJumpSelectMode: false);
+  void clearSelectedDataItems() {
+    state = state.copyWith(selectedDataItems: [], isJumpSelectMode: false);
   }
 
   void onJumpSelectModeChanged({required bool enable}) {
@@ -67,27 +67,18 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(isFollowHighlightedMode: enable);
   }
 
-  Future<void> jumpSelect(
-    int endIndex, {
-    required Future<bool> Function() onShowWarning,
-  }) async {
+  Future<void> jumpSelect(int endIndex) async {
     final lastSelectedIndex = state.lastSelectedIndex;
     if (lastSelectedIndex == null) return;
 
-    final selectedDatasets = state.datasets.sublist(
+    final selectedDatasets = state.dataItems.sublist(
       min(lastSelectedIndex, endIndex),
       max(lastSelectedIndex, endIndex + 1),
     );
 
-    final showWarning = selectedDatasets.any((dataset) => dataset.isLabeled);
-    if (showWarning) {
-      final result = await onShowWarning();
-      if (!result) return;
-    }
-
     state = state.copyWith(
-      selectedDatasets:
-          {...state.selectedDatasets, ...selectedDatasets}.toList(),
+      selectedDataItems:
+          {...state.selectedDataItems, ...selectedDatasets}.toList(),
       lastSelectedIndex: () => endIndex,
       isJumpSelectMode: false,
     );
@@ -99,8 +90,8 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   ) {
     final movementSetId = const Uuid().v7();
     state = state.copyWith(
-      datasets: state.datasets.map((dataset) {
-        if (state.selectedDatasets.contains(dataset)) {
+      dataItems: state.dataItems.map((dataset) {
+        if (state.selectedDataItems.contains(dataset)) {
           return dataset.copyWith(
             movementSetId: movementSetId,
             labelCategory: labelCategory,
@@ -110,7 +101,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
         return dataset;
       }).toList(),
     );
-    clearSelectedDatasets();
+    clearSelectedDataItems();
     return movementSetId;
   }
 
@@ -134,7 +125,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     }
 
     state = state.copyWith(
-      datasets: datasets,
+      dataItems: datasets,
       datasetProp: datasetProp,
     );
     return true;
@@ -146,7 +137,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     final (failure, newPath, datasetProp) =
         await _preprocessRepository.saveDataset(
       state.path,
-      state.datasets,
+      state.dataItems,
       isUpdating: state.datasetProp!.isSubmitted,
     );
 

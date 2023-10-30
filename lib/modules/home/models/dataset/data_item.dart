@@ -141,8 +141,8 @@ class DataItem extends Equatable {
     final movementSetId = this.movementSetId ?? '';
     final deviceLocation = this.deviceLocation.value;
     final note = this.note ?? '';
-    final labelCategory = this.labelCategory ?? '';
-    final label = this.label ?? '';
+    final labelCategory = this.labelCategory?.value ?? '';
+    final label = this.label?.value ?? '';
     final noiseMovement = this.noiseMovement?.value ?? '';
 
     return '$timestamp,$x,$y,$z,$heartRate,$movementSetId,'

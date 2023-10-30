@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_dataset_list_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/accelerometer_chart_widget.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/widgets/preprocess_dataset_list_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/preprocess_toolbar_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -42,6 +42,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   final _zoomPanBehavior = ZoomPanBehavior(
     enablePanning: true,
     enablePinching: true,
+    enableDoubleTapZooming: true,
+    enableMouseWheelZooming: true,
     zoomMode: ZoomMode.x,
   );
   final _primaryXAxis = NumericAxis(
@@ -59,7 +61,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
     if (!_videoPlayerController.value.isPlaying) return;
 
-    final datasets = ref.read(preprocessProvider).datasets;
+    final datasets = ref.read(preprocessProvider).dataItems;
     final currentPosition =
         _videoPlayerController.value.position.inMilliseconds;
     var index = 0;
@@ -147,20 +149,21 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     final datasetProp =
         ref.watch(preprocessProvider.select((state) => state.datasetProp));
     final datasets =
-        ref.watch(preprocessProvider.select((state) => state.datasets));
+        ref.watch(preprocessProvider.select((state) => state.dataItems));
 
     return WillPopScope(
       onWillPop: () async {
         final isSelectMode =
-            ref.read(preprocessProvider).selectedDatasets.isNotEmpty;
+            ref.read(preprocessProvider).selectedDataItems.isNotEmpty;
 
         if (isSelectMode) {
-          _notifier.clearSelectedDatasets();
+          _notifier.clearSelectedDataItems();
           return false;
         }
         return true;
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,43 +280,38 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     style: textTheme.bodyMedium!.copyWith(
                       color: colorScheme.onSurface.withOpacity(0.6),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           flex: 2,
                           child: Center(child: Text('i')),
                         ),
-                        const Expanded(
+                        Expanded(
                           flex: 3,
                           child: Center(
                             child: Text('timestamp'),
                           ),
                         ),
-                        const Expanded(
+                        Expanded(
                           flex: 2,
                           child: Center(child: Text('x')),
                         ),
-                        const Expanded(
+                        Expanded(
                           flex: 2,
                           child: Center(child: Text('y')),
                         ),
-                        const Expanded(
+                        Expanded(
                           flex: 2,
                           child: Center(child: Text('z')),
                         ),
                         Expanded(
                           flex: 2,
                           child: Center(
-                            child: Icon(
-                              Symbols.ecg_heart_rounded,
-                              size: 16,
-                              weight: 600,
-                              color: colorScheme.error,
-                            ),
+                            child: Text('noise'),
                           ),
                         ),
-                        const Expanded(
-                          child: Center(child: Text('')),
+                        Expanded(
+                          child: SizedBox(),
                         ),
                       ],
                     ),

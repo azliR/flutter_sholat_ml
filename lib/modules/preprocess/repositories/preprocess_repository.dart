@@ -79,7 +79,7 @@ class PreprocessRepository {
   Future<(Failure?, String?, DatasetProp?)> saveDataset(
     String path,
     List<DataItem> datasets, {
-    bool isUpdating = false,
+    required bool isUpdating,
   }) async {
     try {
       final datasetStr = datasets.fold('', (previousValue, dataset) {
@@ -97,8 +97,9 @@ class PreprocessRepository {
       final (failure, datasetPropInfo) = await uploadDataset(
         dirName: path.split('/').last,
         csvFile: csvFile,
-        videoFile: isUpdating ? null : File('$path/$datasetVideoPath'),
-        thumbnailFile: isUpdating ? null : File('$path/$datasetThumbnailPath'),
+        videoFile: File('$path/$datasetVideoPath'),
+        thumbnailFile: File('$path/$datasetThumbnailPath'),
+        isUpdating: isUpdating,
       );
       if (failure != null) return (failure, null, null);
 
@@ -130,8 +131,9 @@ class PreprocessRepository {
   Future<(Failure?, DatasetProp?)> uploadDataset({
     required String dirName,
     required File csvFile,
-    File? videoFile,
-    File? thumbnailFile,
+    required bool isUpdating,
+    required File videoFile,
+    required File thumbnailFile,
   }) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
@@ -152,13 +154,13 @@ class PreprocessRepository {
           },
         ),
       );
-      if (videoFile != null) {
+      if (!isUpdating) {
         await datasetVideoRef.putFile(
           videoFile,
           SettableMetadata(contentType: 'video/mp4'),
         );
       }
-      if (thumbnailFile != null) {
+      if (!isUpdating) {
         await datasetThumbnailRef.putFile(
           thumbnailFile,
           SettableMetadata(contentType: 'image/webp'),
@@ -180,8 +182,10 @@ class PreprocessRepository {
 
       return (null, datasetPropInfo);
     } catch (e, stackTrace) {
-      final (deleteFailure, _) = await deleteDatasetFromCloud(dirName);
-      if (deleteFailure != null) return (deleteFailure, null);
+      if (!isUpdating) {
+        final (deleteFailure, _) = await deleteDatasetFromCloud(dirName);
+        if (deleteFailure != null) return (deleteFailure, null);
+      }
 
       const message = 'Failed saving dataset';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
