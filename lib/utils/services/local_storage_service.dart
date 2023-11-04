@@ -1,6 +1,5 @@
 import 'package:flutter_sholat_ml/modules/device/models/device/device.dart';
 import 'package:hive/hive.dart';
-import 'package:path_provider/path_provider.dart';
 
 class LocalStorageService {
   LocalStorageService._();
@@ -9,11 +8,6 @@ class LocalStorageService {
   static const String kSavedDevices = 'saved_devices';
 
   static final _box = Hive.box<List<dynamic>>(name: kBox);
-
-  static Future<void> initialise() async {
-    final dir = await getApplicationDocumentsDirectory();
-    Hive.defaultDirectory = dir.path;
-  }
 
   static Stream<List<Device>> get savedDevicesStream =>
       _box.watchKey(kSavedDevices).map((event) {

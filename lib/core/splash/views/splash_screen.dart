@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
-import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -46,7 +45,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await LocalStorageService.initialise();
       await _connectToSavedDevice();
     });
     super.initState();

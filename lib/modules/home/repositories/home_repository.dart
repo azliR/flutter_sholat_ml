@@ -11,6 +11,7 @@ import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:path_provider/path_provider.dart';
@@ -21,55 +22,31 @@ class HomeRepository {
 
   Query<Dataset> get reviewedDatasetsQuery =>
       _firestore.collection('datasets').withConverter(
-        fromFirestore: (snapshot, options) {
-          final property =
-              DatasetProp.fromFirestoreJson(snapshot.data()!, snapshot.id);
-          return Dataset(
-            downloaded: null,
-            property: property,
+            fromFirestore: (snapshot, options) {
+              final property =
+                  DatasetProp.fromFirestoreJson(snapshot.data()!, snapshot.id);
+              return Dataset(
+                downloaded: null,
+                property: property,
+              );
+            },
+            toFirestore: (value, options) => value.property.toFirestoreJson(),
           );
-        },
-        toFirestore: (value, options) {
-          return value.property.toFirestoreJson();
-        },
-      );
 
-  Future<(Failure?, List<Dataset>?)> loadDatasetsFromDisk(
-    String dirName,
-  ) async {
+  (Failure?, List<Dataset>?) getRangeLocalDatasets(
+    int start,
+    int end,
+  ) {
     try {
-      final dir = await getApplicationDocumentsDirectory();
-      final fullDir = dir.directory(dirName);
-
-      if (!fullDir.existsSync()) {
-        await fullDir.create(recursive: true);
-      }
-
-      final entities = await fullDir.list().toList();
-      final datasetPaths = entities.fold(<Dataset>[], (previous, entity) {
-        final type = FileSystemEntity.typeSync(entity.path);
-
-        if (type == FileSystemEntityType.directory) {
-          final fullDir = Directory(entity.path);
-          final datasetPropFile = fullDir.file(Paths.datasetProp);
-
-          if (!datasetPropFile.existsSync()) return previous;
-
-          final datasetProp = DatasetProp.fromJson(
-            jsonDecode(datasetPropFile.readAsStringSync())
-                as Map<String, dynamic>,
-          );
-          final dataset = Dataset(
-            downloaded: true,
-            path: entity.path,
-            property: datasetProp,
-          );
-          return [...previous, dataset];
-        }
-        return previous;
+      final datasetProps =
+          LocalDatasetStorageService.getDatasetRange(start, end);
+      final datasets = datasetProps.map((datasetProp) {
+        return Dataset(
+          downloaded: null,
+          property: datasetProp,
+        );
       }).toList();
-
-      return (null, datasetPaths);
+      return (null, datasets);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -87,7 +64,7 @@ class HomeRepository {
           ? Directories.reviewedDirPath
           : Directories.needReviewDirPath;
       final fullDir =
-          dir.directory(datasetDirPath).directory(dataset.property.dirName);
+          dir.directory(datasetDirPath).directory(dataset.property.id);
 
       if (!fullDir.existsSync()) {
         await fullDir.create(recursive: true);
@@ -118,7 +95,7 @@ class HomeRepository {
       final baseDir = await getApplicationDocumentsDirectory();
       final fullDir = baseDir
           .directory(Directories.reviewedDirPath)
-          .directory(dataset.property.dirName);
+          .directory(dataset.property.id);
 
       if (!fullDir.existsSync()) {
         await fullDir.create(recursive: true);
@@ -187,6 +164,7 @@ class HomeRepository {
     try {
       final dir = Directory(path);
       await dir.delete(recursive: true);
+      LocalDatasetStorageService.deleteDataset(path);
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed deleting dataset';

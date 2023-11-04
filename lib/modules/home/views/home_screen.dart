@@ -176,7 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         device: _authDeviceNotifier.bluetoothDevice!,
                         services: _authDeviceNotifier.services!,
                         onRecordSuccess: () {
-                          _datasetNotifier.loadDatasetsFromDisk();
+                          // _datasetNotifier.loadDatasetsFromDisk();
                         },
                       ),
                     );

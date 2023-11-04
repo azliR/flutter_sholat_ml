@@ -67,16 +67,16 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                     if (isJumpSelectMode) {
                       await _notifier.jumpSelect(index);
                     } else {
-                      _notifier.onSelectedDatasetChanged(index);
+                      _notifier.setSelectedDataset(index);
                     }
                   }
-                  _notifier.onCurrentHighlightedIndexChanged(index);
+                  _notifier.setCurrentHighlightedIndex(index);
                   widget.trackballBehavior.showByIndex(index);
                 },
                 onLongPress: () async {
                   _notifier
-                    ..onSelectedDatasetChanged(index)
-                    ..onCurrentHighlightedIndexChanged(index);
+                    ..setSelectedDataset(index)
+                    ..setCurrentHighlightedIndex(index);
                   widget.trackballBehavior.showByIndex(index);
                 },
               );

@@ -123,8 +123,8 @@ class RecordNotifier extends StateNotifier<RecordState> {
       }
       datasets.removeWhere((dataset) => dataset.timestamp == null);
       state = state.copyWith(
-        accelerometerDatasets: [
-          ...state.accelerometerDatasets,
+        dataItems: [
+          ...state.dataItems,
           ...datasets,
         ],
         lastDatasets: () => datasets,
@@ -179,7 +179,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
 
   Future<void> startRecording(CameraController cameraController) async {
     state = state.copyWith(
-      accelerometerDatasets: [],
+      dataItems: [],
       lastDatasets: () => null,
       cameraState: CameraState.preparing,
     );
@@ -226,7 +226,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
     }
     final (saveFailure, _) = await _recordRepository.saveRecording(
       cameraController: cameraController,
-      accelerometerDatasets: state.accelerometerDatasets,
+      dataItems: state.dataItems,
     );
     if (saveFailure != null) {
       state = state.copyWith(

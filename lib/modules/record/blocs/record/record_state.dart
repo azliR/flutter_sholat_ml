@@ -11,7 +11,7 @@ class RecordState extends Equatable {
     required this.cameraState,
     required this.currentCamera,
     required this.availableCameras,
-    required this.accelerometerDatasets,
+    required this.dataItems,
     required this.lastDatasets,
     required this.presentationState,
   });
@@ -24,7 +24,7 @@ class RecordState extends Equatable {
         cameraState: CameraState.notInitialised,
         currentCamera: null,
         availableCameras: [],
-        accelerometerDatasets: [],
+        dataItems: [],
         lastDatasets: null,
         presentationState: RecordInitialState(),
       );
@@ -36,7 +36,7 @@ class RecordState extends Equatable {
   final CameraState cameraState;
   final CameraDescription? currentCamera;
   final List<CameraDescription> availableCameras;
-  final List<DataItem> accelerometerDatasets;
+  final List<DataItem> dataItems;
   final List<DataItem>? lastDatasets;
   final RecordPresentationState presentationState;
 
@@ -47,7 +47,7 @@ class RecordState extends Equatable {
     DeviceLocation? deviceLocation,
     CameraState? cameraState,
     CameraDescription? currentCamera,
-    List<DataItem>? accelerometerDatasets,
+    List<DataItem>? dataItems,
     List<CameraDescription>? availableCameras,
     ValueGetter<List<DataItem>?>? lastDatasets,
     RecordPresentationState? presentationState,
@@ -60,8 +60,7 @@ class RecordState extends Equatable {
       deviceLocation: deviceLocation ?? this.deviceLocation,
       cameraState: cameraState ?? this.cameraState,
       currentCamera: currentCamera ?? this.currentCamera,
-      accelerometerDatasets:
-          accelerometerDatasets ?? this.accelerometerDatasets,
+      dataItems: dataItems ?? this.dataItems,
       availableCameras: availableCameras ?? this.availableCameras,
       lastDatasets: lastDatasets?.call() ?? this.lastDatasets,
       presentationState: presentationState ?? this.presentationState,
@@ -77,7 +76,7 @@ class RecordState extends Equatable {
         cameraState,
         currentCamera,
         availableCameras,
-        accelerometerDatasets,
+        dataItems,
         lastDatasets,
         presentationState,
       ];

@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
@@ -35,51 +33,25 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   Query<Dataset> get reviewedDatasetsQuery =>
       _homeRepository.reviewedDatasetsQuery;
 
-  Future<void> loadDatasetsFromDisk({bool isReviewedDatasets = false}) async {
-    state = state.copyWith(isLoading: true);
-
-    final (failure, datasets) = await _homeRepository.loadDatasetsFromDisk(
-      isReviewedDatasets
-          ? Directories.reviewedDirPath
-          : Directories.needReviewDirPath,
-    );
+  (Failure?, List<Dataset>?) getRangeLocalDatasets(
+    int start,
+    int end,
+  ) {
+    final (failure, datasets) =
+        _homeRepository.getRangeLocalDatasets(start, end);
     if (failure != null) {
-      state = state.copyWith(
-        isLoading: false,
-        presentationState: LoadDatasetsFailureState(failure),
-      );
-      return;
+      return (failure, null);
     }
-
-    if (isReviewedDatasets) {
-      state = state.copyWith(
-        reviewedDatasets: datasets?.map((newDataset) {
-          return newDataset.copyWith(
-            thumbnail: state.reviewedDatasets.firstOrNullWhere((oldDataset) {
-              return oldDataset.path == newDataset.path;
-            })?.thumbnail,
-          );
-        }).toList(),
-        isLoading: false,
-      );
-    } else {
-      state = state.copyWith(
-        needReviewDatasets: datasets?.map((newDataset) {
-          return newDataset.copyWith(
-            thumbnail: state.needReviewDatasets.firstOrNullWhere((oldDataset) {
-              return oldDataset.path == newDataset.path;
-            })?.thumbnail,
-          );
-        }).toList(),
-        isLoading: false,
-      );
-    }
+    return (null, datasets);
   }
 
-  Future<Dataset?> loadDatasetFromDisk(Dataset dataset) async {
+  Future<Dataset?> loadDatasetFromDisk({
+    required Dataset dataset,
+    required bool isReviewedDataset,
+  }) async {
     final (failure, updatedDataset) = await _homeRepository.loadDatasetFromDisk(
       dataset: dataset,
-      isReviewedDataset: true,
+      isReviewedDataset: isReviewedDataset,
     );
     if (failure != null) {
       state = state.copyWith(
@@ -89,8 +61,12 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
 
     state = state.copyWith(
-      reviewedDatasets: [...state.reviewedDatasets]
-        ..addOrUpdate(updatedDataset!),
+      needReviewDatasets: !isReviewedDataset
+          ? ([...state.needReviewDatasets]..addOrUpdate(updatedDataset!))
+          : null,
+      reviewedDatasets: isReviewedDataset
+          ? ([...state.reviewedDatasets]..addOrUpdate(updatedDataset!))
+          : null,
     );
     return updatedDataset;
   }
@@ -164,12 +140,12 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
 
     final thumbnail = failure == null
         ? DatasetThumbnail(
-            dirName: dataset.property.dirName,
+            dirName: dataset.property.id,
             thumbnailPath: thumbnailPath,
             error: null,
           )
         : DatasetThumbnail(
-            dirName: dataset.property.dirName,
+            dirName: dataset.property.id,
             thumbnailPath: null,
             error: failure.message,
           );
@@ -177,7 +153,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     final datasets =
         isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
     final updatedDatasets = datasets.map((oldDataset) {
-      if (dataset.property.dirName == oldDataset.property.dirName) {
+      if (dataset.property.id == oldDataset.property.id) {
         return dataset.copyWith(
           thumbnail: thumbnail,
         );
@@ -251,8 +227,8 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     state =
         state.copyWith(presentationState: const DeleteDatasetLoadingState());
 
-    final (failure, _) = await _preprocessRepository
-        .deleteDatasetFromCloud(dataset.property.dirName);
+    final (failure, _) =
+        await _preprocessRepository.deleteDatasetFromCloud(dataset.property.id);
     if (failure != null) {
       state = state.copyWith(
         presentationState: DeleteDatasetFailureState(failure),

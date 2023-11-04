@@ -3,18 +3,18 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:math' hide log;
-import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
-import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -126,7 +126,7 @@ class RecordRepository {
 
   Future<(Failure?, void)> saveRecording({
     required CameraController cameraController,
-    required List<DataItem> accelerometerDatasets,
+    required List<DataItem> dataItems,
   }) async {
     final now = DateTime.now();
     final dir = await getApplicationDocumentsDirectory();
@@ -137,15 +137,10 @@ class RecordRepository {
         .create(recursive: true);
 
     try {
-      final datasetStr =
-          accelerometerDatasets.fold('', (previousValue, dataset) {
-        return previousValue + dataset.toCsv();
-      });
-
       final datasetProp = DatasetProp(
-        dirName: dirName,
+        id: dirName,
         datasetVersion: DatasetVersion.values.last,
-        datasetPropVersion: DatasetPropVersion.values.last,
+        createdAt: now,
       );
 
       final videoFile = await cameraController.stopVideoRecording();
@@ -154,12 +149,20 @@ class RecordRepository {
       const datasetVideoPath = Paths.datasetVideo;
       const datasetPropPath = Paths.datasetProp;
 
+      final fullDatasetCsvPath = '${fullSavedDir.path}/$datasetCsvPath';
+      final fullDatasetPropPath = '${fullSavedDir.path}/$datasetPropPath';
+
       await videoFile.saveTo('${fullSavedDir.path}/$datasetVideoPath');
 
-      await File('${fullSavedDir.path}/$datasetCsvPath')
-          .writeAsString(datasetStr);
-      await File('${fullSavedDir.path}/$datasetPropPath')
-          .writeAsString(jsonEncode(datasetProp.toJson()));
+      final (failure, _) = await writeDataset(
+        csvPath: fullDatasetCsvPath,
+        propPath: fullDatasetPropPath,
+        datasetProp: datasetProp,
+        dataItems: dataItems,
+      );
+      if (failure != null) return (failure, null);
+
+      LocalDatasetStorageService.putDataset(dirName, datasetProp);
 
       return (null, null);
     } catch (e, stackTrace) {
@@ -168,6 +171,43 @@ class RecordRepository {
       }
 
       const message = 'Failed saving recording';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> writeDataset({
+    required String csvPath,
+    required String propPath,
+    required DatasetProp datasetProp,
+    required List<DataItem> dataItems,
+  }) async {
+    try {
+      final message = {
+        'csvPath': csvPath,
+        'propPath': propPath,
+        'datasetProp': datasetProp,
+        'dataItems': dataItems,
+      };
+      await compute(
+        (message) async {
+          final csvPath = message['csvPath']! as String;
+          final propPath = message['propPath']! as String;
+          final datasetProp = message['datasetProp']! as DatasetProp;
+          final dataItems = message['dataItems']! as List<DataItem>;
+
+          final datasetStr = dataItems.fold('', (previousValue, dataset) {
+            return previousValue + dataset.toCsv();
+          });
+
+          await File(csvPath).writeAsString(datasetStr);
+          await File(propPath).writeAsString(jsonEncode(datasetProp.toJson()));
+        },
+        message,
+      );
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed writing dataset using compute';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

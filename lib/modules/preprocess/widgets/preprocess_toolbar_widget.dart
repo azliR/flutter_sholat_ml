@@ -114,7 +114,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                                 ? () {
                                     Navigator.pop(context);
                                     final movementSetId =
-                                        _notifier.onTaggedDatasets(
+                                        _notifier.setDataItemLabels(
                                       selectedCategory!,
                                       movement,
                                     );
@@ -275,7 +275,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                 weight: 300,
               ),
               onPressed: () {
-                _notifier.onJumpSelectModeChanged(enable: true);
+                _notifier.setJumpSelectMode(enable: true);
               },
             ),
             const VerticalDivider(),
@@ -337,7 +337,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
               ),
               onPressed: () {
                 final enable = !isFollowHighlightedMode;
-                _notifier.onFollowHighlightedModeChanged(
+                _notifier.setFollowHighlightedMode(
                   enable: enable,
                 );
                 if (enable) {

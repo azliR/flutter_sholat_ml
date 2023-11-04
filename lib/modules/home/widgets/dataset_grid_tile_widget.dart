@@ -44,11 +44,9 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final name = widget.dataset.property.dirName;
-    final dateTime = DateTime.tryParse(name);
-    final formattedDatasetName = dateTime == null
-        ? name
-        : DateFormat("EEEE 'at' HH:mm - d MMM yyy").format(dateTime);
+    final createdAt = widget.dataset.property.createdAt;
+    final formattedDatasetName =
+        DateFormat("EEEE 'at' HH:mm - d MMM yyy").format(createdAt);
     final datasetVersion = widget.dataset.property.datasetVersion;
     final datasetVersionName = '${datasetVersion.name}'
         '${DatasetVersion.values.last == datasetVersion ? ' (latest)' : ''}';

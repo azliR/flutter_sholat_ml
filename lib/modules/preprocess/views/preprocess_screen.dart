@@ -55,7 +55,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   void _videoListener() {
     if (!mounted) return;
 
-    _notifier.onIsPlayingChanged(
+    _notifier.setIsPlaying(
       isPlaying: _videoPlayerController.value.isPlaying,
     );
 
@@ -73,7 +73,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       }
     }
 
-    _notifier.onCurrentHighlightedIndexChanged(index);
+    _notifier.setCurrentHighlightedIndex(index);
     _trackballBehavior.showByIndex(index);
     if (ref.read(preprocessProvider).isFollowHighlightedMode) {
       _scrollToDatasetTile(index);
@@ -191,7 +191,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: FilledButton.tonalIcon(
-                onPressed: () => _notifier.onSaveDataset(),
+                onPressed: () => _notifier.saveDataset(),
                 icon: datasetProp?.isSubmitted ?? false
                     ? const Icon(Symbols.sync_rounded)
                     : const Icon(Symbols.backup_rounded),
@@ -236,7 +236,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                         _timer = Timer(const Duration(milliseconds: 300), () {
                           _videoPlayerController
                               .seekTo(datasets[index].timestamp!);
-                          _notifier.onCurrentHighlightedIndexChanged(index);
+                          _notifier.setCurrentHighlightedIndex(index);
                           if (ref
                               .read(preprocessProvider)
                               .isFollowHighlightedMode) {

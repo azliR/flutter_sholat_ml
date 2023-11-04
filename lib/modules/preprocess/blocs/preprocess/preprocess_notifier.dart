@@ -27,18 +27,44 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
 
   Future<void> initialise(String path) async {
     state = state.copyWith(path: path);
-    await readDatasets();
+    await readDataItems();
   }
 
-  void onIsPlayingChanged({required bool isPlaying}) {
+  Future<bool> readDataItems() async {
+    final (datasetPropFailure, datasetProp) =
+        await _preprocessRepository.readDatasetProp(state.path);
+    if (datasetPropFailure != null) {
+      state = state.copyWith(
+        presentationState: ReadDatasetsFailureState(datasetPropFailure),
+      );
+      return false;
+    }
+
+    final (datasetsFailure, datasets) =
+        await _preprocessRepository.readDataItems(state.path);
+    if (datasetsFailure != null) {
+      state = state.copyWith(
+        presentationState: ReadDatasetsFailureState(datasetsFailure),
+      );
+      return false;
+    }
+
+    state = state.copyWith(
+      dataItems: datasets,
+      datasetProp: datasetProp,
+    );
+    return true;
+  }
+
+  void setIsPlaying({required bool isPlaying}) {
     state = state.copyWith(isPlaying: isPlaying);
   }
 
-  void onCurrentHighlightedIndexChanged(int index) {
+  void setCurrentHighlightedIndex(int index) {
     state = state.copyWith(currentHighlightedIndex: index);
   }
 
-  void onSelectedDatasetChanged(int index) {
+  void setSelectedDataset(int index) {
     final datasets = state.dataItems;
     final selectedDatasets = state.selectedDataItems;
     final dataset = datasets[index];
@@ -59,11 +85,11 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     state = state.copyWith(selectedDataItems: [], isJumpSelectMode: false);
   }
 
-  void onJumpSelectModeChanged({required bool enable}) {
+  void setJumpSelectMode({required bool enable}) {
     state = state.copyWith(isJumpSelectMode: enable);
   }
 
-  void onFollowHighlightedModeChanged({required bool enable}) {
+  void setFollowHighlightedMode({required bool enable}) {
     state = state.copyWith(isFollowHighlightedMode: enable);
   }
 
@@ -84,7 +110,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     );
   }
 
-  String onTaggedDatasets(
+  String setDataItemLabels(
     SholatMovementCategory labelCategory,
     SholatMovement label,
   ) {
@@ -105,40 +131,14 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     return movementSetId;
   }
 
-  Future<bool> readDatasets() async {
-    final (datasetPropFailure, datasetProp) =
-        await _preprocessRepository.readDatasetProp(state.path);
-    if (datasetPropFailure != null) {
-      state = state.copyWith(
-        presentationState: ReadDatasetsFailureState(datasetPropFailure),
-      );
-      return false;
-    }
-
-    final (datasetsFailure, datasets) =
-        await _preprocessRepository.readDatasets(state.path);
-    if (datasetsFailure != null) {
-      state = state.copyWith(
-        presentationState: ReadDatasetsFailureState(datasetsFailure),
-      );
-      return false;
-    }
-
-    state = state.copyWith(
-      dataItems: datasets,
-      datasetProp: datasetProp,
-    );
-    return true;
-  }
-
-  Future<void> onSaveDataset() async {
+  Future<void> saveDataset() async {
     state = state.copyWith(presentationState: const SaveDatasetLoadingState());
 
     final (failure, newPath, datasetProp) =
         await _preprocessRepository.saveDataset(
-      state.path,
-      state.dataItems,
-      isUpdating: state.datasetProp!.isSubmitted,
+      path: state.path,
+      dataItems: state.dataItems,
+      datasetProp: state.datasetProp!,
     );
 
     if (failure != null) {

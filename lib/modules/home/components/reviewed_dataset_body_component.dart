@@ -98,8 +98,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                     datasetsProvider.select(
                       (state) => state.reviewedDatasets.firstWhere(
                         (dataset) =>
-                            dataset.property.dirName ==
-                            rawDataset.property.dirName,
+                            dataset.property.id == rawDataset.property.id,
                         orElse: () => rawDataset,
                       ),
                     ),
@@ -125,9 +124,11 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                     onInitialise: () async {
                       var updatedDataset = dataset;
                       if (dataset.path == null) {
-                        updatedDataset =
-                            await _notifier.loadDatasetFromDisk(dataset) ??
-                                dataset;
+                        updatedDataset = await _notifier.loadDatasetFromDisk(
+                              dataset: dataset,
+                              isReviewedDataset: true,
+                            ) ??
+                            dataset;
                       }
                       if (dataset.thumbnail == null &&
                           updatedDataset.path != null) {
