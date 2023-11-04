@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/components/need_review_datasets_body_component.dart';
@@ -85,6 +84,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
       if (previous?.presentationState != next.presentationState) {
         final presentationState = next.presentationState;
         switch (presentationState) {
+          case DatasetsInitial():
+            break;
           case LoadDatasetsFailureState():
             showErrorSnackbar(context, 'Failed to load datasets');
           case DeleteDatasetLoadingState():
@@ -122,8 +123,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             showSnackbar(context, 'Dataset downloaded succesfully!');
           case DownloadDatasetFailureState():
             showErrorSnackbar(context, 'Failed to download dataset!');
-          case DatasetsInitial():
-            break;
         }
       }
     });
@@ -146,19 +145,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             return [
               SliverAppBar.medium(
                 title: const Text('Datasets'),
-                leading: IconButton(
-                  onPressed: () {
-                    if (isSelectMode) {
-                      _notifier.clearSelections();
-                    } else {
-                      Scaffold.of(context).openDrawer();
-                    }
-                  },
-                  icon: isSelectMode
-                      ? const Icon(Symbols.clear_rounded)
-                      : const Icon(Symbols.menu_rounded),
-                ),
-                actions: _buildAppBarActions(isSelectMode),
                 bottom: TabBar(
                   controller: _tabController,
                   tabs: const [
@@ -202,70 +188,5 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
         ),
       ),
     );
-  }
-
-  List<Widget> _buildAppBarActions(bool isSelectMode) {
-    return [
-      if (!isSelectMode)
-        MenuAnchor(
-          builder: (context, controller, child) {
-            return IconButton(
-              style: IconButton.styleFrom(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: () {
-                if (controller.isOpen) {
-                  controller.close();
-                } else {
-                  controller.open();
-                }
-              },
-              icon: child!,
-            );
-          },
-          menuChildren: [
-            MenuItemButton(
-              leadingIcon: const Icon(Symbols.delete_rounded),
-              onPressed: () async {
-                final savedDevices = ref.read(authDeviceProvider).savedDevices;
-                final device = savedDevices.firstWhere(
-                  (savedDevice) =>
-                      savedDevice.deviceId ==
-                      _authDeviceNotifier.bluetoothDevice?.remoteId.str,
-                );
-                final success =
-                    await _authDeviceNotifier.removeSavedDevice(device);
-                if (success) {
-                  if (!context.mounted) return;
-                  if (savedDevices.isEmpty) {
-                    await context.router.push(const DiscoverDeviceRoute());
-                  } else {
-                    await context.router.push(const SavedDevicesPage());
-                  }
-                }
-              },
-              child: const Text('Delete this device'),
-            ),
-          ],
-          child: const Icon(Symbols.more_vert_rounded),
-        )
-      else ...[
-        IconButton(
-          onPressed: () => _showDeleteDialog(
-            action: () async {
-              Navigator.pop(context);
-              await _notifier.deleteSelectedDatasets();
-              await _needReviewRefreshKey.currentState?.show();
-              await _reviewedRefreshKey.currentState?.show();
-            },
-          ),
-          icon: const Icon(Symbols.delete_rounded),
-        ),
-        IconButton(
-          onPressed: () => _notifier.onSelectAllDatasets(),
-          icon: const Icon(Symbols.select_all_rounded),
-        ),
-      ],
-    ];
   }
 }

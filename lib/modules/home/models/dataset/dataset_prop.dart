@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
@@ -93,7 +94,7 @@ class DatasetProp extends Equatable {
               : DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
           createdAt:
-              DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
+              (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
         );
       case DatasetPropVersion.v3:
         return DatasetProp._(
@@ -105,7 +106,7 @@ class DatasetProp extends Equatable {
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
-          createdAt: DateTime.parse(json['created_at'] as String),
+          createdAt: (json['created_at'] as Timestamp).toDate(),
         );
     }
   }
@@ -138,7 +139,7 @@ class DatasetProp extends Equatable {
       'thumbnail_url': thumbnailUrl,
       'dataset_version': datasetVersion.value,
       'dataset_prop_version': DatasetPropVersion.values.last.value,
-      'created_at': createdAt.toUtc().toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
     };
   }
 
@@ -148,8 +149,8 @@ class DatasetProp extends Equatable {
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
       'dataset_version': datasetVersion.value,
-      'dataset_prop_version': DatasetPropVersion.values.last,
-      'created_at': createdAt.toUtc().toIso8601String(),
+      'dataset_prop_version': DatasetPropVersion.values.last.value,
+      'created_at': Timestamp.fromDate(createdAt),
     };
   }
 

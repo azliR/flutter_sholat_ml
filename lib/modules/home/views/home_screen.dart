@@ -3,17 +3,28 @@ import 'dart:async';
 import 'package:animations/animations.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
-import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 enum HomeScreenNavigation { savedDevice, datasets }
+
+enum NavigationType { bottom, rail, drawer }
+
+class AdaptiveScaffoldDestination {
+  const AdaptiveScaffoldDestination({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+  });
+  final String label;
+  final Icon icon;
+  final Icon selectedIcon;
+}
 
 @RoutePage()
 class HomeScreen extends ConsumerStatefulWidget {
@@ -25,7 +36,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final AuthDeviceNotifier _authDeviceNotifier;
-  late final DatasetsNotifier _datasetNotifier;
 
   final _tabsRouterCompleter = Completer<TabsRouter>();
 
@@ -39,6 +49,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         };
       }).toList();
 
+  List<AdaptiveScaffoldDestination> get _destinations {
+    return HomeScreenNavigation.values.map((section) {
+      switch (section) {
+        case HomeScreenNavigation.savedDevice:
+          return const AdaptiveScaffoldDestination(
+            icon: Icon(Symbols.watch),
+            selectedIcon: Icon(Symbols.watch, fill: 1),
+            label: 'Devices',
+          );
+        case HomeScreenNavigation.datasets:
+          return const AdaptiveScaffoldDestination(
+            icon: Icon(Symbols.dataset),
+            selectedIcon: Icon(Symbols.dataset, fill: 1),
+            label: 'Datasets',
+          );
+      }
+    }).toList();
+  }
+
   void _onNavigationChanged(TabsRouter tabsRouter, int index) {
     if (index != tabsRouter.activeIndex) {
       tabsRouter.setActiveIndex(index);
@@ -47,8 +76,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<void> _onRecordPressed() async {
+    final connectedDevice = _authDeviceNotifier.bluetoothDevice;
+    if (connectedDevice == null) {
+      showSnackbar(context, 'No connected device found');
+      final tabRouter = await _tabsRouterCompleter.future;
+      tabRouter.setActiveIndex(HomeScreenNavigation.savedDevice.index);
+      return;
+    }
+    await context.router.push(
+      RecordRoute(
+        device: connectedDevice,
+        services: _authDeviceNotifier.services!,
+        onRecordSuccess: () {
+          // _datasetNotifier.loadDatasetsFromDisk();
+        },
+      ),
+    );
+  }
+
   @override
   void initState() {
+    _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
+
     _tabsRouterCompleter.future.then((value) {
       value.addListener(() {
         if (!context.mounted) return;
@@ -57,14 +107,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         });
       });
     });
-    _datasetNotifier = ref.read(datasetsProvider.notifier);
-    _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final data = MediaQuery.of(context);
+
+    final NavigationType navigationType;
+    if (data.size.width < 600) {
+      if (data.orientation == Orientation.portrait) {
+        navigationType = NavigationType.bottom;
+      } else {
+        navigationType = NavigationType.rail;
+      }
+    } else if (data.size.width < 1280) {
+      navigationType = NavigationType.rail;
+    } else {
+      navigationType = NavigationType.drawer;
+    }
 
     ref.listen(
       authDeviceProvider,
@@ -95,96 +158,125 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: child,
       ),
       builder: (context, child) {
-        final tabRouter = context.tabsRouter;
+        final tabsRouter = context.tabsRouter;
         if (!_tabsRouterCompleter.isCompleted) {
-          _tabsRouterCompleter.complete(tabRouter);
+          _tabsRouterCompleter.complete(tabsRouter);
         }
-        _currentPage = tabRouter.activeIndex;
-
+        _currentPage = tabsRouter.activeIndex;
         return Scaffold(
-          drawer: NavigationDrawer(
-            selectedIndex: tabRouter.activeIndex,
-            onDestinationSelected: (index) async {
-              if (index == 0) {
-                _onNavigationChanged(tabRouter, index);
-                Navigator.pop(context);
-              } else if (index - 1 < savedDevices.length) {
-                final deviceIndex = index - 1;
-                final device = savedDevices[deviceIndex];
-
-                if (device == currentDevice) {
-                  _onNavigationChanged(tabRouter, index);
-                  Navigator.pop(context);
-                  return;
-                }
-                await _authDeviceNotifier.connectToSavedDevice(device);
-              } else if (index - 1 == savedDevices.length) {
-                await context.router.push(const DiscoverDeviceRoute());
-              }
-            },
-            children: [
-              const SizedBox(height: 16),
-              NavigationDrawerDestination(
-                icon: tabRouter.activeIndex == 0
-                    ? const Icon(Symbols.home_rounded, fill: 1)
-                    : const Icon(Symbols.home_rounded),
-                label: const Text('Home'),
-              ),
-              const Divider(),
-              ...savedDevices.map((device) {
-                return NavigationDrawerDestination(
-                  icon: const Icon(Symbols.bluetooth_rounded),
-                  label: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(device.deviceName),
-                      GestureDetector(
-                        onLongPress: () async {
-                          Navigator.pop(context);
-                          await Clipboard.setData(
-                            ClipboardData(text: device.deviceId),
-                          );
-
-                          if (!context.mounted) return;
-                          showSnackbar(context, 'Device ID Copied!');
-                        },
-                        child:
-                            Text(device.deviceId, style: textTheme.bodySmall),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-              const Divider(),
-              const NavigationDrawerDestination(
-                icon: Icon(Symbols.add_rounded),
-                label: Text('Add device'),
-              ),
-            ],
+          backgroundColor: ElevationOverlay.applySurfaceTint(
+            colorScheme.surface,
+            colorScheme.surfaceTint,
+            2,
           ),
-          body: child,
+          bottomNavigationBar: navigationType == NavigationType.bottom
+              ? NavigationBar(
+                  selectedIndex: tabsRouter.activeIndex,
+                  onDestinationSelected: (index) =>
+                      _onNavigationChanged(tabsRouter, index),
+                  destinations: _destinations
+                      .map(
+                        (destination) => NavigationDestination(
+                          label: destination.label,
+                          icon: destination.icon,
+                          selectedIcon: destination.selectedIcon,
+                        ),
+                      )
+                      .toList(),
+                )
+              : null,
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: HomeScreenNavigation.values[_currentPage] !=
-                  HomeScreenNavigation.datasets
-              ? null
-              : FloatingActionButton.large(
-                  onPressed: () async {
-                    await context.router.push(
-                      RecordRoute(
-                        device: _authDeviceNotifier.bluetoothDevice!,
-                        services: _authDeviceNotifier.services!,
-                        onRecordSuccess: () {
-                          // _datasetNotifier.loadDatasetsFromDisk();
-                        },
+          floatingActionButton: navigationType == NavigationType.bottom
+              ? FloatingActionButton.large(
+                  onPressed: _onRecordPressed,
+                  child: const Icon(Symbols.videocam_rounded),
+                )
+              : null,
+          body: Row(
+            children: [
+              if (navigationType == NavigationType.drawer)
+                NavigationDrawer(
+                  selectedIndex: tabsRouter.activeIndex,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  onDestinationSelected: (index) =>
+                      _onNavigationChanged(tabsRouter, index),
+                  children: [
+                    SizedBox(height: data.padding.top + 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    );
-                  },
-                  child: const Icon(
-                    Symbols.videocam_rounded,
+                      child: Text(
+                        'Sholat-ML',
+                        style: textTheme.titleMedium,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        child: FloatingActionButton.extended(
+                          elevation: 2,
+                          onPressed: _onRecordPressed,
+                          label: const Text('Record'),
+                          icon: const Icon(Symbols.videocam_rounded),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ..._destinations.map(
+                      (destination) => NavigationDrawerDestination(
+                        icon: destination.icon,
+                        selectedIcon: destination.selectedIcon,
+                        label: Text(destination.label),
+                      ),
+                    ),
+                  ],
+                )
+              else if (navigationType == NavigationType.rail)
+                NavigationRail(
+                  selectedIndex: _currentPage,
+                  backgroundColor: Colors.transparent,
+                  leading: FloatingActionButton(
+                    elevation: 2,
+                    onPressed: _onRecordPressed,
+                    child: const Icon(Symbols.videocam_rounded),
                   ),
+                  labelType: NavigationRailLabelType.all,
+                  groupAlignment: -0.2,
+                  onDestinationSelected: (index) =>
+                      _onNavigationChanged(tabsRouter, index),
+                  destinations: _destinations
+                      .map(
+                        (destination) => NavigationRailDestination(
+                          label: Text(destination.label),
+                          icon: destination.icon,
+                          selectedIcon: destination.selectedIcon,
+                        ),
+                      )
+                      .toList(),
                 ),
+              if (navigationType != NavigationType.bottom)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: ClipRRect(
+                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                      borderRadius: BorderRadius.circular(16),
+                      child: child,
+                    ),
+                  ),
+                )
+              else
+                Expanded(child: child),
+            ],
+          ),
         );
       },
     );

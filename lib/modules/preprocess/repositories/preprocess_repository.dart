@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -174,10 +175,9 @@ class PreprocessRepository {
     required File thumbnailFile,
     required DatasetProp datasetProp,
   }) async {
+    final ref = _firestore.collection('datasets');
+    final docRef = ref.doc(datasetProp.isSubmitted ? datasetProp.id : null);
     try {
-      final ref = _firestore.collection('datasets');
-      final docRef = ref.doc(datasetProp.isSubmitted ? datasetProp.id : null);
-
       final (failure, updatedDatasetProp) = await uploadDataset(
         datasetProp: datasetProp.copyWith(id: docRef.id),
         csvFile: csvFile,
@@ -186,10 +186,19 @@ class PreprocessRepository {
       );
       if (failure != null) throw Exception(failure.message);
 
-      await docRef.set(updatedDatasetProp!.toFirestoreJson());
+      print(updatedDatasetProp!.toFirestoreJson());
+      await docRef.set(
+        updatedDatasetProp!.toFirestoreJson(),
+        SetOptions(merge: false),
+      );
 
       return (null, updatedDatasetProp);
     } catch (e, stackTrace) {
+      if (!datasetProp.isSubmitted) {
+        log('Deleting uploaded dataset...');
+        final (deleteFailure, _) = await deleteDatasetFromCloud(docRef.id);
+        if (deleteFailure != null) return (deleteFailure, null);
+      }
       const message = 'Failed saving dataset to firestore';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
@@ -244,7 +253,8 @@ class PreprocessRepository {
 
       return (null, updatedDatasetProp);
     } catch (e, stackTrace) {
-      if (datasetProp.isSubmitted) {
+      if (!datasetProp.isSubmitted) {
+        log('Deleting uploaded dataset...');
         final (deleteFailure, _) = await deleteDatasetFromCloud(datasetProp.id);
         if (deleteFailure != null) return (deleteFailure, null);
       }

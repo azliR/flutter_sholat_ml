@@ -24,7 +24,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final device = await _authDeviceNotifier.getPrimaryDevice();
     if (device == null) {
       if (!context.mounted) return;
-      await context.router.replace(const DiscoverDeviceRoute());
+      await context.router.replace(const SavedDevicesPage());
       return;
     }
     await _authDeviceNotifier.connectToSavedDevice(device);
@@ -32,9 +32,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> onFailure() async {
     showErrorSnackbar(context, 'Failed to connect to saved device');
-    Timer(const Duration(seconds: 1), () async {
+    await Future.delayed(const Duration(seconds: 1), () async {
       await context.router.pushAndPopUntil(
         const SavedDevicesPage(),
+        predicate: (_) => false,
+      );
+    });
+  }
+
+  Future<void> onSuccess() async {
+    await Future.delayed(const Duration(seconds: 1), () async {
+      await context.router.pushAndPopUntil(
+        const DatasetsPage(),
         predicate: (_) => false,
       );
     });
@@ -64,7 +73,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         onConnectDeviceFailureState: (failure) => onFailure(),
         onConnectDeviceSuccessState: () {},
         onSelectDeviceLoadingState: () {},
-        onSelectDeviceSuccessState: () {},
+        onSelectDeviceSuccessState: onSuccess,
         onSelectDeviceFailureState: (failure) => onFailure(),
         onAuthDeviceLoadingState: () {},
         onAuthDeviceFailureState: (failure) => onFailure(),

@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
+import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/widgets/dataset_grid_tile_widget.dart';
@@ -82,6 +83,26 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
           padding:
               const EdgeInsets.fromLTRB(12, 8, 12, kBottomNavigationBarHeight),
           builderDelegate: PagedChildBuilderDelegate<Dataset>(
+            noItemsFoundIndicatorBuilder: (context) {
+              return IllustrationWidget(
+                type: IllustrationWidgetType.noData,
+                action: FilledButton.tonalIcon(
+                  onPressed: () => widget.refreshKey.currentState?.show(),
+                  label: const Text('Refresh'),
+                  icon: const Icon(Symbols.refresh_rounded),
+                ),
+              );
+            },
+            firstPageErrorIndicatorBuilder: (context) {
+              return IllustrationWidget(
+                type: IllustrationWidgetType.error,
+                action: FilledButton.tonalIcon(
+                  onPressed: () => widget.refreshKey.currentState?.show(),
+                  label: const Text('Refresh'),
+                  icon: const Icon(Symbols.refresh_rounded),
+                ),
+              );
+            },
             itemBuilder: (context, rawDataset, index) {
               return Consumer(
                 builder: (context, ref, child) {

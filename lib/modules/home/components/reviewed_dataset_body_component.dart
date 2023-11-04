@@ -75,70 +75,79 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
               ),
             );
           }
-          return GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.87,
-            ),
-            padding:
-                const EdgeInsets.fromLTRB(12, 8, 12, Dimens.bottomListPadding),
-            itemCount: snapshot.docs.length,
-            itemBuilder: (context, index) {
-              if (snapshot.hasMore && index + 1 == snapshot.docs.length) {
-                snapshot.fetchMore();
-              }
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final crossAxisCount = constraints.maxWidth ~/ 180;
+              final aspectRatio =
+                  constraints.maxWidth / (crossAxisCount * 200) - 0.2;
 
-              final rawDataset = snapshot.docs[index].data();
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: aspectRatio,
+                ),
+                padding: const EdgeInsets.fromLTRB(
+                    12, 8, 12, Dimens.bottomListPadding),
+                itemCount: snapshot.docs.length,
+                itemBuilder: (context, index) {
+                  if (snapshot.hasMore && index + 1 == snapshot.docs.length) {
+                    snapshot.fetchMore();
+                  }
 
-              return Consumer(
-                builder: (context, ref, child) {
-                  final dataset = ref.watch(
-                    datasetsProvider.select(
-                      (state) => state.reviewedDatasets.firstWhere(
-                        (dataset) =>
-                            dataset.property.id == rawDataset.property.id,
-                        orElse: () => rawDataset,
-                      ),
-                    ),
-                  );
-                  final selected = ref.watch(
-                    datasetsProvider.select(
-                      (state) => state.selectedDatasets.contains(dataset),
-                    ),
-                  );
+                  final rawDataset = snapshot.docs[index].data();
 
-                  return DatasetGridTile(
-                    dataset: dataset,
-                    selected: selected,
-                    tagged: true,
-                    onTap: () async {
-                      if (dataset.downloaded ?? false) {
-                        await context.router
-                            .push(PreprocessRoute(path: dataset.path!));
-                        return;
-                      }
-                      await _notifier.downloadDataset(dataset);
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final dataset = ref.watch(
+                        datasetsProvider.select(
+                          (state) => state.reviewedDatasets.firstWhere(
+                            (dataset) =>
+                                dataset.property.id == rawDataset.property.id,
+                            orElse: () => rawDataset,
+                          ),
+                        ),
+                      );
+                      final selected = ref.watch(
+                        datasetsProvider.select(
+                          (state) => state.selectedDatasets.contains(dataset),
+                        ),
+                      );
+
+                      return DatasetGridTile(
+                        dataset: dataset,
+                        selected: selected,
+                        tagged: true,
+                        onTap: () async {
+                          if (dataset.downloaded ?? false) {
+                            await context.router
+                                .push(PreprocessRoute(path: dataset.path!));
+                            return;
+                          }
+                          await _notifier.downloadDataset(dataset);
+                        },
+                        onInitialise: () async {
+                          var updatedDataset = dataset;
+                          if (dataset.path == null) {
+                            updatedDataset =
+                                await _notifier.loadDatasetFromDisk(
+                                      dataset: dataset,
+                                      isReviewedDataset: true,
+                                    ) ??
+                                    dataset;
+                          }
+                          if (dataset.thumbnail == null &&
+                              updatedDataset.path != null) {
+                            await _notifier.getThumbnail(
+                              dataset: updatedDataset,
+                              isReviewedDatasets: true,
+                            );
+                          }
+                        },
+                        action: _buildMenu(dataset),
+                      );
                     },
-                    onInitialise: () async {
-                      var updatedDataset = dataset;
-                      if (dataset.path == null) {
-                        updatedDataset = await _notifier.loadDatasetFromDisk(
-                              dataset: dataset,
-                              isReviewedDataset: true,
-                            ) ??
-                            dataset;
-                      }
-                      if (dataset.thumbnail == null &&
-                          updatedDataset.path != null) {
-                        await _notifier.getThumbnail(
-                          dataset: updatedDataset,
-                          isReviewedDatasets: true,
-                        );
-                      }
-                    },
-                    action: _buildMenu(dataset),
                   );
                 },
               );

@@ -1,6 +1,4 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -81,8 +79,6 @@ void handleAuthDeviceState(
           onAuthDeviceSuccessState.call();
         } else {
           context.loaderOverlay.hide();
-          context.router
-              .pushAndPopUntil(const DatasetsPage(), predicate: (_) => false);
         }
       case AuthDeviceFailureState():
         if (onAuthDeviceFailureState != null) {
@@ -109,8 +105,6 @@ void handleAuthDeviceState(
           onAuthWithXiaomiAccountSuccessState.call();
         } else {
           context.loaderOverlay.hide();
-          context.router
-              .pushAndPopUntil(const DatasetsPage(), predicate: (_) => false);
         }
       case AuthWithXiaomiAccountFailureState():
         if (onAuthWithXiaomiAccountFailureState != null) {
