@@ -94,12 +94,14 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
   }
 
   Future<void> jumpSelect(int endIndex) async {
-    final lastSelectedIndex = state.lastSelectedIndex;
-    if (lastSelectedIndex == null) return;
+    final startJumpIndex = state.selectedDataItems.isEmpty
+        ? state.currentHighlightedIndex
+        : state.lastSelectedIndex;
+    if (startJumpIndex == null) return;
 
     final selectedDatasets = state.dataItems.sublist(
-      min(lastSelectedIndex, endIndex),
-      max(lastSelectedIndex, endIndex + 1),
+      min(startJumpIndex, endIndex),
+      max(startJumpIndex, endIndex + 1),
     );
 
     state = state.copyWith(
@@ -119,9 +121,9 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
       dataItems: state.dataItems.map((dataset) {
         if (state.selectedDataItems.contains(dataset)) {
           return dataset.copyWith(
-            movementSetId: movementSetId,
-            labelCategory: labelCategory,
-            label: label,
+            movementSetId: () => movementSetId,
+            labelCategory: () => labelCategory,
+            label: () => label,
           );
         }
         return dataset;
@@ -131,7 +133,42 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     return movementSetId;
   }
 
-  Future<void> saveDataset() async {
+  void removeDataItemLabels({bool includeSameMovementIds = false}) {
+    if (includeSameMovementIds) {
+      final movementIds = state.selectedDataItems
+          .map((dataItem) => dataItem.movementSetId)
+          .toSet()
+          .toList();
+      state = state.copyWith(
+        dataItems: state.dataItems.map((dataset) {
+          if (movementIds.contains(dataset.movementSetId)) {
+            return dataset.copyWith(
+              movementSetId: () => null,
+              labelCategory: () => null,
+              label: () => null,
+            );
+          }
+          return dataset;
+        }).toList(),
+      );
+    } else {
+      state = state.copyWith(
+        dataItems: state.dataItems.map((dataset) {
+          if (state.selectedDataItems.contains(dataset)) {
+            return dataset.copyWith(
+              movementSetId: () => null,
+              labelCategory: () => null,
+              label: () => null,
+            );
+          }
+          return dataset;
+        }).toList(),
+      );
+    }
+    clearSelectedDataItems();
+  }
+
+  Future<void> saveDataset({bool diskOnly = false}) async {
     state = state.copyWith(presentationState: const SaveDatasetLoadingState());
 
     final (failure, newPath, datasetProp) =
@@ -139,6 +176,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
       path: state.path,
       dataItems: state.dataItems,
       datasetProp: state.datasetProp!,
+      diskOnly: diskOnly,
     );
 
     if (failure != null) {

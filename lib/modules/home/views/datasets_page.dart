@@ -1,15 +1,11 @@
-import 'dart:async';
-
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/components/need_review_datasets_body_component.dart';
 import 'package:flutter_sholat_ml/modules/home/components/reviewed_dataset_body_component.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
 class DatasetsPage extends ConsumerStatefulWidget {
@@ -22,45 +18,14 @@ class DatasetsPage extends ConsumerStatefulWidget {
 class _DatasetsPageState extends ConsumerState<DatasetsPage>
     with SingleTickerProviderStateMixin {
   late final DatasetsNotifier _notifier;
-  late final AuthDeviceNotifier _authDeviceNotifier;
   late final TabController _tabController;
 
   final _needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
   final _reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
 
-  Future<void> _showDeleteDialog({required void Function() action}) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete dataset(s)?'),
-        content: const Text(
-          'These datasets will be deleted and cannot be recover.',
-        ),
-        icon: const Icon(Symbols.delete_rounded, weight: 600),
-        iconColor: colorScheme.error,
-        actions: [
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-            ),
-            onPressed: action,
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
-    _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
 
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
@@ -80,6 +45,10 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final data = MediaQuery.of(context);
+
     ref.listen(datasetsProvider, (previous, next) {
       if (previous?.presentationState != next.presentationState) {
         final presentationState = next.presentationState;
@@ -100,26 +69,69 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             _reviewedRefreshKey.currentState?.show();
             showErrorSnackbar(context, 'Failed to delete dataset');
           case DownloadDatasetProgressState():
-            final progressPercent = (presentationState.progress * 100).round();
+            final csvProgress = presentationState.csvProgress;
+            final videoProgress = presentationState.videoProgress;
             context.loaderOverlay.show(
               widget: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(
-                      value: presentationState.progress == 0
-                          ? null
-                          : presentationState.progress,
+                child: SizedBox(
+                  width: 240,
+                  child: Card(
+                    elevation: 8,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
                     ),
-                    const SizedBox(height: 12),
-                    Text('Downloading dataset: $progressPercent%'),
-                  ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Downloading dataset',
+                            style: textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 16),
+                          if (csvProgress == null && videoProgress == null) ...[
+                            LinearProgressIndicator(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text('Preparing...'),
+                          ] else ...[
+                            if (csvProgress != null) ...[
+                              LinearProgressIndicator(
+                                value: csvProgress,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Downloading csv at ${(csvProgress * 100).toStringAsFixed(0)}%',
+                              ),
+                            ],
+                            if (videoProgress != null) ...[
+                              const SizedBox(height: 16),
+                              LinearProgressIndicator(
+                                value: videoProgress,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Downloading video at ${(videoProgress * 100).toStringAsFixed(0)}%',
+                              ),
+                            ],
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             );
-          // context.loaderOverlay.overlayController;
           case DownloadDatasetSuccessState():
             context.loaderOverlay.hide();
+            _notifier.loadDatasetFromDisk(
+              dataset: presentationState.dataset,
+              isReviewedDataset: true,
+            );
             showSnackbar(context, 'Dataset downloaded succesfully!');
           case DownloadDatasetFailureState():
             showErrorSnackbar(context, 'Failed to download dataset!');
@@ -147,12 +159,14 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                 title: const Text('Datasets'),
                 bottom: TabBar(
                   controller: _tabController,
+                  isScrollable: data.size.width > 480,
+                  dividerColor: Colors.transparent,
                   tabs: const [
                     Tab(
-                      child: Text('Need review'),
+                      child: Text('Local'),
                     ),
                     Tab(
-                      child: Text('Reviewed'),
+                      child: Text('Uploaded'),
                     ),
                   ],
                 ),

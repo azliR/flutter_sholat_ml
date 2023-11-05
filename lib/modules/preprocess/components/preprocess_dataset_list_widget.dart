@@ -33,56 +33,61 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
-      child: ListView.builder(
-        controller: widget.scrollController,
-        cacheExtent: 32,
-        itemExtent: 32,
-        itemCount: widget.datasets.length,
-        itemBuilder: (context, index) {
-          return Consumer(
-            builder: (context, ref, child) {
-              final currentHighlightedIndex = ref.watch(
-                preprocessProvider
-                    .select((value) => value.currentHighlightedIndex),
-              );
-              final selectedDatasets = ref.watch(
-                preprocessProvider.select((state) => state.selectedDataItems),
-              );
+    return Focus(
+      autofocus: true,
+      onKey: (node, event) {
+        _notifier.setJumpSelectMode(enable: event.isShiftPressed);
+        return KeyEventResult.handled;
+      },
+      child: Scrollbar(
+        child: ListView.builder(
+          controller: widget.scrollController,
+          cacheExtent: 32,
+          itemExtent: 32,
+          itemCount: widget.datasets.length,
+          itemBuilder: (context, index) {
+            return Consumer(
+              builder: (context, ref, child) {
+                final currentHighlightedIndex = ref.watch(
+                  preprocessProvider
+                      .select((value) => value.currentHighlightedIndex),
+                );
+                final selectedDatasets = ref.watch(
+                  preprocessProvider.select((state) => state.selectedDataItems),
+                );
 
-              final dataset = widget.datasets[index];
-              final selected = selectedDatasets.contains(dataset);
+                final dataset = widget.datasets[index];
+                final selected = selectedDatasets.contains(dataset);
 
-              return DataItemTile(
-                index: index,
-                dataset: dataset,
-                highlighted: index == currentHighlightedIndex,
-                selected: selected,
-                onTap: () async {
-                  if (selectedDatasets.isNotEmpty) {
+                return DataItemTile(
+                  index: index,
+                  dataset: dataset,
+                  highlighted: index == currentHighlightedIndex,
+                  selected: selected,
+                  onTap: () async {
                     final isJumpSelectMode = ref.read(
                       preprocessProvider
                           .select((value) => value.isJumpSelectMode),
                     );
                     if (isJumpSelectMode) {
                       await _notifier.jumpSelect(index);
-                    } else {
+                    } else if (selectedDatasets.isNotEmpty) {
                       _notifier.setSelectedDataset(index);
                     }
-                  }
-                  _notifier.setCurrentHighlightedIndex(index);
-                  widget.trackballBehavior.showByIndex(index);
-                },
-                onLongPress: () async {
-                  _notifier
-                    ..setSelectedDataset(index)
-                    ..setCurrentHighlightedIndex(index);
-                  widget.trackballBehavior.showByIndex(index);
-                },
-              );
-            },
-          );
-        },
+                    _notifier.setCurrentHighlightedIndex(index);
+                    widget.trackballBehavior.showByIndex(index);
+                  },
+                  onLongPress: () async {
+                    _notifier
+                      ..setSelectedDataset(index)
+                      ..setCurrentHighlightedIndex(index);
+                    widget.trackballBehavior.showByIndex(index);
+                  },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }

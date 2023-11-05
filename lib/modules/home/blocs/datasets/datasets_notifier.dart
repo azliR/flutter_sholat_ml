@@ -28,7 +28,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   final HomeRepository _homeRepository;
   final PreprocessRepository _preprocessRepository;
 
-  StreamSubscription<TaskSnapshot>? _downloadSubscription;
+  StreamSubscription<List<TaskSnapshot>>? _downloadSubscription;
 
   Query<Dataset> get reviewedDatasetsQuery =>
       _homeRepository.reviewedDatasetsQuery;
@@ -76,9 +76,9 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     bool forceDownload = false,
   }) async {
     state = state.copyWith(
-      presentationState: const DownloadDatasetProgressState(0),
+      presentationState: const DownloadDatasetProgressState(),
     );
-    final (failure, streamGroup) = await _homeRepository.downloadDataset(
+    final (failure, streamZip) = await _homeRepository.downloadDataset(
       dataset,
       forceDownload: forceDownload,
     );
@@ -88,45 +88,56 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return;
     }
-    if (streamGroup == null) {
-      state = state.copyWith(
-        presentationState: const DownloadDatasetSuccessState(),
-      );
-      return;
-    }
+    _downloadSubscription = streamZip!.listen(
+      (taskSnapshots) {
+        for (var i = 0; i < taskSnapshots.length; i++) {
+          final taskSnapshot = taskSnapshots[i];
 
-    _downloadSubscription = streamGroup.listen((event) {
-      switch (event.state) {
-        case TaskState.success:
-          state = state.copyWith(
-            presentationState: const DownloadDatasetSuccessState(),
-          );
-        case TaskState.canceled:
-        case TaskState.error:
-          state = state.copyWith(
-            presentationState: const DownloadDatasetFailureState(),
-          );
-        case TaskState.paused:
-          break;
-        case TaskState.running:
-          final double progress;
-          if (event.totalBytes > 0 && event.bytesTransferred > 0) {
-            progress = event.bytesTransferred /
-                (event.metadata?.size ?? event.totalBytes);
-          } else {
-            progress = 0;
+          switch (taskSnapshot.state) {
+            case TaskState.success:
+              break;
+            case TaskState.canceled:
+            case TaskState.error:
+              state = state.copyWith(
+                presentationState: const DownloadDatasetFailureState(),
+              );
+            case TaskState.paused:
+              break;
+            case TaskState.running:
+              final double progress;
+              if (taskSnapshot.totalBytes > 0 &&
+                  taskSnapshot.bytesTransferred > 0) {
+                progress = taskSnapshot.bytesTransferred /
+                    (taskSnapshot.metadata?.size ?? taskSnapshot.totalBytes);
+              } else {
+                progress = 0;
+              }
+
+              state = state.copyWith(
+                presentationState: DownloadDatasetProgressState(
+                  csvProgress: i == 0 ? progress : null,
+                  videoProgress: i == 1 ? progress : null,
+                ),
+              );
           }
-
+        }
+        if (taskSnapshots
+            .every((taskSnapshot) => taskSnapshot.state == TaskState.success)) {
           state = state.copyWith(
-            presentationState: DownloadDatasetProgressState(progress),
+            presentationState: DownloadDatasetSuccessState(dataset),
           );
-      }
-    })
-      ..onError((e, stackTrace) {
+        }
+      },
+      onDone: () {
+        print('object');
+      },
+      cancelOnError: true,
+      onError: (e, stackTrace) {
         state = state.copyWith(
           presentationState: const DownloadDatasetFailureState(),
         );
-      });
+      },
+    );
   }
 
   Future<void> getThumbnail({

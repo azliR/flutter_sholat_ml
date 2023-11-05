@@ -87,7 +87,7 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, Stream<TaskSnapshot>?)> downloadDataset(
+  Future<(Failure?, StreamZip<TaskSnapshot>?)> downloadDataset(
     Dataset dataset, {
     bool forceDownload = false,
   }) async {
@@ -104,23 +104,24 @@ class HomeRepository {
       final datasetPropStr = jsonEncode(dataset.property.toJson());
       await fullDir.file(Paths.datasetProp).writeAsString(datasetPropStr);
 
-      final streamGroup = StreamGroup<TaskSnapshot>();
+      final streams = <Stream<TaskSnapshot>>[];
 
       final csvUrl = dataset.property.csvUrl;
       final csvFile = fullDir.file(Paths.datasetCsv);
       if (csvUrl != null && (!csvFile.existsSync() || forceDownload)) {
         final ref = _storage.refFromURL(csvUrl);
         final snapshotStream = ref.writeToFile(csvFile).snapshotEvents;
-        await streamGroup.add(snapshotStream);
+        streams.add(snapshotStream);
       }
-      final videoUrl = dataset.property.videoUrl;
-      final videoFile = fullDir.file(Paths.datasetVideo);
-      if (videoUrl != null && (!videoFile.existsSync() || forceDownload)) {
-        final ref = _storage.refFromURL(videoUrl);
-        final snapshotStream = ref.writeToFile(videoFile).snapshotEvents;
-        await streamGroup.add(snapshotStream);
-      }
-      return (null, streamGroup.isIdle ? null : streamGroup.stream);
+      // final videoUrl = dataset.property.videoUrl;
+      // final videoFile = fullDir.file(Paths.datasetVideo);
+      // if (videoUrl != null && (!videoFile.existsSync() || forceDownload)) {
+      //   final ref = _storage.refFromURL(videoUrl);
+      //   final snapshotStream = ref.writeToFile(videoFile).snapshotEvents;
+      // streams.add(snapshotStream);
+      // }
+      final streamZip = StreamZip<TaskSnapshot>(streams);
+      return (null, streamZip);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);

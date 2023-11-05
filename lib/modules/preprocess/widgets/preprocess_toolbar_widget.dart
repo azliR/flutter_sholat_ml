@@ -198,6 +198,48 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
     );
   }
 
+  Future<void> _showRemoveLabelsDialog() async {
+    final data = MediaQuery.of(context);
+    final textTheme = Theme.of(context).textTheme;
+
+    return showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Remove selected labels'),
+              subtitle: const Text(
+                'Remove only selected labels',
+              ),
+              leading: const Icon(Symbols.delete_rounded),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              onTap: () {
+                Navigator.pop(context);
+                _notifier.removeDataItemLabels();
+              },
+            ),
+            ListTile(
+              title: const Text('Remove same movement IDs'),
+              subtitle:
+                  const Text('Remove every labels with the same movement IDs'),
+              leading: const Icon(Symbols.delete_sweep_rounded),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              onTap: () {
+                Navigator.pop(context);
+                _notifier.removeDataItemLabels(includeSameMovementIds: true);
+              },
+            ),
+            const SizedBox(height: 8),
+            SizedBox(height: data.padding.bottom),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
@@ -220,8 +262,12 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
     final isFollowHighlightedMode = ref.watch(
       preprocessProvider.select((state) => state.isFollowHighlightedMode),
     );
-    final lastSelectedIndex = ref.watch(
-      preprocessProvider.select((state) => state.lastSelectedIndex),
+    final startJumpIndex = ref.watch(
+      preprocessProvider.select(
+        (state) => state.selectedDataItems.isEmpty
+            ? state.currentHighlightedIndex
+            : state.lastSelectedIndex,
+      ),
     );
 
     return SizedBox(
@@ -229,21 +275,6 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          if (selectedDatasets.isNotEmpty)
-            IconButton(
-              tooltip: 'Clear selected data items',
-              visualDensity: VisualDensity.compact,
-              style: IconButton.styleFrom(
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              icon: const Icon(
-                Symbols.arrow_back_rounded,
-                weight: 300,
-              ),
-              onPressed: () {
-                _notifier.clearSelectedDataItems();
-              },
-            ),
           if (!isJumpSelectMode && selectedDatasets.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -256,7 +287,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                'Select end index (start index: ${lastSelectedIndex!})',
+                'Select end index (start index: ${startJumpIndex!})',
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),
@@ -316,6 +347,27 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                   }
                 }
                 await _showTagDialog();
+              },
+            ),
+            IconButton(
+              tooltip: 'Remove label',
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: const Icon(
+                Symbols.backspace_rounded,
+                weight: 300,
+              ),
+              onPressed: () async {
+                final selectedDataItems = ref.read(
+                  preprocessProvider.select((state) => state.selectedDataItems),
+                );
+                final anyLabeled =
+                    selectedDataItems.any((dataItem) => dataItem.isLabeled);
+                if (anyLabeled) {
+                  await _showRemoveLabelsDialog();
+                } else {}
               },
             ),
             const VerticalDivider(),

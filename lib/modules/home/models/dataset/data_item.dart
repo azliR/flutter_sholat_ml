@@ -46,11 +46,11 @@ class DataItem extends Equatable {
     num? y,
     num? z,
     int? heartRate,
-    String? movementSetId,
+    ValueGetter<String?>? movementSetId,
     DeviceLocation? deviceLocation,
     String? note,
-    SholatMovementCategory? labelCategory,
-    SholatMovement? label,
+    ValueGetter<SholatMovementCategory?>? labelCategory,
+    ValueGetter<SholatMovement?>? label,
     SholatNoiseMovement? noiseMovement,
   }) {
     return DataItem(
@@ -59,11 +59,13 @@ class DataItem extends Equatable {
       y: y ?? this.y,
       z: z ?? this.z,
       heartRate: heartRate ?? this.heartRate,
-      movementSetId: movementSetId ?? this.movementSetId,
+      movementSetId:
+          movementSetId != null ? movementSetId() : this.movementSetId,
       deviceLocation: deviceLocation ?? this.deviceLocation,
       note: note ?? this.note,
-      labelCategory: labelCategory ?? this.labelCategory,
-      label: label ?? this.label,
+      labelCategory:
+          labelCategory != null ? labelCategory() : this.labelCategory,
+      label: label != null ? label() : this.label,
       noiseMovement: noiseMovement ?? this.noiseMovement,
     );
   }

@@ -112,16 +112,16 @@ class DataItemTile extends StatelessWidget {
                 child: Center(
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      if (tagged) {
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        showSnackbar(
-                          context,
-                          '${dataset.label!.name} with movement ID:\n'
-                          '${dataset.movementSetId!}',
-                        );
-                      }
-                    },
+                    onTap: tagged
+                        ? () {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            showSnackbar(
+                              context,
+                              '${dataset.label!.name} with movement ID:\n'
+                              '${dataset.movementSetId!}',
+                            );
+                          }
+                        : null,
                     child: icon,
                   ),
                 ),

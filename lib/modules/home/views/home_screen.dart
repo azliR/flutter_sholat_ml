@@ -189,6 +189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               FloatingActionButtonLocation.centerFloat,
           floatingActionButton: navigationType == NavigationType.bottom
               ? FloatingActionButton.large(
+                  tooltip: 'Record',
                   onPressed: _onRecordPressed,
                   child: const Icon(Symbols.videocam_rounded),
                 )
@@ -223,6 +224,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         child: FloatingActionButton.extended(
                           elevation: 2,
+                          tooltip: 'Record',
                           onPressed: _onRecordPressed,
                           label: const Text('Record'),
                           icon: const Icon(Symbols.videocam_rounded),
@@ -245,6 +247,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   backgroundColor: Colors.transparent,
                   leading: FloatingActionButton(
                     elevation: 2,
+                    tooltip: 'Record',
                     onPressed: _onRecordPressed,
                     child: const Icon(Symbols.videocam_rounded),
                   ),

@@ -62,7 +62,7 @@ class RecordState extends Equatable {
       currentCamera: currentCamera ?? this.currentCamera,
       dataItems: dataItems ?? this.dataItems,
       availableCameras: availableCameras ?? this.availableCameras,
-      lastDatasets: lastDatasets?.call() ?? this.lastDatasets,
+      lastDatasets: lastDatasets != null ? lastDatasets() : this.lastDatasets,
       presentationState: presentationState ?? this.presentationState,
     );
   }

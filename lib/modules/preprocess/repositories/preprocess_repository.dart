@@ -115,6 +115,7 @@ class PreprocessRepository {
     required String path,
     required List<DataItem> dataItems,
     required DatasetProp datasetProp,
+    required bool diskOnly,
   }) async {
     try {
       final datasetStr = await compute(
@@ -133,6 +134,8 @@ class PreprocessRepository {
 
       final csvFile = File('$path/$datasetCsvPath');
       await csvFile.writeAsString(datasetStr);
+
+      if (diskOnly) return (null, path, datasetProp);
 
       final (failure, updatedDatasetProp) = await saveDatasetToDatabase(
         csvFile: csvFile,
@@ -186,7 +189,6 @@ class PreprocessRepository {
       );
       if (failure != null) throw Exception(failure.message);
 
-      print(updatedDatasetProp!.toFirestoreJson());
       await docRef.set(
         updatedDatasetProp!.toFirestoreJson(),
         SetOptions(merge: false),

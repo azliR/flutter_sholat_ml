@@ -56,7 +56,9 @@ class PreprocessState extends Equatable {
       datasetProp: datasetProp ?? this.datasetProp,
       currentHighlightedIndex:
           currentHighlightedIndex ?? this.currentHighlightedIndex,
-      lastSelectedIndex: lastSelectedIndex?.call() ?? this.lastSelectedIndex,
+      lastSelectedIndex: lastSelectedIndex != null
+          ? lastSelectedIndex()
+          : this.lastSelectedIndex,
       isJumpSelectMode: isJumpSelectMode ?? this.isJumpSelectMode,
       isFollowHighlightedMode:
           isFollowHighlightedMode ?? this.isFollowHighlightedMode,

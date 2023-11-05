@@ -88,6 +88,45 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
+  Future<void> _showSaveDialog() {
+    final data = MediaQuery.of(context);
+
+    return showModalBottomSheet<void>(
+      context: context,
+      builder: (context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Save locally'),
+              subtitle: const Text(
+                'Dataset will be saved in the disk only',
+              ),
+              leading: const Icon(Symbols.save_rounded),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              onTap: () {
+                Navigator.pop(context);
+                _notifier.saveDataset(diskOnly: true);
+              },
+            ),
+            ListTile(
+              title: const Text('Upload to the cloud'),
+              subtitle: const Text('Dataset will be uploaded'),
+              leading: const Icon(Symbols.cloud_upload_rounded),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            SizedBox(height: data.padding.bottom),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
@@ -190,13 +229,30 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           actions: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: FilledButton.tonalIcon(
-                onPressed: () => _notifier.saveDataset(),
-                icon: datasetProp?.isSubmitted ?? false
-                    ? const Icon(Symbols.sync_rounded)
-                    : const Icon(Symbols.backup_rounded),
-                label: Text(
-                  (datasetProp?.isSubmitted ?? false) ? 'Update' : 'Save',
+              child: FilledButton.tonal(
+                style: FilledButton.styleFrom(
+                  padding: (datasetProp?.isSubmitted ?? false)
+                      ? const EdgeInsets.fromLTRB(16, 8, 24, 8)
+                      : null,
+                ),
+                onPressed: () {
+                  if (datasetProp?.isSubmitted ?? false) {
+                    _notifier.saveDataset();
+                  } else {
+                    _showSaveDialog();
+                  }
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (datasetProp?.isSubmitted ?? false) ...[
+                      const Icon(Symbols.sync_rounded),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      (datasetProp?.isSubmitted ?? false) ? 'Update' : 'Save',
+                    ),
+                  ],
                 ),
               ),
             ),

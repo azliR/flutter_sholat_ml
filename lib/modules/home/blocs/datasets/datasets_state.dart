@@ -65,13 +65,16 @@ final class LoadDatasetsFailureState extends DatasetsPresentationState {
 }
 
 final class DownloadDatasetProgressState extends DatasetsPresentationState {
-  const DownloadDatasetProgressState(this.progress);
+  const DownloadDatasetProgressState({this.csvProgress, this.videoProgress});
 
-  final double progress;
+  final double? csvProgress;
+  final double? videoProgress;
 }
 
 final class DownloadDatasetSuccessState extends DatasetsPresentationState {
-  const DownloadDatasetSuccessState();
+  const DownloadDatasetSuccessState(this.dataset);
+
+  final Dataset dataset;
 }
 
 final class DownloadDatasetFailureState extends DatasetsPresentationState {
