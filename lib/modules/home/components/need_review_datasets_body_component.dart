@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
+import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
@@ -70,108 +71,118 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
         _pagingController.refresh();
         return Future.delayed(const Duration(seconds: 1));
       },
-      child: () {
-        return PagedGridView(
-          pagingController: _pagingController,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.97,
-          ),
-          padding:
-              const EdgeInsets.fromLTRB(12, 8, 12, kBottomNavigationBarHeight),
-          builderDelegate: PagedChildBuilderDelegate<Dataset>(
-            noItemsFoundIndicatorBuilder: (context) {
-              return IllustrationWidget(
-                type: IllustrationWidgetType.noData,
-                actions: [
-                  FilledButton.tonalIcon(
-                    onPressed: () => _notifier.importDatasets(),
-                    label: const Text('Import dataset'),
-                    icon: const Icon(Symbols.upload_rounded),
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: () => widget.refreshKey.currentState?.show(),
-                    label: const Text('Refresh'),
-                    icon: const Icon(Symbols.refresh_rounded),
-                  ),
-                ],
-              );
-            },
-            firstPageErrorIndicatorBuilder: (context) {
-              return IllustrationWidget(
-                type: IllustrationWidgetType.error,
-                actions: [
-                  FilledButton.tonalIcon(
-                    onPressed: () => widget.refreshKey.currentState?.show(),
-                    label: const Text('Refresh'),
-                    icon: const Icon(Symbols.refresh_rounded),
-                  ),
-                ],
-              );
-            },
-            itemBuilder: (context, rawDataset, index) {
-              return Consumer(
-                builder: (context, ref, child) {
-                  final dataset = ref.watch(
-                    datasetsProvider.select(
-                      (state) => state.needReviewDatasets.firstWhere(
-                        (dataset) =>
-                            dataset.property.id == rawDataset.property.id,
-                        orElse: () => rawDataset,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = constraints.maxWidth ~/ 180;
+          final aspectRatio =
+              constraints.maxWidth / (crossAxisCount * 200) - 0.1;
+
+          return PagedGridView(
+            pagingController: _pagingController,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: aspectRatio,
+            ),
+            padding: const EdgeInsets.fromLTRB(
+              12,
+              8,
+              12,
+              Dimens.bottomListPadding,
+            ),
+            builderDelegate: PagedChildBuilderDelegate<Dataset>(
+              noItemsFoundIndicatorBuilder: (context) {
+                return IllustrationWidget(
+                  type: IllustrationWidgetType.noData,
+                  actions: [
+                    FilledButton.tonalIcon(
+                      onPressed: () => _notifier.importDatasets(),
+                      label: const Text('Import dataset'),
+                      icon: const Icon(Symbols.upload_rounded),
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () => widget.refreshKey.currentState?.show(),
+                      label: const Text('Refresh'),
+                      icon: const Icon(Symbols.refresh_rounded),
+                    ),
+                  ],
+                );
+              },
+              firstPageErrorIndicatorBuilder: (context) {
+                return IllustrationWidget(
+                  type: IllustrationWidgetType.error,
+                  actions: [
+                    FilledButton.tonalIcon(
+                      onPressed: () => widget.refreshKey.currentState?.show(),
+                      label: const Text('Refresh'),
+                      icon: const Icon(Symbols.refresh_rounded),
+                    ),
+                  ],
+                );
+              },
+              itemBuilder: (context, rawDataset, index) {
+                return Consumer(
+                  builder: (context, ref, child) {
+                    final dataset = ref.watch(
+                      datasetsProvider.select(
+                        (state) => state.needReviewDatasets.firstWhere(
+                          (dataset) =>
+                              dataset.property.id == rawDataset.property.id,
+                          orElse: () => rawDataset,
+                        ),
                       ),
-                    ),
-                  );
-                  final selected = ref.watch(
-                    datasetsProvider.select(
-                      (state) => state.selectedDatasets.contains(dataset),
-                    ),
-                  );
-                  return DatasetGridTile(
-                    tagged: false,
-                    dataset: dataset,
-                    selected: selected,
-                    onTap: () async {
-                      if (widget.isSelectMode) {
-                        _notifier.onSelectedDataset(dataset);
-                        return;
-                      }
-                      await context.router
-                          .push(PreprocessRoute(path: dataset.path!));
-                      await _notifier.loadDatasetFromDisk(
-                        dataset: dataset,
-                        isReviewedDataset: false,
-                        createDirIfNotExist: false,
-                      );
-                    },
-                    onInitialise: () async {
-                      var updatedDataset = dataset;
-                      if (dataset.path == null) {
-                        updatedDataset = await _notifier.loadDatasetFromDisk(
-                              dataset: dataset,
-                              isReviewedDataset: false,
-                              createDirIfNotExist: true,
-                            ) ??
-                            dataset;
-                      }
-                      if (dataset.thumbnail == null &&
-                          updatedDataset.path != null) {
-                        await _notifier.getThumbnail(
-                          dataset: updatedDataset,
-                          isReviewedDatasets: false,
+                    );
+                    final selected = ref.watch(
+                      datasetsProvider.select(
+                        (state) => state.selectedDatasets.contains(dataset),
+                      ),
+                    );
+                    return DatasetGridTile(
+                      tagged: false,
+                      dataset: dataset,
+                      selected: selected,
+                      onTap: () async {
+                        if (widget.isSelectMode) {
+                          _notifier.onSelectedDataset(dataset);
+                          return;
+                        }
+                        await context.router
+                            .push(PreprocessRoute(path: dataset.path!));
+                        await _notifier.loadDatasetFromDisk(
+                          dataset: dataset,
+                          isReviewedDataset: false,
+                          createDirIfNotExist: false,
                         );
-                      }
-                    },
-                    onLongPress: () => _notifier.onSelectedDataset(dataset),
-                    action: _buildMenu(dataset.path),
-                  );
-                },
-              );
-            },
-          ),
-        );
-      }(),
+                      },
+                      onInitialise: () async {
+                        var updatedDataset = dataset;
+                        if (dataset.path == null) {
+                          updatedDataset = await _notifier.loadDatasetFromDisk(
+                                dataset: dataset,
+                                isReviewedDataset: false,
+                                createDirIfNotExist: true,
+                              ) ??
+                              dataset;
+                        }
+                        if (dataset.thumbnail == null &&
+                            updatedDataset.path != null) {
+                          await _notifier.getThumbnail(
+                            dataset: updatedDataset,
+                            isReviewedDatasets: false,
+                          );
+                        }
+                      },
+                      onLongPress: () => _notifier.onSelectedDataset(dataset),
+                      action: _buildMenu(dataset.path),
+                    );
+                  },
+                );
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 

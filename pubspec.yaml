@@ -26,7 +26,7 @@ dependencies:
   firebase_ui_firestore: ^1.5.12
   flutter:
     sdk: flutter
-  flutter_blue_plus: ^1.26.0
+  flutter_blue_plus: ^1.26.1
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^2.4.0

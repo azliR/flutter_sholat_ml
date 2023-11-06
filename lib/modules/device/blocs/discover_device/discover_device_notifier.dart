@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -27,10 +26,11 @@ class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
   void initialise() {
     if (state.isInitialised) return;
 
+    getBondedDevices();
+
     _scanSubscription ??= _deviceRepository.scanResults.listen((results) {
       for (final result in results) {
         if (!state.scanResults.contains(result)) {
-          log('Device found: ${result.device.platformName}');
           state = state.copyWith(
             scanResults: [...state.scanResults, result],
           );

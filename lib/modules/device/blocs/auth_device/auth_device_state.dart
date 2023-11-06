@@ -39,6 +39,7 @@ class AuthDeviceState extends Equatable {
   @override
   List<Object?> get props => [
         isInitialised,
+        currentDevice,
         savedDevices,
         presentationState,
       ];

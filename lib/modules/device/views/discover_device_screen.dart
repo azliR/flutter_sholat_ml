@@ -84,7 +84,10 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
     bool isBonded = false,
   }) async {
     if (!isBonded) {
-      await _authDeviceNotifier.connectDevice(bluetoothDevice);
+      final result = await _authDeviceNotifier.connectDevice(bluetoothDevice);
+      if (result == false) {
+        return;
+      }
     }
     final services = await _authDeviceNotifier.selectDevice(bluetoothDevice);
     if (services == null) return;
@@ -144,6 +147,8 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
         .watch(discoverDeviceProvider.select((value) => value.bluetoothState));
     final scanResults =
         ref.watch(discoverDeviceProvider.select((value) => value.scanResults));
+    final bondedDevices = ref
+        .watch(discoverDeviceProvider.select((value) => value.bondedDevices));
 
     return Scaffold(
       body: CustomScrollView(
@@ -226,7 +231,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                           (service) => service == DeviceUuids.serviceMiBand1,
                         );
                 return RoundedListTile(
-                  title: Text(name),
+                  title: Text(name.isEmpty ? 'Unknown device' : name),
                   subtitle: Text(device.remoteId.str),
                   leading: const Icon(Symbols.bluetooth),
                   trailing: isSupported ? null : const Text('Not Supported'),
@@ -234,35 +239,41 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 );
               },
             ),
-          // if (bondedDevices.isNotEmpty) ...[
-          //   SliverPadding(
-          //     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          //     sliver: SliverToBoxAdapter(
-          //       child: Text(
-          //         'Bonded devices',
-          //         style: textTheme.titleSmall,
-          //       ),
-          //     ),
-          //   ),
-          //   SliverList.builder(
-          //     itemCount: bondedDevices.length,
-          //     itemBuilder: (context, index) {
-          //       final device = bondedDevices[index];
-          //       final name = device.platformName;
-          //       final isSupported = true;
+          if (bondedDevices.isNotEmpty) ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              sliver: SliverToBoxAdapter(
+                child: Text(
+                  'Bonded devices',
+                  style: textTheme.titleSmall,
+                ),
+              ),
+            ),
+            SliverList.builder(
+              itemCount: bondedDevices.length,
+              itemBuilder: (context, index) {
+                final device = bondedDevices[index];
+                final name = device.platformName;
+                final isSupported = device.servicesList?.any(
+                      (service) {
+                        return service.serviceUuid.toString() ==
+                            DeviceUuids.serviceMiBand1;
+                      },
+                    ) ??
+                    false;
 
-          //       return RoundedListTile(
-          //         title: Text(name),
-          //         subtitle: Text(device.remoteId.str),
-          //         leading: const Icon(Symbols.bluetooth),
-          //         trailing: isSupported ? null : const Text('Not Supported'),
-          //         onTap: !isSupported
-          //             ? null
-          //             : () => _onConnectPressed(device, isBonded: true),
-          //       );
-          //     },
-          //   ),
-          // ],
+                return RoundedListTile(
+                  title: Text(name),
+                  subtitle: Text(device.remoteId.str),
+                  leading: const Icon(Symbols.bluetooth),
+                  trailing: isSupported ? null : const Text('Not Supported'),
+                  onTap: !isSupported
+                      ? null
+                      : () => _onConnectPressed(device, isBonded: true),
+                );
+              },
+            ),
+          ],
         ],
       ),
     );

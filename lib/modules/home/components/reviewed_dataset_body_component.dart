@@ -83,7 +83,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
             builder: (context, constraints) {
               final crossAxisCount = constraints.maxWidth ~/ 180;
               final aspectRatio =
-                  constraints.maxWidth / (crossAxisCount * 200) - 0.2;
+                  constraints.maxWidth / (crossAxisCount * 200) - 0.16;
 
               return GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

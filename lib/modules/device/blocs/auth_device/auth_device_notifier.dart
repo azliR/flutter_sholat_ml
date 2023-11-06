@@ -71,8 +71,27 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     if (!success) return;
     final services = await selectDevice(device);
     if (services == null) return;
-
+    await Future<void>.delayed(const Duration(seconds: 1));
     await auth(savedDevice.authKey, device, services);
+  }
+
+  Future<void> auth(
+    String authKey,
+    BluetoothDevice device,
+    List<BluetoothService> services,
+  ) async {
+    state = state.copyWith(presentationState: const AuthDeviceLoadingState());
+
+    await initialise(authKey, device, services);
+
+    final (failure, _) =
+        await _deviceRepository.requestRandomNumber(_authChar!);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: AuthDeviceFailureState(failure),
+      );
+      return;
+    }
   }
 
   Future<void> initialise(
@@ -83,10 +102,10 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     this.bluetoothDevice = bluetoothDevice;
     this.services = services;
 
-    _authService = services.singleWhere(
+    _authService = services.firstWhere(
       (element) => element.uuid == Guid(DeviceUuids.serviceMiBand2),
     );
-    _authChar = _authService!.characteristics.singleWhere(
+    _authChar = _authService!.characteristics.firstWhere(
       (element) => element.uuid == Guid(DeviceUuids.charAuth),
     );
 
@@ -199,25 +218,6 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     state = state.copyWith(
       presentationState: const AuthWithXiaomiAccountSuccessState(),
     );
-  }
-
-  Future<void> auth(
-    String authKey,
-    BluetoothDevice device,
-    List<BluetoothService> services,
-  ) async {
-    state = state.copyWith(presentationState: const AuthDeviceLoadingState());
-
-    await initialise(authKey, device, services);
-
-    final (failure, _) =
-        await _deviceRepository.requestRandomNumber(_authChar!);
-    if (failure != null) {
-      state = state.copyWith(
-        presentationState: AuthDeviceFailureState(failure),
-      );
-      return;
-    }
   }
 
   Future<bool> disconnectCurrentDevice() async {

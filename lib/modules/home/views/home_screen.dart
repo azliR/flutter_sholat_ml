@@ -136,7 +136,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         previous,
         next,
         onAuthDeviceSuccessState: () async {
-          _onNavigationChanged(await _tabsRouterCompleter.future, 1);
           if (!context.mounted) return;
           context.loaderOverlay.hide();
         },

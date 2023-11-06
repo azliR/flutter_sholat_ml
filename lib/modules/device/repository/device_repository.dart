@@ -32,7 +32,9 @@ class DeviceRepository {
     try {
       await Future.wait(
         chars.map((char) async {
-          await char.setNotifyValue(notify);
+          if (char.isNotifying != notify) {
+            await char.setNotifyValue(notify);
+          }
         }),
       );
       return (null, null);
