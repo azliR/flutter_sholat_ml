@@ -117,6 +117,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 24),
               onTap: () {
                 Navigator.pop(context);
+                _notifier.saveDataset();
               },
             ),
             const SizedBox(height: 8),

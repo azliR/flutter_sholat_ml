@@ -62,9 +62,9 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                       Text(
                         'Downloading csv at ${(csvProgress * 100).toStringAsFixed(0)}%',
                       ),
+                      const SizedBox(height: 16),
                     ],
                     if (videoProgress != null) ...[
-                      const SizedBox(height: 16),
                       LinearProgressIndicator(
                         value: videoProgress,
                         borderRadius: BorderRadius.circular(8),
@@ -73,6 +73,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                       Text(
                         'Downloading video at ${(videoProgress * 100).toStringAsFixed(0)}%',
                       ),
+                      const SizedBox(height: 16),
                     ],
                   ],
                 ],
@@ -102,9 +103,10 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Downloading dataset',
+                    'Exporting dataset',
                     style: textTheme.titleMedium,
                   ),
+                  const SizedBox(height: 16),
                   LinearProgressIndicator(
                     value: progress,
                     borderRadius: BorderRadius.circular(8),
@@ -172,10 +174,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             _showDownloadProgressDialog(csvProgress, videoProgress);
           case DownloadDatasetSuccessState():
             context.loaderOverlay.hide();
-            _notifier.loadDatasetFromDisk(
-              dataset: presentationState.dataset,
-              isReviewedDataset: true,
-            );
+            _notifier
+                .refreshDatasetDownloadStatus(presentationState.dataset.path!);
             showSnackbar(context, 'Dataset downloaded succesfully!');
           case DownloadDatasetFailureState():
             showErrorSnackbar(context, 'Failed to download dataset!');

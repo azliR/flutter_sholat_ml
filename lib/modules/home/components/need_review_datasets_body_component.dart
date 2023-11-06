@@ -139,9 +139,11 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                       }
                       await context.router
                           .push(PreprocessRoute(path: dataset.path!));
-                      // await Future.wait([
-                      //   _notifier.loadDatasetsFromDisk(),
-                      // ]);
+                      await _notifier.loadDatasetFromDisk(
+                        dataset: dataset,
+                        isReviewedDataset: false,
+                        createDirIfNotExist: false,
+                      );
                     },
                     onInitialise: () async {
                       var updatedDataset = dataset;
@@ -149,6 +151,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                         updatedDataset = await _notifier.loadDatasetFromDisk(
                               dataset: dataset,
                               isReviewedDataset: false,
+                              createDirIfNotExist: true,
                             ) ??
                             dataset;
                       }

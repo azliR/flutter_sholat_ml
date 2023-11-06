@@ -35,6 +35,8 @@ class _AppState extends State<App> {
     return GlobalLoaderOverlay(
       useDefaultLoading: false,
       useBackButtonInterceptor: true,
+      duration: const Duration(milliseconds: 250),
+      reverseDuration: const Duration(milliseconds: 250),
       overlayColor: colorScheme.surface.withOpacity(0.6),
       overlayWidget: const SafeArea(
         child: Align(

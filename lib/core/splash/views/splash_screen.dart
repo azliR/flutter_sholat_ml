@@ -32,21 +32,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> onFailure() async {
     showErrorSnackbar(context, 'Failed to connect to saved device');
-    await Future.delayed(const Duration(seconds: 1), () async {
-      await context.router.pushAndPopUntil(
-        const SavedDevicesPage(),
-        predicate: (_) => false,
-      );
-    });
+    await context.router.pushAndPopUntil(
+      const SavedDevicesPage(),
+      predicate: (_) => false,
+    );
   }
 
   Future<void> onSuccess() async {
-    await Future.delayed(const Duration(seconds: 1), () async {
-      await context.router.pushAndPopUntil(
-        const DatasetsPage(),
-        predicate: (_) => false,
-      );
-    });
+    await context.router.pushAndPopUntil(
+      const DatasetsPage(),
+      predicate: (_) => false,
+    );
   }
 
   @override

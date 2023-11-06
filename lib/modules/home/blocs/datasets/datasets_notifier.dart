@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
+import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
@@ -29,7 +31,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   final HomeRepository _homeRepository;
   final PreprocessRepository _preprocessRepository;
 
-  StreamSubscription<List<TaskSnapshot>>? _downloadSubscription;
+  StreamSubscription<TaskSnapshot>? _downloadSubscription;
   StreamSubscription<double>? _exportSubscription;
 
   Query<Dataset> get reviewedDatasetsQuery =>
@@ -49,14 +51,34 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   Future<Dataset?> loadDatasetFromDisk({
     required Dataset dataset,
     required bool isReviewedDataset,
+    required bool createDirIfNotExist,
   }) async {
     final (failure, updatedDataset) = await _homeRepository.loadDatasetFromDisk(
       dataset: dataset,
       isReviewedDataset: isReviewedDataset,
+      createDirIfNotExist: createDirIfNotExist,
     );
     if (failure != null) {
       state = state.copyWith(
         presentationState: LoadDatasetsFailureState(failure),
+      );
+      return null;
+    }
+
+    if (updatedDataset == null) {
+      state = state.copyWith(
+        needReviewDatasets: !isReviewedDataset
+            ? (state.needReviewDatasets
+              ..dropLastWhile(
+                (oldDataset) => oldDataset.property.id == dataset.property.id,
+              ))
+            : null,
+        reviewedDatasets: isReviewedDataset
+            ? (state.reviewedDatasets
+              ..dropLastWhile(
+                (oldDataset) => oldDataset.property.id == dataset.property.id,
+              ))
+            : null,
       );
       return null;
     }
@@ -72,10 +94,10 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
 
     state = state.copyWith(
       needReviewDatasets: !isReviewedDataset
-          ? (updatedDatasets..addOrUpdate(updatedDataset!))
+          ? (updatedDatasets..addOrUpdate(updatedDataset))
           : null,
       reviewedDatasets: isReviewedDataset
-          ? (updatedDatasets..addOrUpdate(updatedDataset!))
+          ? (updatedDatasets..addOrUpdate(updatedDataset))
           : null,
     );
     return updatedDataset;
@@ -113,7 +135,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(
       presentationState: const DownloadDatasetProgressState(),
     );
-    final (failure, streamZip) = await _homeRepository.downloadDataset(
+    final (failure, stream) = await _homeRepository.downloadDataset(
       dataset,
       forceDownload: forceDownload,
     );
@@ -123,48 +145,60 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return;
     }
+    var lastCsvProgress = 0.0;
+    var lastVideoProgress = 0.0;
+
     await _downloadSubscription?.cancel();
-    _downloadSubscription = streamZip!.listen(
-      (taskSnapshots) {
-        for (var i = 0; i < taskSnapshots.length; i++) {
-          final taskSnapshot = taskSnapshots[i];
+    _downloadSubscription = stream!.listen(
+      (taskSnapshot) {
+        final fileName = taskSnapshot.ref.name;
+        switch (taskSnapshot.state) {
+          case TaskState.success:
+            if (fileName == Paths.datasetCsv) {
+              lastCsvProgress = 1;
+            } else if (fileName == Paths.datasetVideo) {
+              lastVideoProgress = 1;
+            }
+          case TaskState.canceled:
+          case TaskState.error:
+            state = state.copyWith(
+              presentationState: const DownloadDatasetFailureState(),
+            );
+          case TaskState.paused:
+            break;
+          case TaskState.running:
+            final double progress;
+            if (taskSnapshot.totalBytes > 0 &&
+                taskSnapshot.bytesTransferred > 0) {
+              progress = taskSnapshot.bytesTransferred /
+                  (taskSnapshot.metadata?.size ?? taskSnapshot.totalBytes);
+            } else {
+              progress = 0;
+            }
 
-          switch (taskSnapshot.state) {
-            case TaskState.success:
-              break;
-            case TaskState.canceled:
-            case TaskState.error:
-              state = state.copyWith(
-                presentationState: const DownloadDatasetFailureState(),
-              );
-            case TaskState.paused:
-              break;
-            case TaskState.running:
-              final double progress;
-              if (taskSnapshot.totalBytes > 0 &&
-                  taskSnapshot.bytesTransferred > 0) {
-                progress = taskSnapshot.bytesTransferred /
-                    (taskSnapshot.metadata?.size ?? taskSnapshot.totalBytes);
-              } else {
-                progress = 0;
-              }
-
-              state = state.copyWith(
-                presentationState: DownloadDatasetProgressState(
-                  csvProgress: i == 0 ? progress : null,
-                  videoProgress: i == 1 ? progress : null,
-                ),
-              );
-          }
+            if (fileName == Paths.datasetCsv) {
+              lastCsvProgress = progress;
+            } else if (fileName == Paths.datasetVideo) {
+              lastVideoProgress = progress;
+            }
         }
-        if (taskSnapshots
-            .every((taskSnapshot) => taskSnapshot.state == TaskState.success)) {
+
+        state = state.copyWith(
+          presentationState: DownloadDatasetProgressState(
+            csvProgress: lastCsvProgress,
+            videoProgress: lastVideoProgress,
+          ),
+        );
+        if (lastCsvProgress == 1 && lastVideoProgress == 1) {
           state = state.copyWith(
             presentationState: DownloadDatasetSuccessState(dataset),
           );
         }
       },
       cancelOnError: true,
+      onDone: () {
+        _downloadSubscription?.cancel();
+      },
       onError: (e, stackTrace) {
         state = state.copyWith(
           presentationState: const DownloadDatasetFailureState(),

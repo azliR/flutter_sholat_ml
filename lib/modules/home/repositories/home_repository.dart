@@ -67,6 +67,7 @@ class HomeRepository {
   Future<(Failure?, Dataset?)> loadDatasetFromDisk({
     required Dataset dataset,
     required bool isReviewedDataset,
+    required bool createDirIfNotExist,
   }) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
@@ -76,7 +77,7 @@ class HomeRepository {
       final fullDir =
           dir.directory(datasetDirPath).directory(dataset.property.id);
 
-      if (!fullDir.existsSync()) {
+      if (createDirIfNotExist || !fullDir.existsSync()) {
         await fullDir.create(recursive: true);
       }
 
@@ -116,7 +117,7 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, StreamZip<TaskSnapshot>?)> downloadDataset(
+  Future<(Failure?, Stream<TaskSnapshot>?)> downloadDataset(
     Dataset dataset, {
     bool forceDownload = false,
   }) async {
@@ -149,8 +150,8 @@ class HomeRepository {
         final snapshotStream = ref.writeToFile(videoFile).snapshotEvents;
         streams.add(snapshotStream);
       }
-      final streamZip = StreamZip<TaskSnapshot>(streams);
-      return (null, streamZip);
+      final streamGroup = StreamGroup.merge(streams);
+      return (null, streamGroup);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -193,8 +194,10 @@ class HomeRepository {
   Future<(Failure?, void)> deleteDataset(String path) async {
     try {
       final dir = Directory(path);
-      await dir.delete(recursive: true);
-      LocalDatasetStorageService.deleteDataset(path);
+      if (dir.existsSync()) {
+        await dir.delete(recursive: true);
+      }
+      LocalDatasetStorageService.deleteDataset(path.split('/').last);
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed deleting dataset';

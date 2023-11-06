@@ -34,35 +34,6 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     (json) => DatasetProp.fromJson(json as Map<String, dynamic>),
   );
 
-  // final fullDir = dir.directory(Directories.needReviewDirPath);
-
-  // if (!fullDir.existsSync()) {
-  //   await fullDir.create(recursive: true);
-  // }
-
-  // final entities = await fullDir.list().toList();
-  // final datasetPaths =
-  //     entities.fold(<String, DatasetProp>{}, (previous, entity) {
-  //   final type = FileSystemEntity.typeSync(entity.path);
-
-  //   if (type != FileSystemEntityType.directory) return previous;
-
-  //   final fullDir = Directory(entity.path);
-  //   final datasetPropFile = fullDir.file(Paths.datasetProp);
-
-  //   if (!datasetPropFile.existsSync()) return previous;
-
-  //   final json =
-  //       jsonDecode(datasetPropFile.readAsStringSync()) as Map<String, dynamic>;
-  //   final datasetProp = DatasetProp.fromJson(json);
-  //   return {
-  //     ...previous,
-  //     entity.name: datasetProp,
-  //   };
-  // });
-  // log(jsonEncode(datasetPaths));
-  // LocalDatasetStorageService.putAll(datasetPaths);
-
   runApp(
     ProviderScope(
       child: await builder(),

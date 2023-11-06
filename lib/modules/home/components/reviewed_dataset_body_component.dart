@@ -142,6 +142,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                                 await _notifier.loadDatasetFromDisk(
                                       dataset: dataset,
                                       isReviewedDataset: true,
+                                      createDirIfNotExist: true,
                                     ) ??
                                     dataset;
                           }
