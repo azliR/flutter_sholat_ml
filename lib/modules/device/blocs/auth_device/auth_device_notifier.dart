@@ -91,8 +91,13 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     );
 
     final authChar = _authChar!;
-
-    await authChar.setNotifyValue(true);
+    final (failure, _) =
+        await _deviceRepository.setNotifyChars([authChar], notify: true);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: AuthDeviceFailureState(failure),
+      );
+    }
 
     _authSubscription = authChar.onValueReceived.listen((value) async {
       log('Auth value: $value');

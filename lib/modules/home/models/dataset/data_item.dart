@@ -23,53 +23,6 @@ class DataItem extends Equatable {
     this.noiseMovement,
   });
 
-  final Duration? timestamp;
-  final num x;
-  final num y;
-  final num z;
-  final int? heartRate;
-  final String? movementSetId;
-  final DeviceLocation deviceLocation;
-  final String? note;
-  final SholatMovementCategory? labelCategory;
-  final SholatMovement? label;
-  final SholatNoiseMovement? noiseMovement;
-
-  bool get isLabeled =>
-      movementSetId != null && labelCategory != null && label != null;
-
-  DatasetVersion get version => DatasetVersion.values.last;
-
-  DataItem copyWith({
-    Duration? timestamp,
-    num? x,
-    num? y,
-    num? z,
-    int? heartRate,
-    ValueGetter<String?>? movementSetId,
-    DeviceLocation? deviceLocation,
-    String? note,
-    ValueGetter<SholatMovementCategory?>? labelCategory,
-    ValueGetter<SholatMovement?>? label,
-    SholatNoiseMovement? noiseMovement,
-  }) {
-    return DataItem(
-      timestamp: timestamp ?? this.timestamp,
-      x: x ?? this.x,
-      y: y ?? this.y,
-      z: z ?? this.z,
-      heartRate: heartRate ?? this.heartRate,
-      movementSetId:
-          movementSetId != null ? movementSetId() : this.movementSetId,
-      deviceLocation: deviceLocation ?? this.deviceLocation,
-      note: note ?? this.note,
-      labelCategory:
-          labelCategory != null ? labelCategory() : this.labelCategory,
-      label: label != null ? label() : this.label,
-      noiseMovement: noiseMovement ?? this.noiseMovement,
-    );
-  }
-
   factory DataItem.fromCsv(
     String csv, {
     required DatasetVersion version,
@@ -134,6 +87,53 @@ class DataItem extends Equatable {
     }
   }
 
+  final Duration? timestamp;
+  final num x;
+  final num y;
+  final num z;
+  final int? heartRate;
+  final String? movementSetId;
+  final DeviceLocation deviceLocation;
+  final String? note;
+  final SholatMovementCategory? labelCategory;
+  final SholatMovement? label;
+  final SholatNoiseMovement? noiseMovement;
+
+  bool get isLabeled =>
+      movementSetId != null && labelCategory != null && label != null;
+
+  DatasetVersion get version => DatasetVersion.values.last;
+
+  DataItem copyWith({
+    Duration? timestamp,
+    num? x,
+    num? y,
+    num? z,
+    int? heartRate,
+    ValueGetter<String?>? movementSetId,
+    DeviceLocation? deviceLocation,
+    String? note,
+    ValueGetter<SholatMovementCategory?>? labelCategory,
+    ValueGetter<SholatMovement?>? label,
+    SholatNoiseMovement? noiseMovement,
+  }) {
+    return DataItem(
+      timestamp: timestamp ?? this.timestamp,
+      x: x ?? this.x,
+      y: y ?? this.y,
+      z: z ?? this.z,
+      heartRate: heartRate ?? this.heartRate,
+      movementSetId:
+          movementSetId != null ? movementSetId() : this.movementSetId,
+      deviceLocation: deviceLocation ?? this.deviceLocation,
+      note: note ?? this.note,
+      labelCategory:
+          labelCategory != null ? labelCategory() : this.labelCategory,
+      label: label != null ? label() : this.label,
+      noiseMovement: noiseMovement ?? this.noiseMovement,
+    );
+  }
+
   String toCsv() {
     final timestamp = this.timestamp!.inMilliseconds.toString();
     final x = this.x.toString();
@@ -148,7 +148,7 @@ class DataItem extends Equatable {
     final noiseMovement = this.noiseMovement?.value ?? '';
 
     return '$timestamp,$x,$y,$z,$heartRate,$movementSetId,'
-        '$deviceLocation,$note,$labelCategory,$label,$noiseMovement\n';
+        '$deviceLocation,$note,$labelCategory,$label,$noiseMovement,\n';
   }
 
   @override

@@ -25,6 +25,24 @@ class DeviceRepository {
   Stream<BluetoothAdapterState> get adapterState =>
       FlutterBluePlus.adapterState;
 
+  Future<(Failure?, void)> setNotifyChars(
+    List<BluetoothCharacteristic> chars, {
+    required bool notify,
+  }) async {
+    try {
+      await Future.wait(
+        chars.map((char) async {
+          await char.setNotifyValue(notify);
+        }),
+      );
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed setting notify value';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
   Future<(Failure?, void)> turnOnBluetooth() async {
     try {
       log('Turning on bluetooth...');

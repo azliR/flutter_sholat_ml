@@ -32,8 +32,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
   final _pagingController = PagingController<int, Dataset>(firstPageKey: 0);
 
   Future<void> _fetchPage(int pageKey) async {
-    final (failure, datasets) =
-        _notifier.getRangeLocalDatasets(pageKey, _pageSize);
+    final (failure, datasets) = _notifier.getLocalDatasets(pageKey, _pageSize);
 
     if (failure != null) {
       _pagingController.error = failure.error;
@@ -86,21 +85,30 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
             noItemsFoundIndicatorBuilder: (context) {
               return IllustrationWidget(
                 type: IllustrationWidgetType.noData,
-                action: FilledButton.tonalIcon(
-                  onPressed: () => widget.refreshKey.currentState?.show(),
-                  label: const Text('Refresh'),
-                  icon: const Icon(Symbols.refresh_rounded),
-                ),
+                actions: [
+                  FilledButton.tonalIcon(
+                    onPressed: () => _notifier.importDatasets(),
+                    label: const Text('Import dataset'),
+                    icon: const Icon(Symbols.upload_rounded),
+                  ),
+                  FilledButton.tonalIcon(
+                    onPressed: () => widget.refreshKey.currentState?.show(),
+                    label: const Text('Refresh'),
+                    icon: const Icon(Symbols.refresh_rounded),
+                  ),
+                ],
               );
             },
             firstPageErrorIndicatorBuilder: (context) {
               return IllustrationWidget(
                 type: IllustrationWidgetType.error,
-                action: FilledButton.tonalIcon(
-                  onPressed: () => widget.refreshKey.currentState?.show(),
-                  label: const Text('Refresh'),
-                  icon: const Icon(Symbols.refresh_rounded),
-                ),
+                actions: [
+                  FilledButton.tonalIcon(
+                    onPressed: () => widget.refreshKey.currentState?.show(),
+                    label: const Text('Refresh'),
+                    icon: const Icon(Symbols.refresh_rounded),
+                  ),
+                ],
               );
             },
             itemBuilder: (context, rawDataset, index) {
@@ -164,7 +172,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
     );
   }
 
-  MenuAnchor _buildMenu(String? datasetPath) {
+  Widget _buildMenu(String? datasetPath) {
     return MenuAnchor(
       builder: (context, controller, child) {
         return IconButton(
@@ -183,7 +191,14 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
         );
       },
       menuChildren: [
-        if (datasetPath != null)
+        if (datasetPath != null) ...[
+          MenuItemButton(
+            leadingIcon: const Icon(Symbols.share_rounded),
+            onPressed: () async {
+              await _notifier.exportAndShareDataset(datasetPath);
+            },
+            child: const Text('Export & share'),
+          ),
           MenuItemButton(
             leadingIcon: const Icon(Symbols.delete_rounded),
             onPressed: () async {
@@ -192,6 +207,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
             },
             child: const Text('Delete from device'),
           ),
+        ],
       ],
       child: const Icon(Symbols.more_vert_rounded),
     );

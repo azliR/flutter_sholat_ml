@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
@@ -29,16 +30,16 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   final PreprocessRepository _preprocessRepository;
 
   StreamSubscription<List<TaskSnapshot>>? _downloadSubscription;
+  StreamSubscription<double>? _exportSubscription;
 
   Query<Dataset> get reviewedDatasetsQuery =>
       _homeRepository.reviewedDatasetsQuery;
 
-  (Failure?, List<Dataset>?) getRangeLocalDatasets(
+  (Failure?, List<Dataset>?) getLocalDatasets(
     int start,
     int end,
   ) {
-    final (failure, datasets) =
-        _homeRepository.getRangeLocalDatasets(start, end);
+    final (failure, datasets) = _homeRepository.getLocalDatasets(start, end);
     if (failure != null) {
       return (failure, null);
     }
@@ -60,15 +61,49 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       return null;
     }
 
+    final datasets =
+        isReviewedDataset ? state.reviewedDatasets : state.needReviewDatasets;
+    final updatedDatasets = datasets.map((oldDataset) {
+      if (dataset.property.id == oldDataset.property.id) {
+        return dataset;
+      }
+      return oldDataset;
+    }).toList();
+
     state = state.copyWith(
       needReviewDatasets: !isReviewedDataset
-          ? ([...state.needReviewDatasets]..addOrUpdate(updatedDataset!))
+          ? (updatedDatasets..addOrUpdate(updatedDataset!))
           : null,
       reviewedDatasets: isReviewedDataset
-          ? ([...state.reviewedDatasets]..addOrUpdate(updatedDataset!))
+          ? (updatedDatasets..addOrUpdate(updatedDataset!))
           : null,
     );
     return updatedDataset;
+  }
+
+  Future<void> refreshDatasetDownloadStatus(String path) async {
+    final (failure, downloaded) =
+        await _homeRepository.getDatasetDownloadStatus(path: path);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: LoadDatasetsFailureState(failure),
+      );
+      return;
+    }
+    final isReviewed = path.contains(Directories.reviewedDirPath);
+    final datasets =
+        isReviewed ? state.reviewedDatasets : state.needReviewDatasets;
+    final updatedDatasets = datasets.map((dataset) {
+      if (dataset.path == path) {
+        return dataset.copyWith(downloaded: downloaded);
+      }
+      return dataset;
+    }).toList();
+
+    state = state.copyWith(
+      needReviewDatasets: !isReviewed ? updatedDatasets : null,
+      reviewedDatasets: isReviewed ? updatedDatasets : null,
+    );
   }
 
   Future<void> downloadDataset(
@@ -88,6 +123,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return;
     }
+    await _downloadSubscription?.cancel();
     _downloadSubscription = streamZip!.listen(
       (taskSnapshots) {
         for (var i = 0; i < taskSnapshots.length; i++) {
@@ -127,9 +163,6 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
             presentationState: DownloadDatasetSuccessState(dataset),
           );
         }
-      },
-      onDone: () {
-        print('object');
       },
       cancelOnError: true,
       onError: (e, stackTrace) {
@@ -211,9 +244,12 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
         return;
       }
     }
-    state =
-        state.copyWith(presentationState: const DeleteDatasetSuccessState());
-    clearSelections();
+    state = state.copyWith(
+      selectedDatasets: [],
+      presentationState: DeleteDatasetSuccessState(
+        state.selectedDatasets.map((e) => e.path!).toList(),
+      ),
+    );
   }
 
   Future<bool> deleteDataset(String path) async {
@@ -229,7 +265,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       return false;
     }
     state = state.copyWith(
-      presentationState: const DeleteDatasetSuccessState(),
+      presentationState: DeleteDatasetSuccessState([path]),
     );
     return true;
   }
@@ -248,6 +284,64 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     }
     if (dataset.path != null) await deleteDataset(dataset.path!);
     return true;
+  }
+
+  Future<void> exportAndShareDataset(String path) async {
+    state = state.copyWith(
+      presentationState: const ExportDatasetProgressState(0),
+    );
+
+    final (failure, progressStream, archivedPath) =
+        await _homeRepository.exportDataset(path);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: ExportDatasetFailureState(failure),
+      );
+      return;
+    }
+    await _exportSubscription?.cancel();
+    _exportSubscription = progressStream!.listen(
+      (event) {
+        state = state.copyWith(
+          presentationState: ExportDatasetProgressState(event),
+        );
+      },
+      cancelOnError: true,
+      onDone: () async {
+        final (failure, _) =
+            await _homeRepository.shareDataset([archivedPath!]);
+        if (failure != null) {
+          state = state.copyWith(
+            presentationState: ExportDatasetFailureState(failure),
+          );
+          return;
+        }
+        state = state.copyWith(
+          presentationState: const ExportDatasetSuccessState(),
+        );
+      },
+      onError: (e, stackTrace) {
+        state = state.copyWith(
+          presentationState: const ExportDatasetFailureState(),
+        );
+      },
+    );
+  }
+
+  Future<void> importDatasets() async {
+    state = state.copyWith(
+      presentationState: const ImportDatasetProgressState(),
+    );
+    final (failure, _) = await _homeRepository.importDatasets();
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: ImportDatasetFailureState(failure),
+      );
+      return;
+    }
+    state = state.copyWith(
+      presentationState: const ImportDatasetSuccessState(),
+    );
   }
 
   @override

@@ -88,11 +88,43 @@ final class DeleteDatasetLoadingState extends DatasetsPresentationState {
 }
 
 final class DeleteDatasetSuccessState extends DatasetsPresentationState {
-  const DeleteDatasetSuccessState();
+  const DeleteDatasetSuccessState(this.paths);
+
+  final List<String> paths;
 }
 
 final class DeleteDatasetFailureState extends DatasetsPresentationState {
   const DeleteDatasetFailureState(this.failure);
 
   final Failure? failure;
+}
+
+final class ExportDatasetProgressState extends DatasetsPresentationState {
+  const ExportDatasetProgressState(this.progress);
+
+  final double progress;
+}
+
+final class ExportDatasetSuccessState extends DatasetsPresentationState {
+  const ExportDatasetSuccessState();
+}
+
+final class ExportDatasetFailureState extends DatasetsPresentationState {
+  const ExportDatasetFailureState([this.failure]);
+
+  final Failure? failure;
+}
+
+final class ImportDatasetProgressState extends DatasetsPresentationState {
+  const ImportDatasetProgressState();
+}
+
+final class ImportDatasetSuccessState extends DatasetsPresentationState {
+  const ImportDatasetSuccessState();
+}
+
+final class ImportDatasetFailureState extends DatasetsPresentationState {
+  const ImportDatasetFailureState(this.failure);
+
+  final Failure failure;
 }

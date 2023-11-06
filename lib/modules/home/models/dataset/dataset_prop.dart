@@ -15,26 +15,6 @@ class DatasetProp extends Equatable {
     this.thumbnailUrl,
   }) : datasetPropVersion = DatasetPropVersion.values.last;
 
-  const DatasetProp._({
-    required this.id,
-    required this.datasetVersion,
-    required this.datasetPropVersion,
-    required this.createdAt,
-    this.csvUrl,
-    this.videoUrl,
-    this.thumbnailUrl,
-  });
-
-  final String id;
-  final String? csvUrl;
-  final String? videoUrl;
-  final String? thumbnailUrl;
-  final DatasetVersion datasetVersion;
-  final DatasetPropVersion datasetPropVersion;
-  final DateTime createdAt;
-
-  bool get isSubmitted => csvUrl != null && videoUrl != null;
-
   factory DatasetProp.fromJson(Map<String, dynamic> json) {
     // log(jsonEncode(json));
     final propVersion = json['dataset_prop_version'] == null
@@ -110,6 +90,26 @@ class DatasetProp extends Equatable {
         );
     }
   }
+
+  const DatasetProp._({
+    required this.id,
+    required this.datasetVersion,
+    required this.datasetPropVersion,
+    required this.createdAt,
+    this.csvUrl,
+    this.videoUrl,
+    this.thumbnailUrl,
+  });
+
+  final String id;
+  final String? csvUrl;
+  final String? videoUrl;
+  final String? thumbnailUrl;
+  final DatasetVersion datasetVersion;
+  final DatasetPropVersion datasetPropVersion;
+  final DateTime createdAt;
+
+  bool get isSubmitted => csvUrl != null && videoUrl != null;
 
   DatasetProp copyWith({
     String? id,

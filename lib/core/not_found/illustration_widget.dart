@@ -11,12 +11,12 @@ enum IllustrationWidgetType {
 class IllustrationWidget extends StatelessWidget {
   const IllustrationWidget({
     required this.type,
-    this.action,
+    this.actions,
     super.key,
   });
 
   final IllustrationWidgetType type;
-  final Widget? action;
+  final List<Widget>? actions;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,14 @@ class IllustrationWidget extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          if (action != null) action!,
+          if (actions != null)
+            Wrap(
+              alignment: WrapAlignment.center,
+              runAlignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: actions!,
+            ),
         ],
       ),
     );

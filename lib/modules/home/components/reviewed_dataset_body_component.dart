@@ -58,21 +58,25 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           if (snapshot.hasError) {
             return IllustrationWidget(
               type: IllustrationWidgetType.error,
-              action: FilledButton.tonalIcon(
-                onPressed: () => widget.refreshKey.currentState?.show(),
-                label: const Text('Refresh'),
-                icon: const Icon(Symbols.refresh_rounded),
-              ),
+              actions: [
+                FilledButton.tonalIcon(
+                  onPressed: () => widget.refreshKey.currentState?.show(),
+                  label: const Text('Refresh'),
+                  icon: const Icon(Symbols.refresh_rounded),
+                ),
+              ],
             );
           }
           if (snapshot.docs.isEmpty) {
             return IllustrationWidget(
               type: IllustrationWidgetType.noData,
-              action: FilledButton.tonalIcon(
-                onPressed: () => widget.refreshKey.currentState?.show(),
-                label: const Text('Refresh'),
-                icon: const Icon(Symbols.refresh_rounded),
-              ),
+              actions: [
+                FilledButton.tonalIcon(
+                  onPressed: () => widget.refreshKey.currentState?.show(),
+                  label: const Text('Refresh'),
+                  icon: const Icon(Symbols.refresh_rounded),
+                ),
+              ],
             );
           }
           return LayoutBuilder(
@@ -89,7 +93,11 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                   childAspectRatio: aspectRatio,
                 ),
                 padding: const EdgeInsets.fromLTRB(
-                    12, 8, 12, Dimens.bottomListPadding),
+                  12,
+                  8,
+                  12,
+                  Dimens.bottomListPadding,
+                ),
                 itemCount: snapshot.docs.length,
                 itemBuilder: (context, index) {
                   if (snapshot.hasMore && index + 1 == snapshot.docs.length) {
@@ -191,7 +199,6 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
             leadingIcon: const Icon(Symbols.delete_rounded),
             onPressed: () async {
               await _notifier.deleteDataset(datasetPath);
-              await widget.refreshKey.currentState?.show();
             },
             child: const Text('Delete from device'),
           ),
@@ -199,7 +206,6 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           leadingIcon: const Icon(Symbols.delete_forever_rounded),
           onPressed: () async {
             await _notifier.deleteDatasetFromCloud(dataset);
-            await widget.refreshKey.currentState?.show();
           },
           child: const Text('Delete permanently'),
         ),

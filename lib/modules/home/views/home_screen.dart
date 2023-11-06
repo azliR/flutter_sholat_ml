@@ -143,11 +143,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
 
-    final currentDevice =
-        ref.watch(authDeviceProvider.select((state) => state.currentDevice));
-    final savedDevices =
-        ref.watch(authDeviceProvider.select((state) => state.savedDevices));
-
     return AutoTabsRouter(
       curve: Curves.easeInOut,
       routes: _routes,

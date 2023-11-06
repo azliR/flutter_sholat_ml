@@ -200,7 +200,6 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
 
   Future<void> _showRemoveLabelsDialog() async {
     final data = MediaQuery.of(context);
-    final textTheme = Theme.of(context).textTheme;
 
     return showModalBottomSheet<void>(
       context: context,

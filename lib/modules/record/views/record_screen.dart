@@ -10,8 +10,9 @@ import 'package:flutter_sholat_ml/modules/record/widgets/accelerometer_chart_wid
 import 'package:flutter_sholat_ml/modules/record/widgets/heart_rate_chart_widget.dart';
 import 'package:flutter_sholat_ml/modules/record/widgets/record_button_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 @RoutePage()
 class RecordScreen extends ConsumerStatefulWidget {
@@ -89,36 +90,17 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
       return;
     }
     _notifier.onLockChanged(isLocked: true);
-    await showDialog<void>(
-      context: context,
-      barrierColor: Colors.black,
-      barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async {
-          return false;
+    context.loaderOverlay.show(
+      widget: GestureDetector(
+        onDoubleTap: () {
+          context.loaderOverlay.hide();
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         },
-        child: Align(
-          alignment: Alignment.topRight,
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              borderRadius: const BorderRadius.all(Radius.circular(24)),
-              onLongPress: () {
-                Navigator.pop(context);
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(8),
-                child: Icon(
-                  Symbols.lock_open_rounded,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
+        child: const ColoredBox(
+          color: Colors.black,
         ),
       ),
     );
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _notifier.onLockChanged(isLocked: false);
   }
 
@@ -130,7 +112,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
       _showDeviceLocationDialog();
       _notifier.initialise(widget.device, widget.services);
     });
-    Wakelock.enable();
+    WakelockPlus.enable();
     super.initState();
   }
 
@@ -158,7 +140,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
   void dispose() {
     _cameraController?.dispose();
 
-    Wakelock.disable();
+    WakelockPlus.disable();
     super.dispose();
   }
 

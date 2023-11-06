@@ -66,9 +66,19 @@ class RecordNotifier extends StateNotifier<RecordState> {
       (char) => char.uuid == Guid(DeviceUuids.charHz),
     );
 
-    await _heartRateMeasureChar.setNotifyValue(true);
-    await _sensorChar.setNotifyValue(true);
-    await _hzChar.setNotifyValue(true);
+    final (failure, _) = await _recordRepository.setNotifyChars(
+      [
+        _heartRateMeasureChar,
+        _sensorChar,
+        _hzChar,
+      ],
+      notify: true,
+    );
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: RecordFailureState(failure),
+      );
+    }
 
     _heartRateMeasureChar.onValueReceived.listen((event) {
       log('Heart Rate: $event');
