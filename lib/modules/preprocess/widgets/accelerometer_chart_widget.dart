@@ -4,7 +4,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 
 class AccelerometerChart extends StatelessWidget {
   const AccelerometerChart({
-    required this.datasets,
+    required this.dataItems,
     required this.primaryXAxis,
     required this.onTrackballChanged,
     required this.trackballBehavior,
@@ -12,7 +12,7 @@ class AccelerometerChart extends StatelessWidget {
     super.key,
   });
 
-  final List<DataItem> datasets;
+  final List<DataItem> dataItems;
   final ChartAxis primaryXAxis;
   final TrackballBehavior trackballBehavior;
   final ZoomPanBehavior zoomPanBehavior;
@@ -24,8 +24,8 @@ class AccelerometerChart extends StatelessWidget {
     final yDatasets = <num>[];
     final zDatasets = <num>[];
 
-    for (var i = 0; i < datasets.length; i++) {
-      final dataset = datasets[i];
+    for (var i = 0; i < dataItems.length; i++) {
+      final dataset = dataItems[i];
       xDatasets.add(dataset.x);
       yDatasets.add(dataset.y);
       zDatasets.add(dataset.z);

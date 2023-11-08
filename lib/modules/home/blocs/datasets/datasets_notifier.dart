@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
@@ -33,6 +34,9 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
 
   StreamSubscription<TaskSnapshot>? _downloadSubscription;
   StreamSubscription<double>? _exportSubscription;
+
+  final needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
+  final reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
 
   Query<Dataset> get reviewedDatasetsQuery =>
       _homeRepository.reviewedDatasetsQuery;
@@ -197,6 +201,7 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       },
       cancelOnError: true,
       onDone: () {
+        log('donw');
         _downloadSubscription?.cancel();
       },
       onError: (e, stackTrace) {
@@ -266,31 +271,44 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(selectedDatasets: []);
   }
 
-  Future<void> deleteSelectedDatasets() async {
+  Future<void> deleteSelectedDatasets({
+    required bool isReviewedDatasets,
+  }) async {
     state =
         state.copyWith(presentationState: const DeleteDatasetLoadingState());
-    for (final dataset in state.selectedDatasets) {
-      final (failure, _) = await _homeRepository.deleteDataset(dataset.path!);
-      if (failure != null) {
-        state = state.copyWith(
-          presentationState: DeleteDatasetFailureState(failure),
-        );
-        return;
-      }
+    final selectedDatasets = state.selectedDatasets;
+    final (failure, _) = await _homeRepository
+        .deleteDatasets(selectedDatasets.map((e) => e.path!).toList());
+
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: DeleteDatasetFailureState(failure),
+      );
+      return;
     }
+    final datasets =
+        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
+    final updatedDatasets = datasets
+        .where((dataset) => !selectedDatasets.contains(dataset))
+        .toList();
     state = state.copyWith(
       selectedDatasets: [],
+      needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
+      reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
       presentationState: DeleteDatasetSuccessState(
         state.selectedDatasets.map((e) => e.path!).toList(),
       ),
     );
   }
 
-  Future<bool> deleteDataset(String path) async {
+  Future<bool> deleteDataset(
+    String path, {
+    required bool isReviewedDatasets,
+  }) async {
     state =
         state.copyWith(presentationState: const DeleteDatasetLoadingState());
 
-    final (failure, _) = await _homeRepository.deleteDataset(path);
+    final (failure, _) = await _homeRepository.deleteDatasets([path]);
     if (failure != null) {
       state = state.copyWith(
         isLoading: false,
@@ -298,7 +316,13 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return false;
     }
+    final datasets =
+        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
+    final updatedDatasets =
+        datasets.where((dataset) => dataset.path != path).toList();
     state = state.copyWith(
+      needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
+      reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
       presentationState: DeleteDatasetSuccessState([path]),
     );
     return true;
@@ -316,17 +340,22 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return false;
     }
-    if (dataset.path != null) await deleteDataset(dataset.path!);
+    if (dataset.path != null) {
+      await deleteDataset(
+        dataset.path!,
+        isReviewedDatasets: true,
+      );
+    }
     return true;
   }
 
-  Future<void> exportAndShareDataset(String path) async {
+  Future<void> exportAndShareDatasets(List<String> paths) async {
     state = state.copyWith(
       presentationState: const ExportDatasetProgressState(0),
     );
 
     final (failure, progressStream, archivedPath) =
-        await _homeRepository.exportDataset(path);
+        await _homeRepository.exportDatasets(paths);
     if (failure != null) {
       state = state.copyWith(
         presentationState: ExportDatasetFailureState(failure),

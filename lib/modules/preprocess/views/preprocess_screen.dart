@@ -61,13 +61,13 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
     if (!_videoPlayerController.value.isPlaying) return;
 
-    final datasets = ref.read(preprocessProvider).dataItems;
+    final dataItems = ref.read(preprocessProvider).dataItems;
     final currentPosition =
         _videoPlayerController.value.position.inMilliseconds;
     var index = 0;
-    for (var i = 0; i < datasets.length; i++) {
-      final dataset = datasets[i];
-      if ((dataset.timestamp?.inMilliseconds ?? 0) > currentPosition) {
+    for (var i = 0; i < dataItems.length; i++) {
+      final dataItem = dataItems[i];
+      if ((dataItem.timestamp?.inMilliseconds ?? 0) > currentPosition) {
         index = i - 1;
         break;
       }
@@ -76,11 +76,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     _notifier.setCurrentHighlightedIndex(index);
     _trackballBehavior.showByIndex(index);
     if (ref.read(preprocessProvider).isFollowHighlightedMode) {
-      _scrollToDatasetTile(index);
+      _scrollToDataItemTile(index);
     }
   }
 
-  void _scrollToDatasetTile(int index) {
+  void _scrollToDataItemTile(int index) {
     _scrollController.animateTo(
       index * 32,
       duration: const Duration(milliseconds: 200),
@@ -188,7 +188,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     });
     final datasetProp =
         ref.watch(preprocessProvider.select((state) => state.datasetProp));
-    final datasets =
+    final dataItems =
         ref.watch(preprocessProvider.select((state) => state.dataItems));
 
     return WillPopScope(
@@ -219,7 +219,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    datasets.firstOrNull?.deviceLocation.name ?? '',
+                    dataItems.firstOrNull?.deviceLocation.name ?? '',
                     style: textTheme.bodySmall,
                   ),
                 ],
@@ -279,7 +279,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   ),
                   Expanded(
                     child: AccelerometerChart(
-                      datasets: datasets,
+                      dataItems: dataItems,
                       primaryXAxis: _primaryXAxis,
                       zoomPanBehavior: _zoomPanBehavior,
                       trackballBehavior: _trackballBehavior,
@@ -292,12 +292,12 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                         _timer?.cancel();
                         _timer = Timer(const Duration(milliseconds: 300), () {
                           _videoPlayerController
-                              .seekTo(datasets[index].timestamp!);
+                              .seekTo(dataItems[index].timestamp!);
                           _notifier.setCurrentHighlightedIndex(index);
                           if (ref
                               .read(preprocessProvider)
                               .isFollowHighlightedMode) {
-                            _scrollToDatasetTile(index);
+                            _scrollToDataItemTile(index);
                           }
                         });
                       },
@@ -324,7 +324,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   PreprocessToolbar(
                     videoPlayerController: _videoPlayerController,
                     onFollowHighlighted: () {
-                      _scrollToDatasetTile(
+                      _scrollToDataItemTile(
                         ref.read(preprocessProvider).currentHighlightedIndex,
                       );
                     },
@@ -381,7 +381,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     child: PreprocessDatasetList(
                       scrollController: _scrollController,
                       trackballBehavior: _trackballBehavior,
-                      datasets: datasets,
+                      dataItems: dataItems,
                     ),
                   ),
                 ],

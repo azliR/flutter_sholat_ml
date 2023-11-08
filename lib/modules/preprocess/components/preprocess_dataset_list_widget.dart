@@ -9,13 +9,13 @@ class PreprocessDatasetList extends ConsumerStatefulWidget {
   const PreprocessDatasetList({
     required this.scrollController,
     required this.trackballBehavior,
-    required this.datasets,
+    required this.dataItems,
     super.key,
   });
 
   final ScrollController scrollController;
   final TrackballBehavior trackballBehavior;
-  final List<DataItem> datasets;
+  final List<DataItem> dataItems;
 
   @override
   ConsumerState<PreprocessDatasetList> createState() =>
@@ -44,7 +44,7 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
           controller: widget.scrollController,
           cacheExtent: 32,
           itemExtent: 32,
-          itemCount: widget.datasets.length,
+          itemCount: widget.dataItems.length,
           itemBuilder: (context, index) {
             return Consumer(
               builder: (context, ref, child) {
@@ -52,16 +52,16 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                   preprocessProvider
                       .select((value) => value.currentHighlightedIndex),
                 );
-                final selectedDatasets = ref.watch(
+                final selectedDataItems = ref.watch(
                   preprocessProvider.select((state) => state.selectedDataItems),
                 );
 
-                final dataset = widget.datasets[index];
-                final selected = selectedDatasets.contains(dataset);
+                final dataset = widget.dataItems[index];
+                final selected = selectedDataItems.contains(dataset);
 
                 return DataItemTile(
                   index: index,
-                  dataset: dataset,
+                  dataItem: dataset,
                   highlighted: index == currentHighlightedIndex,
                   selected: selected,
                   onTap: () async {
@@ -71,7 +71,7 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                     );
                     if (isJumpSelectMode) {
                       await _notifier.jumpSelect(index);
-                    } else if (selectedDatasets.isNotEmpty) {
+                    } else if (selectedDataItems.isNotEmpty) {
                       _notifier.setSelectedDataset(index);
                     }
                     _notifier.setCurrentHighlightedIndex(index);

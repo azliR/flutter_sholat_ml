@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/components/need_review_datasets_body_component.dart';
 import 'package:flutter_sholat_ml/modules/home/components/reviewed_dataset_body_component.dart';
+import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -21,8 +22,50 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
   late final DatasetsNotifier _notifier;
   late final TabController _tabController;
 
-  final _needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
-  final _reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
+  Future<void> _showDeleteDatasetsDialog({bool isLocalOnly = true}) async {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            isLocalOnly
+                ? 'Delete datasets?'
+                : 'Delete datasets and cloud storage?',
+          ),
+          content: Text(
+            isLocalOnly
+                ? 'Deleting datasets will remove them from your device.'
+                : 'Deleting datasets will remove them from your device and cloud storage.',
+          ),
+          icon: isLocalOnly
+              ? const Icon(Symbols.delete_rounded)
+              : const Icon(Symbols.delete_forever_rounded),
+          iconColor: colorScheme.error,
+          actions: [
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.error,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _notifier.deleteSelectedDatasets(isReviewedDatasets: false);
+                _notifier.needReviewRefreshKey.currentState?.show();
+              },
+              child: const Text('Delete all'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   void _showDownloadProgressDialog(double? csvProgress, double? videoProgress) {
     final textTheme = Theme.of(context).textTheme;
@@ -190,17 +233,34 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             context.loaderOverlay.show();
           case ImportDatasetSuccessState():
             context.loaderOverlay.hide();
+            _notifier.needReviewRefreshKey.currentState?.show();
             showSnackbar(context, 'Datasets successfully imported!');
           case ImportDatasetFailureState():
             context.loaderOverlay.hide();
-            showErrorSnackbar(context, 'Failed to import datasets');
+            switch (presentationState.failure.code as ImportDatasetErrorCode?) {
+              case ImportDatasetErrorCode.canceled:
+                break;
+              case ImportDatasetErrorCode.unsupported:
+                showErrorSnackbar(
+                  context,
+                  'The selected file is not supported. Only .shd files are supported.',
+                );
+              case ImportDatasetErrorCode.missingRequiredFiles:
+                showErrorSnackbar(
+                  context,
+                  'The selected file is missing required files',
+                );
+              case null:
+                showErrorSnackbar(context, 'Failed to import dataset');
+            }
         }
       }
     });
 
-    final isSelectMode = ref.watch(
-      datasetsProvider.select((value) => value.selectedDatasets.isNotEmpty),
+    final selectedDatasets = ref.watch(
+      datasetsProvider.select((value) => value.selectedDatasets),
     );
+    final isSelectMode = selectedDatasets.isNotEmpty;
 
     return WillPopScope(
       onWillPop: () async {
@@ -217,12 +277,47 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
               SliverAppBar.medium(
                 title: const Text('Datasets'),
                 actions: [
+                  if (isSelectMode && _tabController.index == 0) ...[
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final needReviewDatasets = ref.watch(
+                          datasetsProvider
+                              .select((value) => value.needReviewDatasets),
+                        );
+                        if (selectedDatasets.length ==
+                            needReviewDatasets.length) {
+                          return const SizedBox();
+                        }
+                        return IconButton(
+                          tooltip: 'Select all',
+                          onPressed: () => _notifier.onSelectAllDatasets(),
+                          icon: const Icon(Symbols.select_all_rounded),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      tooltip: 'Delete',
+                      onPressed: _showDeleteDatasetsDialog,
+                      icon: const Icon(Symbols.delete_rounded),
+                    ),
+                    IconButton(
+                      tooltip: 'Share & Export',
+                      onPressed: () {
+                        _notifier.exportAndShareDatasets(
+                          selectedDatasets
+                              .map((dataset) => dataset.path!)
+                              .toList(),
+                        );
+                      },
+                      icon: const Icon(Symbols.share_rounded),
+                    ),
+                  ],
                   _buildMenu(),
+                  const SizedBox(width: 12),
                 ],
                 bottom: TabBar(
                   controller: _tabController,
                   isScrollable: data.size.width > 480,
-                  dividerColor: Colors.transparent,
                   tabs: const [
                     Tab(
                       child: Text('Local'),
@@ -252,13 +347,9 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             controller: _tabController,
             children: [
               NeedReviewDatasetBody(
-                refreshKey: _needReviewRefreshKey,
                 isSelectMode: isSelectMode,
               ),
-              ReviewedDatasetBody(
-                refreshKey: _reviewedRefreshKey,
-                isSelectMode: isSelectMode,
-              ),
+              const ReviewedDatasetBody(),
             ],
           ),
         ),
@@ -290,7 +381,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
           onPressed: () async {
             await _notifier.importDatasets();
           },
-          child: const Text('Import dataset'),
+          child: const Text('Import datasets'),
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),

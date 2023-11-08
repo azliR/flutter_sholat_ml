@@ -115,7 +115,7 @@ class DataItem extends Equatable {
     String? note,
     ValueGetter<SholatMovementCategory?>? labelCategory,
     ValueGetter<SholatMovement?>? label,
-    SholatNoiseMovement? noiseMovement,
+    ValueGetter<SholatNoiseMovement?>? noiseMovement,
   }) {
     return DataItem(
       timestamp: timestamp ?? this.timestamp,
@@ -130,7 +130,8 @@ class DataItem extends Equatable {
       labelCategory:
           labelCategory != null ? labelCategory() : this.labelCategory,
       label: label != null ? label() : this.label,
-      noiseMovement: noiseMovement ?? this.noiseMovement,
+      noiseMovement:
+          noiseMovement != null ? noiseMovement() : this.noiseMovement,
     );
   }
 

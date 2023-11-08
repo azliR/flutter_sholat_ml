@@ -7,11 +7,6 @@ class LocalDatasetStorageService {
   static const String kBox = 'datasets_box';
   static final _box = Hive.box<DatasetProp>(name: kBox);
 
-  static void putAll(Map<String, DatasetProp> datasetProps) {
-    // _box.clear();
-    _box.putAll(datasetProps);
-  }
-
   static int get datasetLength => _box.length;
 
   static List<DatasetProp> getDatasetRange(int start, int end) {
@@ -22,10 +17,10 @@ class LocalDatasetStorageService {
   }
 
   static void putDataset(String key, DatasetProp dataset) {
-    _box.put(key, dataset);
+    return _box.put(key, dataset);
   }
 
-  static void deleteDataset(String key) {
-    _box.delete(key);
+  static bool deleteDataset(String key) {
+    return _box.delete(key);
   }
 }

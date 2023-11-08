@@ -13,14 +13,7 @@ import 'package:flutter_sholat_ml/modules/home/widgets/dataset_grid_tile_widget.
 import 'package:material_symbols_icons/symbols.dart';
 
 class ReviewedDatasetBody extends ConsumerStatefulWidget {
-  const ReviewedDatasetBody({
-    required this.refreshKey,
-    required this.isSelectMode,
-    super.key,
-  });
-
-  final GlobalKey<RefreshIndicatorState> refreshKey;
-  final bool isSelectMode;
+  const ReviewedDatasetBody({super.key});
 
   @override
   ConsumerState<ReviewedDatasetBody> createState() => _ReviewedDatasetState();
@@ -42,7 +35,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      key: widget.refreshKey,
+      key: _notifier.reviewedRefreshKey,
       onRefresh: () async {
         setState(() {
           _datasetsKey = UniqueKey();
@@ -60,7 +53,8 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
               type: IllustrationWidgetType.error,
               actions: [
                 FilledButton.tonalIcon(
-                  onPressed: () => widget.refreshKey.currentState?.show(),
+                  onPressed: () =>
+                      _notifier.reviewedRefreshKey.currentState?.show(),
                   label: const Text('Refresh'),
                   icon: const Icon(Symbols.refresh_rounded),
                 ),
@@ -72,7 +66,8 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
               type: IllustrationWidgetType.noData,
               actions: [
                 FilledButton.tonalIcon(
-                  onPressed: () => widget.refreshKey.currentState?.show(),
+                  onPressed: () =>
+                      _notifier.reviewedRefreshKey.currentState?.show(),
                   label: const Text('Refresh'),
                   icon: const Icon(Symbols.refresh_rounded),
                 ),
@@ -93,9 +88,9 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                   childAspectRatio: aspectRatio,
                 ),
                 padding: const EdgeInsets.fromLTRB(
-                  12,
-                  8,
-                  12,
+                  16,
+                  16,
+                  16,
                   Dimens.bottomListPadding,
                 ),
                 itemCount: snapshot.docs.length,
@@ -199,7 +194,10 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           MenuItemButton(
             leadingIcon: const Icon(Symbols.delete_rounded),
             onPressed: () async {
-              await _notifier.deleteDataset(datasetPath);
+              await _notifier.deleteDataset(
+                datasetPath,
+                isReviewedDatasets: true,
+              );
             },
             child: const Text('Delete from device'),
           ),

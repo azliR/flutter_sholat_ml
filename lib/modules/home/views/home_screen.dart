@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
+import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -36,6 +37,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final AuthDeviceNotifier _authDeviceNotifier;
+  late final DatasetsNotifier _datasetsNotifier;
 
   final _tabsRouterCompleter = Completer<TabsRouter>();
 
@@ -89,7 +91,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         device: connectedDevice,
         services: _authDeviceNotifier.services!,
         onRecordSuccess: () {
-          // _datasetNotifier.loadDatasetsFromDisk();
+          _datasetsNotifier.needReviewRefreshKey.currentState?.show();
         },
       ),
     );
@@ -98,6 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
+    _datasetsNotifier = ref.read(datasetsProvider.notifier);
 
     _tabsRouterCompleter.future.then((value) {
       value.addListener(() {
@@ -259,19 +262,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       )
                       .toList(),
                 ),
-              if (navigationType != NavigationType.bottom)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: ClipRRect(
-                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                      borderRadius: BorderRadius.circular(16),
-                      child: child,
-                    ),
+              Expanded(
+                child: Padding(
+                  padding: navigationType != NavigationType.bottom
+                      ? const EdgeInsets.all(16)
+                      : EdgeInsets.zero,
+                  child: ClipRRect(
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    borderRadius: navigationType != NavigationType.bottom
+                        ? const BorderRadius.all(Radius.circular(24))
+                        : BorderRadius.zero,
+                    child: child,
                   ),
-                )
-              else
-                Expanded(child: child),
+                ),
+              ),
             ],
           ),
         );

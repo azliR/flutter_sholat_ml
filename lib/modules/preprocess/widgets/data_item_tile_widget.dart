@@ -9,7 +9,7 @@ import 'package:material_symbols_icons/symbols.dart';
 class DataItemTile extends StatelessWidget {
   const DataItemTile({
     required this.index,
-    required this.dataset,
+    required this.dataItem,
     required this.onTap,
     required this.onLongPress,
     required this.highlighted,
@@ -18,35 +18,40 @@ class DataItemTile extends StatelessWidget {
   });
 
   final int index;
-  final DataItem dataset;
+  final DataItem dataItem;
   final void Function() onTap;
   final void Function() onLongPress;
   final bool highlighted;
   final bool selected;
 
-  bool get tagged => dataset.labelCategory != null && dataset.label != null;
+  bool _isColorDark(Color color) {
+    return color.computeLuminance() < 0.5;
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     var color = Colors.transparent;
-    if (highlighted) {
-      color = colorScheme.outline.withOpacity(0.1);
-    }
     if (selected) {
-      color = Color.alphaBlend(color, colorScheme.primaryContainer);
+      color = colorScheme.primaryContainer;
+    } else if (dataItem.isLabeled) {
+      final splittedId = dataItem.movementSetId!.substring(0, 6);
+      final hexColor = int.parse('ff$splittedId', radix: 16);
+      final generatedColor = Color(hexColor);
+      color = Color.lerp(color, generatedColor, 0.5)!;
     }
 
     Widget? icon;
-    if (tagged && selected) {
+    if (dataItem.isLabeled && selected) {
       icon = Icon(
         Symbols.warning_rounded,
         color: colorScheme.secondary,
         weight: 300,
       );
-    } else if (tagged) {
-      final category = dataset.labelCategory!;
+    } else if (dataItem.isLabeled) {
+      final category = dataItem.labelCategory!;
       final iconPath = switch (category) {
         SholatMovementCategory.persiapan => AssetImages.persiapan,
         SholatMovementCategory.takbir => AssetImages.takbir,
@@ -69,64 +74,99 @@ class DataItemTile extends StatelessWidget {
       );
     }
 
-    return Material(
-      color: color,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: SizedBox(
-          height: 32,
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Center(child: Text(index.toString())),
-              ),
-              Expanded(
-                flex: 3,
-                child: Center(
-                  child: Text(
-                    dataset.timestamp.toString().replaceFirst('000', ''),
+    return DefaultTextStyle(
+      style: textTheme.bodyMedium!.copyWith(
+        color: _isColorDark(color) ? Colors.white : Colors.black,
+      ),
+      child: Material(
+        color: color,
+        shape: RoundedRectangleBorder(
+          borderRadius: highlighted
+              ? const BorderRadius.all(Radius.circular(12))
+              : BorderRadius.zero,
+          side: highlighted || selected
+              ? BorderSide(
+                  color: colorScheme.outline,
+                )
+              : BorderSide.none,
+        ),
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          child: SizedBox(
+            height: 32,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Center(child: Text(index.toString())),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Center(
+                    child: Text(
+                      dataItem.timestamp.toString().replaceFirst('000', ''),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(child: Text(dataset.x.toStringAsFixed(0))),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(child: Text(dataset.y.toStringAsFixed(0))),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(child: Text(dataset.z.toStringAsFixed(0))),
-              ),
-              Expanded(
-                flex: 2,
-                child: Center(
-                  child: Text(dataset.noiseMovement?.toString() ?? ''),
+                Expanded(
+                  flex: 2,
+                  child: Center(child: Text(dataItem.x.toStringAsFixed(0))),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: tagged
-                        ? () {
-                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                            showSnackbar(
-                              context,
-                              '${dataset.label!.name} with movement ID:\n'
-                              '${dataset.movementSetId!}',
-                            );
-                          }
-                        : null,
-                    child: icon,
+                Expanded(
+                  flex: 2,
+                  child: Center(child: Text(dataItem.y.toStringAsFixed(0))),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Center(child: Text(dataItem.z.toStringAsFixed(0))),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Center(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: dataItem.noiseMovement != null
+                          ? () {
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
+                              showSnackbar(
+                                context,
+                                dataItem.noiseMovement!.name,
+                              );
+                            }
+                          : null,
+                      child: dataItem.noiseMovement != null
+                          ? Icon(
+                              Symbols.report_rounded,
+                              color: colorScheme.secondary,
+                              weight: 300,
+                            )
+                          : const SizedBox(),
+                    ),
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Center(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: dataItem.isLabeled
+                          ? () {
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
+                              showSnackbar(
+                                context,
+                                '${dataItem.label!.name} with movement ID:\n'
+                                '${dataItem.movementSetId!}',
+                              );
+                            }
+                          : null,
+                      child: icon,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
+import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
@@ -66,17 +67,17 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
 
   void setSelectedDataset(int index) {
     final datasets = state.dataItems;
-    final selectedDatasets = state.selectedDataItems;
+    final selectedDatItems = state.selectedDataItems;
     final dataset = datasets[index];
-    if (selectedDatasets.contains(dataset)) {
+    if (selectedDatItems.contains(dataset)) {
       state = state.copyWith(
         lastSelectedIndex: () => index,
-        selectedDataItems: [...selectedDatasets]..remove(dataset),
+        selectedDataItems: [...selectedDatItems]..remove(dataset),
       );
     } else {
       state = state.copyWith(
         lastSelectedIndex: () => index,
-        selectedDataItems: [...selectedDatasets, dataset],
+        selectedDataItems: [...selectedDatItems, dataset],
       );
     }
   }
@@ -99,14 +100,14 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
         : state.lastSelectedIndex;
     if (startJumpIndex == null) return;
 
-    final selectedDatasets = state.dataItems.sublist(
+    final selectedDataItems = state.dataItems.sublist(
       min(startJumpIndex, endIndex),
       max(startJumpIndex, endIndex + 1),
     );
 
     state = state.copyWith(
       selectedDataItems:
-          {...state.selectedDataItems, ...selectedDatasets}.toList(),
+          {...state.selectedDataItems, ...selectedDataItems}.toList(),
       lastSelectedIndex: () => endIndex,
       isJumpSelectMode: false,
     );
@@ -116,7 +117,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     SholatMovementCategory labelCategory,
     SholatMovement label,
   ) {
-    final movementSetId = const Uuid().v7();
+    final movementSetId = const Uuid().v4();
     state = state.copyWith(
       dataItems: state.dataItems.map((dataset) {
         if (state.selectedDataItems.contains(dataset)) {
@@ -131,6 +132,22 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
     );
     clearSelectedDataItems();
     return movementSetId;
+  }
+
+  void setDataItemNoises(
+    SholatNoiseMovement? noiseMovement,
+  ) {
+    state = state.copyWith(
+      dataItems: state.dataItems.map((dataset) {
+        if (state.selectedDataItems.contains(dataset)) {
+          return dataset.copyWith(
+            noiseMovement: () => noiseMovement,
+          );
+        }
+        return dataset;
+      }).toList(),
+    );
+    clearSelectedDataItems();
   }
 
   void removeDataItemLabels({bool includeSameMovementIds = false}) {
