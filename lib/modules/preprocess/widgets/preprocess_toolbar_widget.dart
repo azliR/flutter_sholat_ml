@@ -268,12 +268,12 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
           builder: (context, ref, child) {
             final dontShowAgain = ref.watch(dontShowWarningProvider);
             return AlertDialog(
-              title: const Text('Tagged data items'),
+              title: const Text('Change data items label?'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Text(
-                    'One or more selected data items has been tagged. Are you sure you want to change the tag?',
+                    'One or more selected data items has been labeled. Are you sure you want to change the label?',
                   ),
                   Row(
                     children: [
@@ -306,7 +306,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                     Navigator.pop(context, true);
                     _showWarning = !dontShowAgain;
                   },
-                  child: const Text('Change tag'),
+                  child: const Text('Change label'),
                 ),
               ],
             );
