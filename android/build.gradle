@@ -18,8 +18,6 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        // package:light_compressor
-        maven { url 'https://jitpack.io' }
     }
 }
 

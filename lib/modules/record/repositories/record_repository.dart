@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:math' hide log;
 
 import 'package:camera/camera.dart';
+import 'package:dartx/dartx_io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:video_compress/video_compress.dart';
 
 class RecordRepository {
   Timer? _timer;
@@ -103,6 +105,7 @@ class RecordRepository {
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
+    required BluetoothCharacteristic notificationChar,
   }) async {
     try {
       await _startRealtimeData(
@@ -113,6 +116,11 @@ class RecordRepository {
       );
       await cameraController.startVideoRecording();
       stopwatch.start();
+
+      await _sendNotificationToDevice(
+        notificationChar: notificationChar,
+        message: 'Recording started',
+      );
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed starting recording';
@@ -169,18 +177,23 @@ class RecordRepository {
       const datasetVideoPath = Paths.datasetVideo;
       const datasetPropPath = Paths.datasetProp;
 
-      final fullDatasetCsvPath = '${fullSavedDir.path}/$datasetCsvPath';
-      final fullDatasetPropPath = '${fullSavedDir.path}/$datasetPropPath';
+      final fullDatasetCsvPath = fullSavedDir.file(datasetCsvPath).path;
+      final fullDatasetVideoPath = fullSavedDir.file(datasetVideoPath).path;
+      final fullDatasetPropPath = fullSavedDir.file(datasetPropPath).path;
 
-      await videoFile.saveTo('${fullSavedDir.path}/$datasetVideoPath');
+      final (compressFailure, _) = await _compressVideo(
+        sourcePath: videoFile.path,
+        destPath: fullDatasetVideoPath,
+      );
+      if (compressFailure != null) return (compressFailure, null);
 
-      final (failure, _) = await writeDataset(
+      final (writeDatasetFailure, _) = await writeDataset(
         csvPath: fullDatasetCsvPath,
         propPath: fullDatasetPropPath,
         datasetProp: datasetProp,
         dataItems: dataItems,
       );
-      if (failure != null) return (failure, null);
+      if (writeDatasetFailure != null) return (writeDatasetFailure, null);
 
       LocalDatasetStorageService.putDataset(dirName, datasetProp);
 
@@ -305,6 +318,51 @@ class RecordRepository {
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed stopping realtime';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> _compressVideo({
+    required String sourcePath,
+    required String destPath,
+  }) async {
+    try {
+      final result = await VideoCompress.compressVideo(
+        sourcePath,
+        deleteOrigin: true,
+        includeAudio: true,
+        quality: VideoQuality.MediumQuality,
+      );
+      if (result == null) {
+        return (Failure('Failed compressing video'), null);
+      }
+      await result.file?.rename(destPath);
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed compressing video';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> _sendNotificationToDevice({
+    required BluetoothCharacteristic notificationChar,
+    required String message,
+  }) async {
+    log('Starting realtime...');
+    try {
+      await notificationChar.setNotifyValue(true);
+
+      final messageBytes = utf8.encode(message);
+
+      await notificationChar.write([0x02, 0x01, ...messageBytes]);
+
+      log('Notification sent, with message: $message');
+
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed sending notification';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

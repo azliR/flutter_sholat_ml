@@ -84,7 +84,7 @@ class DataItemTile extends StatelessWidget {
           borderRadius: highlighted
               ? const BorderRadius.all(Radius.circular(12))
               : BorderRadius.zero,
-          side: highlighted || selected
+          side: highlighted
               ? BorderSide(
                   color: colorScheme.outline,
                 )

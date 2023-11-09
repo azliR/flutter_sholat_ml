@@ -26,12 +26,11 @@ class RecordNotifier extends StateNotifier<RecordState> {
 
   final RecordRepository _recordRepository;
 
-  late final BluetoothService _miBand1Service;
-  late final BluetoothService _heartRateService;
   late final BluetoothCharacteristic _heartRateMeasureChar;
   late final BluetoothCharacteristic _heartRateControlChar;
   late final BluetoothCharacteristic _sensorChar;
   late final BluetoothCharacteristic _hzChar;
+  late final BluetoothCharacteristic _notificationChar;
 
   final _stopwatch = Stopwatch();
 
@@ -47,23 +46,29 @@ class RecordNotifier extends StateNotifier<RecordState> {
   ) async {
     if (state.isInitialised) return;
 
-    _miBand1Service = services.singleWhere(
+    final miBand1Service = services.firstWhere(
       (service) => service.uuid == Guid(DeviceUuids.serviceMiBand1),
     );
-    _heartRateService = services.singleWhere(
+    final heartRateService = services.firstWhere(
       (service) => service.uuid == Guid(DeviceUuids.serviceHeartRate),
     );
-    _heartRateMeasureChar = _heartRateService.characteristics.singleWhere(
+    final genericAccessService = services.firstWhere(
+      (service) => service.uuid == Guid(DeviceUuids.serviceAlertNotification),
+    );
+    _heartRateMeasureChar = heartRateService.characteristics.firstWhere(
       (char) => char.uuid == Guid(DeviceUuids.charHeartRateMeasure),
     );
-    _heartRateControlChar = _heartRateService.characteristics.singleWhere(
+    _heartRateControlChar = heartRateService.characteristics.firstWhere(
       (char) => char.uuid == Guid(DeviceUuids.charHeartRateControl),
     );
-    _sensorChar = _miBand1Service.characteristics.singleWhere(
+    _sensorChar = miBand1Service.characteristics.firstWhere(
       (char) => char.uuid == Guid(DeviceUuids.charSensor),
     );
-    _hzChar = _miBand1Service.characteristics.singleWhere(
+    _hzChar = miBand1Service.characteristics.firstWhere(
       (char) => char.uuid == Guid(DeviceUuids.charHz),
+    );
+    _notificationChar = genericAccessService.characteristics.firstWhere(
+      (char) => char.uuid == Guid(DeviceUuids.charNotification),
     );
 
     final (failure, _) = await _recordRepository.setNotifyChars(
@@ -202,6 +207,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
       heartRateControlChar: _heartRateControlChar,
       sensorChar: _sensorChar,
       hzChar: _hzChar,
+      notificationChar: _notificationChar,
     );
     if (failure != null) {
       state = state.copyWith(
