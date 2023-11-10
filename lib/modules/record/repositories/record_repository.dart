@@ -167,6 +167,7 @@ class RecordRepository {
     try {
       final datasetProp = DatasetProp(
         id: dirName,
+        hasEvaluated: false,
         datasetVersion: DatasetVersion.values.last,
         createdAt: now,
       );
@@ -187,7 +188,7 @@ class RecordRepository {
       );
       if (compressFailure != null) return (compressFailure, null);
 
-      final (writeDatasetFailure, _) = await writeDataset(
+      final (writeDatasetFailure, _) = await writeDatasetInIsolate(
         csvPath: fullDatasetCsvPath,
         propPath: fullDatasetPropPath,
         datasetProp: datasetProp,
@@ -209,25 +210,25 @@ class RecordRepository {
     }
   }
 
-  Future<(Failure?, void)> writeDataset({
+  Future<(Failure?, void)> writeDatasetInIsolate({
     required String csvPath,
     required String propPath,
     required DatasetProp datasetProp,
     required List<DataItem> dataItems,
   }) async {
     try {
-      final message = {
-        'csvPath': csvPath,
-        'propPath': propPath,
-        'datasetProp': datasetProp,
-        'dataItems': dataItems,
-      };
+      final message = [
+        csvPath,
+        propPath,
+        datasetProp,
+        dataItems,
+      ];
       await compute(
         (message) async {
-          final csvPath = message['csvPath']! as String;
-          final propPath = message['propPath']! as String;
-          final datasetProp = message['datasetProp']! as DatasetProp;
-          final dataItems = message['dataItems']! as List<DataItem>;
+          final csvPath = message[0] as String;
+          final propPath = message[1] as String;
+          final datasetProp = message[2] as DatasetProp;
+          final dataItems = message[3] as List<DataItem>;
 
           final datasetStr = dataItems.fold('', (previousValue, dataset) {
             return previousValue + dataset.toCsv();
@@ -240,7 +241,7 @@ class RecordRepository {
       );
       return (null, null);
     } catch (e, stackTrace) {
-      const message = 'Failed writing dataset using compute';
+      const message = 'Failed writing dataset in isolate';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

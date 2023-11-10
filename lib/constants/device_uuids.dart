@@ -5,6 +5,7 @@ class DeviceUuids {
   static const serviceMiBand2 = '0000fee1-0000-1000-8000-00805f9b34fb';
 
   static const serviceHeartRate = '0000180d-0000-1000-8000-00805f9b34fb';
+  static const serviceGenericAccess = '00001800-0000-1000-8000-00805f9b34fb';
   static const serviceAlertNotification =
       '00001811-0000-1000-8000-00805f9b34fb';
 
@@ -13,6 +14,6 @@ class DeviceUuids {
   static const charHeartRateMeasure = '00002a37-0000-1000-8000-00805f9b34fb';
   static const charHeartRateControl = '00002a39-0000-1000-8000-00805f9b34fb';
   static const charSensor = '00000001-0000-3512-2118-0009af100700';
-  static const charNotification = '00002A46-0000-1000-8000-00805f9b34fb';
+  static const charNotification = '00002a46-0000-1000-8000-00805f9b34fb';
   static const charDeviceName = '00002a00-0000-1000-8000-00805f9b34fb';
 }

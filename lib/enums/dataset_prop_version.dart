@@ -10,7 +10,7 @@ enum DatasetPropVersion {
   /// ```
   v1,
 
-  /// Dataset prop v2 is backward compatible with v1
+  /// Dataset prop v2 is backward compatible with v1.
   ///
   /// Format dataset prop in v2:
   /// ```json
@@ -26,7 +26,7 @@ enum DatasetPropVersion {
   v2,
 
   /// Dataset prop v3 is **NOT** backward compatible with v2. This is because we
-  /// added new non-nullable `id` and `created_at` and removed `dir_name`
+  /// added new non-nullable `id` and `created_at` and removed `dir_name`.
   ///
   /// Format dataset prop in v3:
   /// ```json
@@ -40,7 +40,24 @@ enum DatasetPropVersion {
   ///    'created_at': DateTime
   /// }
   /// ```
-  v3;
+  v3,
+
+  /// Dataset prop v4 is backward compatible with v3.
+  ///
+  /// Format dataset prop in v4:
+  /// ```json
+  /// {
+  ///    'id': String,
+  ///    'csv_url': String?,
+  ///    'video_url': String?,
+  ///    'thumbnail_url': String?,
+  ///    'has_evaluated': bool,
+  ///    'dataset_version': Enum,
+  ///    'dataset_prop_version': Enum,
+  ///    'created_at': DateTime
+  /// }
+  /// ```
+  v4;
 
   factory DatasetPropVersion.fromValue(int value) {
     return DatasetPropVersion.values.firstWhere((e) => e.value == value);
@@ -54,6 +71,8 @@ enum DatasetPropVersion {
         return 'v2';
       case DatasetPropVersion.v3:
         return 'v3';
+      case DatasetPropVersion.v4:
+        return 'v4';
     }
   }
 
@@ -65,6 +84,8 @@ enum DatasetPropVersion {
         return 2;
       case DatasetPropVersion.v3:
         return 3;
+      case DatasetPropVersion.v4:
+        return 4;
     }
   }
 }

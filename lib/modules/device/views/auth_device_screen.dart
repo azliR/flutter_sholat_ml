@@ -79,7 +79,7 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
         context,
         previous,
         next,
-        onAuthDeviceSuccessState: () {
+        onAuthDeviceSuccess: () {
           context.router.popUntilRoot();
         },
       ),

@@ -8,107 +8,109 @@ void handleAuthDeviceState(
   BuildContext context,
   AuthDeviceState? previous,
   AuthDeviceState next, {
-  void Function()? onAuthDeviceInitialState,
-  void Function()? onConnectDeviceLoadingState,
-  void Function()? onConnectDeviceSuccessState,
-  void Function(Failure failure)? onConnectDeviceFailureState,
-  void Function()? onSelectDeviceLoadingState,
-  void Function()? onSelectDeviceSuccessState,
-  void Function(Failure failure)? onSelectDeviceFailureState,
-  void Function()? onAuthDeviceLoadingState,
-  void Function()? onAuthDeviceSuccessState,
-  void Function(Failure failure)? onAuthDeviceFailureState,
-  void Function()? onAuthDeviceResponseFailureState,
-  void Function()? onAuthWithXiaomiAccountLoadingState,
-  void Function()? onAuthWithXiaomiAccountSuccessState,
-  void Function(Failure failure)? onAuthWithXiaomiAccountFailureState,
-  void Function()? onAuthWithXiaomiAccountResponseFailureState,
+  void Function()? onAuthDeviceInitial,
+  void Function()? onConnectDeviceLoading,
+  void Function()? onConnectDeviceSuccess,
+  void Function(Failure failure)? onConnectDeviceFailure,
+  void Function()? onSelectDeviceLoading,
+  void Function()? onSelectDeviceSuccess,
+  void Function(Failure failure)? onSelectDeviceFailure,
+  void Function()? onAuthDeviceLoading,
+  void Function()? onAuthDeviceSuccess,
+  void Function(Failure failure)? onAuthDeviceFailure,
+  void Function()? onAuthDeviceResponseFailure,
+  void Function()? onAuthWithXiaomiAccountLoading,
+  void Function()? onAuthWithXiaomiAccountSuccess,
+  void Function(Failure failure)? onAuthWithXiaomiAccountFailure,
+  void Function()? onAuthWithXiaomiAccountResponseFailure,
   void Function(Failure failure)? onDisconnectDeviceFailure,
   void Function(Failure failure)? onGetPrimaryDeviceFailure,
   void Function(Failure failure)? onRemoveDeviceFailure,
+  void Function()? onGetDeviceNameLoading,
+  void Function(Failure failure)? onGetDeviceNameFailure,
 }) {
   if (previous?.presentationState != next.presentationState) {
     final presentationState = next.presentationState;
     switch (presentationState) {
       case AuthDeviceInitialState():
-        onAuthDeviceInitialState?.call();
+        onAuthDeviceInitial?.call();
       case ConnectDeviceLoadingState():
-        if (onConnectDeviceLoadingState != null) {
-          onConnectDeviceLoadingState.call();
+        if (onConnectDeviceLoading != null) {
+          onConnectDeviceLoading.call();
         } else {
           context.loaderOverlay.show();
         }
       case ConnectDeviceSuccessState():
-        if (onConnectDeviceSuccessState != null) {
-          onConnectDeviceSuccessState.call();
+        if (onConnectDeviceSuccess != null) {
+          onConnectDeviceSuccess.call();
         } else {
           context.loaderOverlay.hide();
         }
       case ConnectDeviceFailureState():
-        if (onConnectDeviceFailureState != null) {
-          onConnectDeviceFailureState.call(presentationState.failure);
+        if (onConnectDeviceFailure != null) {
+          onConnectDeviceFailure.call(presentationState.failure);
         } else {
           showErrorSnackbar(context, 'Failed connecting to device');
         }
       case SelectDeviceLoadingState():
-        if (onSelectDeviceLoadingState != null) {
-          onSelectDeviceLoadingState.call();
+        if (onSelectDeviceLoading != null) {
+          onSelectDeviceLoading.call();
         } else {
           context.loaderOverlay.hide();
         }
       case SelectDeviceSuccessState():
-        if (onSelectDeviceSuccessState != null) {
-          onSelectDeviceSuccessState.call();
+        if (onSelectDeviceSuccess != null) {
+          onSelectDeviceSuccess.call();
         } else {
           context.loaderOverlay.hide();
         }
       case SelectDeviceFailureState():
-        if (onSelectDeviceFailureState != null) {
-          onSelectDeviceFailureState.call(presentationState.failure);
+        if (onSelectDeviceFailure != null) {
+          onSelectDeviceFailure.call(presentationState.failure);
         } else {
           showErrorSnackbar(context, 'Failed selecting device');
         }
       case AuthDeviceLoadingState():
-        if (onAuthDeviceLoadingState != null) {
-          onAuthDeviceLoadingState.call();
+        if (onAuthDeviceLoading != null) {
+          onAuthDeviceLoading.call();
         } else {
           context.loaderOverlay.show();
         }
       case AuthDeviceSuccessState():
-        if (onAuthDeviceSuccessState != null) {
-          onAuthDeviceSuccessState.call();
+        if (onAuthDeviceSuccess != null) {
+          onAuthDeviceSuccess.call();
         } else {
           context.loaderOverlay.hide();
         }
       case AuthDeviceFailureState():
-        if (onAuthDeviceFailureState != null) {
-          onAuthDeviceFailureState.call(presentationState.failure);
+        if (onAuthDeviceFailure != null) {
+          onAuthDeviceFailure.call(presentationState.failure);
         } else {
           context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');
         }
       case AuthDeviceResponseFailureState():
-        if (onAuthDeviceResponseFailureState != null) {
-          onAuthDeviceResponseFailureState.call();
+        if (onAuthDeviceResponseFailure != null) {
+          onAuthDeviceResponseFailure.call();
         } else {
           context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');
         }
       case AuthWithXiaomiAccountLoadingState():
-        if (onAuthWithXiaomiAccountLoadingState != null) {
-          onAuthWithXiaomiAccountLoadingState.call();
+        if (onAuthWithXiaomiAccountLoading != null) {
+          onAuthWithXiaomiAccountLoading.call();
         } else {
           context.loaderOverlay.show();
         }
       case AuthWithXiaomiAccountSuccessState():
-        if (onAuthWithXiaomiAccountSuccessState != null) {
-          onAuthWithXiaomiAccountSuccessState.call();
+        if (onAuthWithXiaomiAccountSuccess != null) {
+          onAuthWithXiaomiAccountSuccess.call();
         } else {
           context.loaderOverlay.hide();
         }
       case AuthWithXiaomiAccountFailureState():
-        if (onAuthWithXiaomiAccountFailureState != null) {
-          onAuthWithXiaomiAccountFailureState.call(presentationState.failure);
+        if (onAuthWithXiaomiAccountFailure != null) {
+          onAuthWithXiaomiAccountFailure.call(presentationState.failure);
         } else {
           context.loaderOverlay.hide();
           showErrorSnackbar(
@@ -117,29 +119,39 @@ void handleAuthDeviceState(
           );
         }
       case AuthWithXiaomiAccountResponseFailureState():
-        if (onAuthWithXiaomiAccountResponseFailureState != null) {
-          onAuthWithXiaomiAccountResponseFailureState.call();
+        if (onAuthWithXiaomiAccountResponseFailure != null) {
+          onAuthWithXiaomiAccountResponseFailure.call();
         } else {
           context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');
         }
-      case DisconnectDeviceFailure():
+      case DisconnectDeviceFailureState():
         if (onDisconnectDeviceFailure != null) {
           onDisconnectDeviceFailure.call(presentationState.failure);
         } else {
           showErrorSnackbar(context, 'Failed to disconnect device');
         }
-      case GetPrimaryDeviceFailure():
+      case GetPrimaryDeviceFailureState():
         if (onGetPrimaryDeviceFailure != null) {
           onGetPrimaryDeviceFailure.call(presentationState.failure);
         } else {
           showErrorSnackbar(context, 'Failed to get saved device');
         }
-      case RemoveDeviceFailure():
+      case RemoveDeviceFailureState():
         if (onRemoveDeviceFailure != null) {
           onRemoveDeviceFailure.call(presentationState.failure);
         } else {
           showErrorSnackbar(context, 'Failed to remove saved device');
+        }
+      case GetDeviceNameFailureState():
+        if (onGetDeviceNameFailure != null) {
+          onGetDeviceNameFailure.call(presentationState.failure);
+        } else {
+          showErrorSnackbar(context, 'Failed to get device name');
+        }
+      case GetDeviceNameLoadingState():
+        if (onGetDeviceNameLoading != null) {
+          onGetDeviceNameLoading.call();
         }
     }
   }

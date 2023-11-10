@@ -373,16 +373,16 @@ class DeviceRepository {
     return aes.encrypt(Uint8List.fromList(data)).bytes;
   }
 
-  Future<(Failure?, Device?)> getPrimaryDevice() async {
-    try {
-      final devices = LocalStorageService.getSavedDevices();
-      if (devices.isEmpty) return (null, null);
-      return (null, devices.first);
-    } catch (e, stackTrace) {
-      const message = 'Failed getting primary device';
-      final failure = Failure(message, error: e, stackTrace: stackTrace);
-      return (failure, null);
-    }
+  Device? getPrimaryDevice() {
+    final devices = LocalStorageService.getSavedDevices();
+    if (devices.isEmpty) return null;
+    return devices.first;
+  }
+
+  Device? getDeviceById(String deviceId) {
+    final devices = LocalStorageService.getSavedDevices();
+    if (devices.isEmpty) return null;
+    return devices.firstWhere((device) => device.deviceId == deviceId);
   }
 
   Future<(Failure?, void)> saveDevice(Device device) async {
@@ -402,6 +402,22 @@ class DeviceRepository {
       return (null, null);
     } catch (e, stackTrace) {
       final message = 'Failed removing device: $device';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, String?)> getDeviceName(
+    BluetoothCharacteristic deviceNameChar,
+  ) async {
+    try {
+      log('Getting device name...');
+      final resultBytes = await deviceNameChar.read();
+      final deviceName = utf8.decode(resultBytes);
+
+      return (null, deviceName);
+    } catch (e, stackTrace) {
+      const message = 'Failed sending encrypted key!';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

@@ -127,20 +127,30 @@ final class AuthWithXiaomiAccountResponseFailureState
   const AuthWithXiaomiAccountResponseFailureState();
 }
 
-final class DisconnectDeviceFailure extends AuthDevicePresentationState {
-  const DisconnectDeviceFailure(this.failure);
+final class DisconnectDeviceFailureState extends AuthDevicePresentationState {
+  const DisconnectDeviceFailureState(this.failure);
 
   final Failure failure;
 }
 
-final class GetPrimaryDeviceFailure extends AuthDevicePresentationState {
-  const GetPrimaryDeviceFailure(this.failure);
+final class GetPrimaryDeviceFailureState extends AuthDevicePresentationState {
+  const GetPrimaryDeviceFailureState(this.failure);
 
   final Failure failure;
 }
 
-final class RemoveDeviceFailure extends AuthDevicePresentationState {
-  const RemoveDeviceFailure(this.failure);
+final class RemoveDeviceFailureState extends AuthDevicePresentationState {
+  const RemoveDeviceFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class GetDeviceNameLoadingState extends AuthDevicePresentationState {
+  const GetDeviceNameLoadingState();
+}
+
+final class GetDeviceNameFailureState extends AuthDevicePresentationState {
+  const GetDeviceNameFailureState(this.failure);
 
   final Failure failure;
 }

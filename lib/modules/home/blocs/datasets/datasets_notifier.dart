@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
@@ -201,7 +200,6 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       },
       cancelOnError: true,
       onDone: () {
-        log('donw');
         _downloadSubscription?.cancel();
       },
       onError: (e, stackTrace) {
@@ -362,15 +360,15 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return;
     }
+
     await _exportSubscription?.cancel();
     _exportSubscription = progressStream!.listen(
-      (event) {
+      (event) async {
         state = state.copyWith(
           presentationState: ExportDatasetProgressState(event),
         );
-      },
-      cancelOnError: true,
-      onDone: () async {
+        if (event != 1) return;
+
         final (failure, _) =
             await _homeRepository.shareDataset([archivedPath!]);
         if (failure != null) {
@@ -383,9 +381,17 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
           presentationState: const ExportDatasetSuccessState(),
         );
       },
-      onError: (e, stackTrace) {
+      cancelOnError: true,
+      onError: (Object? e, stackTrace) {
+        Failure failure;
+        if (e is Failure) {
+          failure = e;
+        } else {
+          const message = 'Failed exporting datasets';
+          failure = Failure(message, error: e);
+        }
         state = state.copyWith(
-          presentationState: const ExportDatasetFailureState(),
+          presentationState: ExportDatasetFailureState(failure),
         );
       },
     );

@@ -33,6 +33,7 @@ class PreprocessRepository {
       if (!datasetPropFile.existsSync()) {
         datasetProp = DatasetProp(
           id: dirName,
+          hasEvaluated: false,
           datasetVersion: DatasetVersion.v1,
           createdAt: DateTime.tryParse(dirName) ?? DateTime.now(),
         );
@@ -44,7 +45,7 @@ class PreprocessRepository {
         );
       }
 
-      final (failure, datasets) = await computeDataItems(
+      final (failure, datasets) = await _readDataItemsInIsolate(
         datasetStrList: datasetStrList,
         datasetProp: datasetProp,
       );
@@ -58,19 +59,16 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, List<DataItem>?)> computeDataItems({
+  Future<(Failure?, List<DataItem>?)> _readDataItemsInIsolate({
     required List<String> datasetStrList,
     required DatasetProp datasetProp,
   }) async {
     try {
-      final message = {
-        'datasetStrList': datasetStrList,
-        'datasetProp': datasetProp,
-      };
+      final message = [datasetStrList, datasetProp];
       final datasets = await compute(
         (message) {
-          final datasetStrList = message['datasetStrList']! as List<String>;
-          final datasetProp = message['datasetProp']! as DatasetProp;
+          final datasetStrList = message[0] as List<String>;
+          final datasetProp = message[1] as DatasetProp;
 
           final datasets = datasetStrList
               .map(
@@ -86,7 +84,7 @@ class PreprocessRepository {
       );
       return (null, datasets);
     } catch (e, stackTrace) {
-      const message = 'Failed reading data items using compute';
+      const message = 'Failed reading data items in isolate';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

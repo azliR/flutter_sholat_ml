@@ -8,6 +8,7 @@ import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 class DatasetProp extends Equatable {
   DatasetProp({
     required this.id,
+    required this.hasEvaluated,
     required this.datasetVersion,
     required this.createdAt,
     this.csvUrl,
@@ -16,7 +17,6 @@ class DatasetProp extends Equatable {
   }) : datasetPropVersion = DatasetPropVersion.values.last;
 
   factory DatasetProp.fromJson(Map<String, dynamic> json) {
-    // log(jsonEncode(json));
     final propVersion = json['dataset_prop_version'] == null
         ? DatasetPropVersion.v1
         : DatasetPropVersion.fromValue(json['dataset_prop_version'] as int);
@@ -30,6 +30,7 @@ class DatasetProp extends Equatable {
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
+          hasEvaluated: false,
           datasetVersion: json['dataset_version'] == null
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
@@ -38,11 +39,13 @@ class DatasetProp extends Equatable {
               DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
         );
       case DatasetPropVersion.v3:
+      case DatasetPropVersion.v4:
         return DatasetProp._(
           id: json['id'] as String,
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
+          hasEvaluated: json['has_evaluated'] as bool? ?? false,
           datasetVersion: json['dataset_version'] == null
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
@@ -69,6 +72,7 @@ class DatasetProp extends Equatable {
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
+          hasEvaluated: false,
           datasetVersion: json['dataset_version'] == null
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
@@ -77,11 +81,13 @@ class DatasetProp extends Equatable {
               (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
         );
       case DatasetPropVersion.v3:
+      case DatasetPropVersion.v4:
         return DatasetProp._(
           id: id,
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
+          hasEvaluated: json['has_evaluated'] as bool? ?? false,
           datasetVersion: json['dataset_version'] == null
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
@@ -93,6 +99,7 @@ class DatasetProp extends Equatable {
 
   const DatasetProp._({
     required this.id,
+    required this.hasEvaluated,
     required this.datasetVersion,
     required this.datasetPropVersion,
     required this.createdAt,
@@ -105,6 +112,7 @@ class DatasetProp extends Equatable {
   final String? csvUrl;
   final String? videoUrl;
   final String? thumbnailUrl;
+  final bool hasEvaluated;
   final DatasetVersion datasetVersion;
   final DatasetPropVersion datasetPropVersion;
   final DateTime createdAt;
@@ -116,6 +124,7 @@ class DatasetProp extends Equatable {
     String? csvUrl,
     String? videoUrl,
     String? thumbnailUrl,
+    bool? hasEvaluated,
     DatasetVersion? datasetVersion,
     DatasetPropVersion? datasetPropVersion,
     DateTime? createdAt,
@@ -125,6 +134,7 @@ class DatasetProp extends Equatable {
       csvUrl: csvUrl ?? this.csvUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      hasEvaluated: hasEvaluated ?? this.hasEvaluated,
       datasetVersion: datasetVersion ?? this.datasetVersion,
       datasetPropVersion: datasetPropVersion ?? this.datasetPropVersion,
       createdAt: createdAt ?? this.createdAt,
@@ -137,6 +147,7 @@ class DatasetProp extends Equatable {
       'csv_url': csvUrl,
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
+      'has_evaluated': hasEvaluated,
       'dataset_version': datasetVersion.value,
       'dataset_prop_version': DatasetPropVersion.values.last.value,
       'created_at': createdAt.toIso8601String(),
@@ -148,6 +159,7 @@ class DatasetProp extends Equatable {
       'csv_url': csvUrl,
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
+      'has_evaluated': hasEvaluated,
       'dataset_version': datasetVersion.value,
       'dataset_prop_version': DatasetPropVersion.values.last.value,
       'created_at': Timestamp.fromDate(createdAt),
@@ -160,6 +172,7 @@ class DatasetProp extends Equatable {
         csvUrl,
         videoUrl,
         thumbnailUrl,
+        hasEvaluated,
         datasetVersion,
         datasetPropVersion,
         createdAt,

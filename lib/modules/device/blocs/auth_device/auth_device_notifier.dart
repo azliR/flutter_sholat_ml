@@ -31,20 +31,15 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
   List<BluetoothService>? services;
 
   BluetoothService? _authService;
+  BluetoothService? _genericAccessService;
   BluetoothCharacteristic? _authChar;
+  BluetoothCharacteristic? _deviceNameChar;
 
   StreamSubscription<List<int>>? _authSubscription;
   StreamSubscription<List<Device>>? _savedDevicesSubscription;
 
   Future<Device?> getPrimaryDevice() async {
-    final (failure, device) = await _deviceRepository.getPrimaryDevice();
-    if (failure != null) {
-      state = state.copyWith(
-        presentationState: GetPrimaryDeviceFailure(failure),
-      );
-      return null;
-    }
-    return device;
+    return _deviceRepository.getPrimaryDevice();
   }
 
   Future<bool> removeSavedDevice(Device device) async {
@@ -55,7 +50,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     final (removeFailure, _) = await _deviceRepository.removeDevice(device);
     if (removeFailure != null) {
       state = state.copyWith(
-        presentationState: RemoveDeviceFailure(removeFailure),
+        presentationState: RemoveDeviceFailureState(removeFailure),
       );
       return false;
     }
@@ -103,10 +98,17 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     this.services = services;
 
     _authService = services.firstWhere(
-      (element) => element.uuid == Guid(DeviceUuids.serviceMiBand2),
+      (service) => service.uuid.toString() == DeviceUuids.serviceMiBand2,
     );
+    _genericAccessService = services.firstWhere(
+      (service) => service.uuid.toString() == DeviceUuids.serviceGenericAccess,
+    );
+
     _authChar = _authService!.characteristics.firstWhere(
-      (element) => element.uuid == Guid(DeviceUuids.charAuth),
+      (char) => char.uuid.toString() == DeviceUuids.charAuth,
+    );
+    _deviceNameChar = _genericAccessService!.characteristics.firstWhere(
+      (char) => char.uuid.toString() == DeviceUuids.charDeviceName,
     );
 
     final authChar = _authChar!;
@@ -134,12 +136,38 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
           return;
         }
       } else if (hexResponse == DeviceResponses.authSucceeded) {
+        final savedDevice =
+            _deviceRepository.getDeviceById(bluetoothDevice.remoteId.str);
+
+        if (savedDevice != null) {
+          state = state.copyWith(
+            currentDevice: () => savedDevice,
+            presentationState: const AuthDeviceSuccessState(),
+          );
+          return;
+        }
+
+        var platformName = bluetoothDevice.platformName;
+        if (platformName.isNullOrEmpty) {
+          state = state.copyWith(
+            presentationState: const GetDeviceNameLoadingState(),
+          );
+          final (failure, deviceName) =
+              await _deviceRepository.getDeviceName(_deviceNameChar!);
+          if (failure != null) {
+            state = state.copyWith(
+              presentationState: GetDeviceNameFailureState(failure),
+            );
+            platformName = 'Unknown device';
+          } else {
+            platformName = deviceName!;
+          }
+        }
+
         final currentDevice = Device(
           authKey: authKey,
           deviceId: bluetoothDevice.remoteId.str,
-          deviceName: bluetoothDevice.platformName.isNullOrBlank
-              ? 'Unknown device'
-              : bluetoothDevice.platformName,
+          deviceName: platformName,
         );
         await _deviceRepository.saveDevice(currentDevice);
 
@@ -227,7 +255,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
         await _deviceRepository.disconnectDevice(bluetoothDevice!);
     if (disconnectFailure != null) {
       state = state.copyWith(
-        presentationState: DisconnectDeviceFailure(disconnectFailure),
+        presentationState: DisconnectDeviceFailureState(disconnectFailure),
       );
       return false;
     }

@@ -121,7 +121,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                       return DatasetGridTile(
                         dataset: dataset,
                         selected: selected,
-                        tagged: true,
+                        labeled: true,
                         onTap: () async {
                           if (dataset.downloaded ?? false) {
                             await context.router

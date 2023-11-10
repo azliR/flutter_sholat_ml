@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:archive/archive_io.dart';
 import 'package:async/async.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
@@ -20,6 +19,7 @@ import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:tar/tar.dart';
 
 enum ImportDatasetErrorCode { canceled, unsupported, missingRequiredFiles }
 
@@ -212,57 +212,92 @@ class HomeRepository {
     List<String> paths,
   ) async {
     try {
-      final streams = <Stream<double>>[];
+      final progressController = StreamController<double>();
+      final tarEntriesController = StreamController<TarEntry>();
+
       final tempDir = await getTemporaryDirectory();
 
       final archivePath = tempDir.file('sholat-ml-dataset.shd').path;
-      final output = OutputFileStream(archivePath);
-      final encoder = ZipEncoder()..startEncode(output);
+
+      var totalSize = 0;
 
       for (final path in paths) {
-        final streamController = StreamController<double>();
-        streams.add(streamController.stream);
-
         final dir = Directory(path);
         final dirName = dir.name;
         final files = await dir.list(recursive: true).toList();
-        var current = 0;
-        final amount = files.length;
 
-        for (final file in files) {
-          final fileStat = file.statSync();
-          var filename = relative(file.path, from: dir.path);
-          filename = '$dirName/$filename';
+        for (final entity in files) {
+          if (entity is! File) continue;
 
-          if (file is Directory) {
-            final archiveFile = ArchiveFile('$filename/', 0, null)
-              ..mode = fileStat.mode
-              ..lastModTime = fileStat.modified.millisecondsSinceEpoch ~/ 1000
-              ..isFile = false;
-            encoder.addFile(archiveFile);
-          } else if (file is File) {
-            final fileStream = InputFileStream(file.path);
-            final archiveFile =
-                ArchiveFile.stream(filename, file.lengthSync(), fileStream)
-                  ..lastModTime =
-                      fileStat.modified.millisecondsSinceEpoch ~/ 1000
-                  ..mode = fileStat.mode;
+          var fileName = relative(entity.path, from: dir.path);
+          fileName = join(dirName, fileName);
 
-            encoder.addFile(archiveFile);
-            await fileStream.close();
-            streamController.add(++current / amount);
-          }
+          final fileStat = entity.statSync();
+
+          tarEntriesController.add(
+            TarEntry(
+              TarHeader(
+                name: fileName,
+                mode: fileStat.mode,
+                accessed: fileStat.accessed,
+                modified: fileStat.modified,
+                size: fileStat.size,
+              ),
+              entity.openRead(),
+            ),
+          );
+          totalSize += fileStat.size;
         }
-        unawaited(streamController.close());
       }
-      encoder.endEncode();
+
+      final tarEntries = tarEntriesController.stream;
+
+      final output = File(archivePath).openWrite();
+      var processedSize = 0;
+      unawaited(
+        tarEntries
+            .map((tarEntry) {
+              processedSize += tarEntry.size;
+              final progress = processedSize / totalSize;
+              progressController.add(progress);
+              return tarEntry;
+            })
+            // convert entries into a .tar stream
+            .transform(tarWriter)
+            // convert the .tar stream into a .tar.gz stream
+            .transform(gzip.encoder)
+            .handleError((Object error, StackTrace stackTrace) {
+              const message = 'Failed compressing files';
+              final failure =
+                  Failure(message, error: error, stackTrace: stackTrace);
+              progressController.addError(failure, stackTrace);
+            })
+            .pipe(output)
+            .onError((error, stackTrace) {
+              const message = 'Failed compressing files';
+              final failure =
+                  Failure(message, error: error, stackTrace: stackTrace);
+              progressController.addError(failure, stackTrace);
+            })
+            .catchError((Object? error, Object? stackTrace) {
+              final failure = Failure('Failed compressing files', error: error);
+              progressController.addError(failure);
+            })
+            .whenComplete(() {
+              progressController.close();
+              output.close();
+            }),
+      );
+
+      await tarEntriesController.close();
 
       return (
         null,
-        StreamGroup.merge(streams),
+        progressController.stream,
         archivePath,
       );
     } catch (e, stackTrace) {
+      log('message');
       const message = 'Failed exporting dataset';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null, null);
@@ -300,24 +335,32 @@ class HomeRepository {
       final dir = await getApplicationDocumentsDirectory();
       final baseOutputDir = dir.directory(Directories.needReviewDirPath);
 
-      final inputStream = InputFileStream(pickedFile.path!);
-      final archive = ZipDecoder().decodeBuffer(inputStream);
+      final inputStream = File(pickedFile.path!).openRead();
 
-      if (archive.files.isEmpty) {
-        const message = 'Missing required files';
-        const code = ImportDatasetErrorCode.missingRequiredFiles;
-        final failure = Failure(message, code: code);
-        return (failure, null);
-      }
+      final reader = TarReader(inputStream.transform(gzip.decoder));
+      final fileMap = <String, List<File>>{};
 
-      final fileMap = <String, List<ArchiveFile>>{};
+      while (await reader.moveNext()) {
+        final entry = reader.current;
+        final header = entry.header;
 
-      for (final file in archive.files) {
-        final parts = file.name.split('/');
+        if (header.typeFlag != TypeFlag.reg) continue;
+
+        final filePath = entry.header.name;
+        if (![
+          Paths.datasetCsv,
+          Paths.datasetProp,
+          Paths.datasetVideo,
+          Paths.datasetThumbnail,
+        ].contains(basename(filePath))) {
+          continue;
+        }
+
+        final parts = split(normalize(filePath));
 
         if (parts.length != 2) continue;
 
-        final folderName = parts[0];
+        final dirName = parts[0];
         final fileName = parts[1];
 
         if (extension(fileName).isEmpty || fileName.split('/').length > 1) {
@@ -325,69 +368,61 @@ class HomeRepository {
           continue;
         }
 
-        fileMap[folderName] ??= [];
-        fileMap[folderName]!.add(file);
+        var outputDir = baseOutputDir.directory(dirName);
+        var i = 1;
+        while (!fileMap.containsKey(outputDir.name) && outputDir.existsSync()) {
+          outputDir = baseOutputDir.directory('$dirName ($i)');
+          i++;
+        }
+        final file = await outputDir.file(fileName).create(recursive: true);
+        await entry.contents.pipe(file.openWrite());
+
+        fileMap[basename(outputDir.name)] ??= [];
+        fileMap[basename(outputDir.name)]!.add(file);
       }
 
-      bool containsFile(List<ArchiveFile> files, String fileName) {
-        return files.any((file) => basename(file.name) == fileName);
+      if (fileMap.isEmpty) {
+        const message = 'Missing required files';
+        const code = ImportDatasetErrorCode.missingRequiredFiles;
+        final failure = Failure(message, code: code);
+        return (failure, null);
       }
 
       for (final entry in fileMap.entries) {
-        final isContainCsv = containsFile(entry.value, Paths.datasetCsv);
-        final isContainVideo = containsFile(entry.value, Paths.datasetVideo);
-        final isContainProp = containsFile(entry.value, Paths.datasetProp);
+        final isContainCsv = entry.value.any(
+          (file) => basename(file.path) == Paths.datasetCsv,
+        );
+        final isContainVideo = entry.value.any(
+          (file) => basename(file.path) == Paths.datasetVideo,
+        );
+        final isContainProp = entry.value.any(
+          (file) => basename(file.path) == Paths.datasetProp,
+        );
 
         if (!isContainCsv || !isContainVideo || !isContainProp) {
+          await Directory(entry.key).delete(recursive: true);
+
           const message = 'Missing required files';
           const code = ImportDatasetErrorCode.missingRequiredFiles;
           final failure = Failure(message, code: code);
           return (failure, null);
         }
 
-        var datasetOutputDir = baseOutputDir.directory(entry.key);
-
-        var i = 1;
-        while (true) {
-          if (!datasetOutputDir.existsSync()) break;
-
-          datasetOutputDir = baseOutputDir.directory('${entry.key} ($i)');
-          i++;
-        }
-        final datasetOutputDirName = basename(datasetOutputDir.path);
-        late final DatasetProp datasetProp;
-        for (final archiveFile in entry.value) {
-          final filename = basename(archiveFile.name);
-          if (![
-            Paths.datasetCsv,
-            Paths.datasetProp,
-            Paths.datasetVideo,
-            Paths.datasetThumbnail,
-          ].contains(filename)) {
-            continue;
-          }
-          final bytes = archiveFile.content as List<int>;
-          final outputFile = datasetOutputDir.file(filename);
-          final file = await outputFile.create(recursive: true);
-          await file.writeAsBytes(bytes);
-          archiveFile.clear();
-
-          if (filename == Paths.datasetProp) {
-            final datasetPropStr = utf8.decode(bytes);
-            datasetProp = DatasetProp.fromJson(
-              jsonDecode(datasetPropStr) as Map<String, dynamic>,
-            ).copyWith(
-              id: datasetOutputDirName,
+        final datasetOutputDirName = basename(entry.key);
+        final datasetProp = await entry.value
+            .firstWhere((file) => basename(file.path) == Paths.datasetProp)
+            .readAsString()
+            .then(
+              (value) => DatasetProp.fromJson(
+                jsonDecode(value) as Map<String, dynamic>,
+              ).copyWith(id: datasetOutputDirName),
             );
-          }
-        }
+
         LocalDatasetStorageService.putDataset(
           datasetOutputDirName,
           datasetProp,
         );
       }
-
-      await archive.clear();
 
       return (null, null);
     } catch (e, stackTrace) {

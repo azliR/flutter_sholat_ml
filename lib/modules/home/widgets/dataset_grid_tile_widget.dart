@@ -10,7 +10,7 @@ class DatasetGridTile extends StatefulWidget {
   const DatasetGridTile({
     required this.dataset,
     required this.selected,
-    required this.tagged,
+    required this.labeled,
     required this.action,
     required this.onInitialise,
     required this.onTap,
@@ -20,7 +20,7 @@ class DatasetGridTile extends StatefulWidget {
 
   final Dataset dataset;
   final bool selected;
-  final bool tagged;
+  final bool labeled;
   final Widget? action;
   final void Function() onInitialise;
   final void Function() onTap;
@@ -51,6 +51,7 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
     final datasetVersionName = '${datasetVersion.name}'
         '${DatasetVersion.values.last == datasetVersion ? ' (latest)' : ''}';
     final downloaded = widget.dataset.downloaded;
+    final hasEvaluated = widget.dataset.property.hasEvaluated;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -176,7 +177,7 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
             //     ),
             //   ),
 
-            if (widget.tagged && (downloaded != null && !downloaded))
+            if (widget.labeled && (downloaded != null && !downloaded))
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
@@ -195,6 +196,27 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
                         downloaded
                             ? 'Available offline'
                             : 'Available to download',
+                        style: textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (hasEvaluated)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Symbols.check_rounded,
+                      size: 16,
+                      opticalSize: 20,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Has evaluated',
                         style: textTheme.bodySmall,
                       ),
                     ),

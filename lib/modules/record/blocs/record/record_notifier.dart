@@ -47,28 +47,30 @@ class RecordNotifier extends StateNotifier<RecordState> {
     if (state.isInitialised) return;
 
     final miBand1Service = services.firstWhere(
-      (service) => service.uuid == Guid(DeviceUuids.serviceMiBand1),
+      (service) => service.uuid.toString() == DeviceUuids.serviceMiBand1,
     );
     final heartRateService = services.firstWhere(
-      (service) => service.uuid == Guid(DeviceUuids.serviceHeartRate),
+      (service) => service.uuid.toString() == DeviceUuids.serviceHeartRate,
     );
-    final genericAccessService = services.firstWhere(
-      (service) => service.uuid == Guid(DeviceUuids.serviceAlertNotification),
+    final alertNotificationService = services.firstWhere(
+      (service) =>
+          service.uuid.toString() == DeviceUuids.serviceAlertNotification,
     );
+
     _heartRateMeasureChar = heartRateService.characteristics.firstWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charHeartRateMeasure),
+      (char) => char.uuid.toString() == DeviceUuids.charHeartRateMeasure,
     );
     _heartRateControlChar = heartRateService.characteristics.firstWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charHeartRateControl),
+      (char) => char.uuid.toString() == DeviceUuids.charHeartRateControl,
     );
     _sensorChar = miBand1Service.characteristics.firstWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charSensor),
+      (char) => char.uuid.toString() == DeviceUuids.charSensor,
     );
     _hzChar = miBand1Service.characteristics.firstWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charHz),
+      (char) => char.uuid.toString() == DeviceUuids.charHz,
     );
-    _notificationChar = genericAccessService.characteristics.firstWhere(
-      (char) => char.uuid == Guid(DeviceUuids.charNotification),
+    _notificationChar = alertNotificationService.characteristics.firstWhere(
+      (char) => char.uuid.toString() == DeviceUuids.charNotification,
     );
 
     final (failure, _) = await _recordRepository.setNotifyChars(

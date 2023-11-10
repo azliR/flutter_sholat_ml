@@ -157,7 +157,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                                     );
                                     showSnackbar(
                                       context,
-                                      'Data items tagged with movement ID: \n'
+                                      'Data items labeled with movement ID: \n'
                                       '$movementSetId',
                                     );
                                   }
@@ -454,8 +454,8 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                   final anyLabeled =
                       selectedDataItems.any((dataItem) => dataItem.isLabeled);
                   if (anyLabeled) {
-                    final shouldChangeTag = await _showWarningDialog();
-                    if (shouldChangeTag != true) {
+                    final shouldChangeLabel = await _showWarningDialog();
+                    if (shouldChangeLabel != true) {
                       return;
                     }
                   }

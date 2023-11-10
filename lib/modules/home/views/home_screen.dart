@@ -138,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         context,
         previous,
         next,
-        onAuthDeviceSuccessState: () async {
+        onAuthDeviceSuccess: () async {
           if (!context.mounted) return;
           context.loaderOverlay.hide();
         },
