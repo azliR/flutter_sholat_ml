@@ -38,12 +38,14 @@ class _AppState extends State<App> {
       duration: const Duration(milliseconds: 250),
       reverseDuration: const Duration(milliseconds: 250),
       overlayColor: colorScheme.surface.withOpacity(0.6),
-      overlayWidget: const SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: LinearProgressIndicator(),
-        ),
-      ),
+      overlayWidgetBuilder: (_) {
+        return const SafeArea(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: LinearProgressIndicator(),
+          ),
+        );
+      },
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(

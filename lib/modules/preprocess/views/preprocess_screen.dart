@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:dartx/dartx_io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_dataset_list_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/accelerometer_chart_widget.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/widgets/dataset_prop_tile_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/preprocess_toolbar_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -128,6 +131,75 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
+  Future<void> _showSpeedDialog(BuildContext context) async {
+    const offs = Offset.zero;
+    final button = context.findRenderObject()! as RenderBox;
+    final overlay =
+        Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
+    final position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(offs, ancestor: overlay),
+        button.localToGlobal(
+          button.size.bottomRight(Offset.zero) + offs,
+          ancestor: overlay,
+        ),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    final result = await showMenu<double>(
+      context: context,
+      position: position,
+      initialValue: _videoPlayerController.value.playbackSpeed,
+      items: [
+        const PopupMenuItem(
+          height: 40,
+          value: 0.25,
+          child: Text('0.25'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 0.5,
+          child: Text('0.5'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 0.75,
+          child: Text('0.75'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 1,
+          child: Text('Normal'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 1.25,
+          child: Text('1.25'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 1.5,
+          child: Text('1.5'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 1.75,
+          child: Text('1.75'),
+        ),
+        const PopupMenuItem(
+          height: 40,
+          value: 2,
+          child: Text('2'),
+        ),
+      ],
+    );
+    if (result != null) {
+      await _videoPlayerController.setPlaybackSpeed(result);
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
@@ -161,11 +233,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final data = MediaQuery.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final isPortrait =
-        MediaQuery.of(context).orientation == Orientation.portrait;
+    final shouldVertical = data.size.width < 720;
 
     ref.listen(preprocessProvider.select((value) => value.presentationState),
         (previous, next) {
@@ -209,58 +281,70 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Preprocess'),
-              Row(
-                children: [
-                  const Icon(
-                    Symbols.watch_rounded,
-                    size: 16,
-                    weight: 600,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    dataItems.firstOrNull?.deviceLocation.name ?? '',
-                    style: textTheme.bodySmall,
-                  ),
-                ],
+              Text(
+                'Preprocess',
+                style: textTheme.titleLarge?.copyWith(
+                  fontSize: 20,
+                ),
               ),
+              if (datasetProp != null) ...[
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 1,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color:
+                        datasetProp.hasEvaluated ? colorScheme.secondary : null,
+                    border: datasetProp.hasEvaluated
+                        ? null
+                        : Border.all(
+                            color: colorScheme.outline,
+                          ),
+                  ),
+                  child: Text(
+                    datasetProp.hasEvaluated ? 'Evaluated' : 'Not evaluated',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: datasetProp.hasEvaluated
+                          ? colorScheme.onSecondary
+                          : colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           scrolledUnderElevation: 0,
           actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: FilledButton.tonal(
-                style: FilledButton.styleFrom(
-                  padding: (datasetProp?.isSubmitted ?? false)
-                      ? const EdgeInsets.fromLTRB(16, 8, 24, 8)
-                      : null,
-                ),
-                onPressed: () {
-                  if (datasetProp?.isSubmitted ?? false) {
-                    _notifier.saveDataset();
-                  } else {
-                    _showSaveDialog();
-                  }
-                },
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (datasetProp?.isSubmitted ?? false) ...[
-                      const Icon(Symbols.sync_rounded),
+            if (datasetProp != null) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
+                  ),
+                  onPressed: _showSaveDialog,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        datasetProp.isSubmitted ? 'Update' : 'Save',
+                      ),
                       const SizedBox(width: 8),
+                      const Icon(Symbols.arrow_drop_down_rounded),
                     ],
-                    Text(
-                      (datasetProp?.isSubmitted ?? false) ? 'Update' : 'Save',
-                    ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              _buildMenu(datasetProp),
+              const SizedBox(width: 12),
+            ],
           ],
         ),
         body: Flex(
-          direction: isPortrait ? Axis.vertical : Axis.horizontal,
+          direction: shouldVertical ? Axis.vertical : Axis.horizontal,
           children: [
             Expanded(
               flex: 4,
@@ -268,9 +352,98 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Expanded(
-                    child: AspectRatio(
-                      aspectRatio: _videoPlayerController.value.aspectRatio,
-                      child: VideoPlayer(_videoPlayerController),
+                    child: Row(
+                      children: [
+                        AspectRatio(
+                          aspectRatio: _videoPlayerController.value.aspectRatio,
+                          child: VideoPlayer(_videoPlayerController),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: ListView(
+                                  children: [
+                                    if (datasetProp != null) ...[
+                                      DatasetPropTile(
+                                        label: 'Dataset ID',
+                                        content: datasetProp.id,
+                                        icon: Symbols.key_rounded,
+                                      ),
+                                      DatasetPropTile(
+                                        label: 'Device Location',
+                                        content:
+                                            datasetProp.deviceLocation.name,
+                                        icon: Symbols.watch_rounded,
+                                      ),
+                                      DatasetPropTile(
+                                        label: 'Dataset prop version',
+                                        content: datasetProp.datasetPropVersion
+                                            .nameWithIsLatest(
+                                          latestText: ' (latest)',
+                                        ),
+                                        icon: Symbols.manufacturing_rounded,
+                                      ),
+                                      DatasetPropTile(
+                                        label: 'Dataset version',
+                                        content: datasetProp.datasetVersion
+                                            .nameWithIsLatest(
+                                          latestText: ' (latest)',
+                                        ),
+                                        icon: Symbols.dataset_rounded,
+                                      ),
+                                      const Divider(),
+                                      DatasetPropTile(
+                                        label: 'Duration',
+                                        content: _videoPlayerController
+                                            .value.duration
+                                            .toString(),
+                                        icon: Symbols.timer_rounded,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              const Divider(height: 0),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Builder(
+                                    builder: (context) {
+                                      return IconButton(
+                                        tooltip: 'Speed',
+                                        visualDensity: VisualDensity.compact,
+                                        style: IconButton.styleFrom(
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        icon: Row(
+                                          children: [
+                                            const Icon(
+                                              Symbols.speed_rounded,
+                                              weight: 300,
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              _videoPlayerController
+                                                  .value.playbackSpeed
+                                                  .toStringAsFixed(2)
+                                                  .removeSuffix('0'),
+                                              style: textTheme.bodyMedium,
+                                            ),
+                                          ],
+                                        ),
+                                        onPressed: () =>
+                                            _showSpeedDialog(context),
+                                      );
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Divider(
@@ -306,7 +479,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                 ],
               ),
             ),
-            if (isPortrait)
+            if (shouldVertical)
               Divider(
                 height: 0,
                 color: colorScheme.outline,
@@ -390,6 +563,43 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMenu(DatasetProp datasetProp) {
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return IconButton(
+          style: IconButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          iconSize: 20,
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: child!,
+        );
+      },
+      menuChildren: [
+        MenuItemButton(
+          leadingIcon: datasetProp.hasEvaluated
+              ? const Icon(Symbols.close_rounded)
+              : const Icon(Symbols.done_rounded),
+          onPressed: () {
+            _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated);
+          },
+          child: Text(
+            datasetProp.hasEvaluated
+                ? 'Mark as not evaluated'
+                : 'Mark as evaluated',
+          ),
+        ),
+      ],
+      child: const Icon(Symbols.more_vert_rounded),
     );
   }
 }

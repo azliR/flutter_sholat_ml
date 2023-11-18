@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/device/repository/device_repository.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 
 part 'discover_device_state.dart';
 

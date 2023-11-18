@@ -3,17 +3,21 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
+import 'package:flutter_sholat_ml/enums/device_location.dart';
 
 @immutable
 class DatasetProp extends Equatable {
   DatasetProp({
     required this.id,
+    required this.isCompressed,
     required this.hasEvaluated,
+    required this.deviceLocation,
     required this.datasetVersion,
     required this.createdAt,
     this.csvUrl,
     this.videoUrl,
     this.thumbnailUrl,
+    this.isSyncedWithCloud,
   }) : datasetPropVersion = DatasetPropVersion.values.last;
 
   factory DatasetProp.fromJson(Map<String, dynamic> json) {
@@ -22,35 +26,83 @@ class DatasetProp extends Equatable {
         : DatasetPropVersion.fromValue(json['dataset_prop_version'] as int);
 
     switch (propVersion) {
-      // Prop v1 and v2 is backward compatible
       case DatasetPropVersion.v1:
+        return DatasetProp._(
+          // v1
+          id: json['dir_name'] as String,
+          csvUrl: json['csv_url'] as String?,
+          videoUrl: json['video_url'] as String?,
+          datasetVersion: json['dataset_version'] == null
+              ? DatasetVersion.v1
+              : DatasetVersion.fromValue(json['dataset_version'] as int),
+          // new
+          isCompressed: false,
+          hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
+          datasetPropVersion: propVersion,
+          createdAt:
+              DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
+        );
       case DatasetPropVersion.v2:
         return DatasetProp._(
+          // v2
           id: json['dir_name'] as String,
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
+          datasetVersion: json['dataset_version'] == null
+              ? DatasetVersion.v1
+              : DatasetVersion.fromValue(json['dataset_version'] as int),
+          datasetPropVersion: propVersion,
+          // new
+          isSyncedWithCloud: json['csv_url'] != null &&
+              json['video_url'] != null &&
+              json['thumbnail_url'] != null,
+          isCompressed: false,
           hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
+          createdAt:
+              DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
+        );
+      case DatasetPropVersion.v3:
+        return DatasetProp._(
+          // v3
+          id: json['id'] as String,
+          csvUrl: json['csv_url'] as String?,
+          videoUrl: json['video_url'] as String?,
+          thumbnailUrl: json['thumbnail_url'] as String?,
           datasetVersion: json['dataset_version'] == null
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
           createdAt:
-              DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
+              DateTime.tryParse(json['created_at'] as String) ?? DateTime.now(),
+          // new
+          isSyncedWithCloud: json['csv_url'] != null &&
+              json['video_url'] != null &&
+              json['thumbnail_url'] != null,
+          isCompressed: false,
+          hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
         );
-      case DatasetPropVersion.v3:
       case DatasetPropVersion.v4:
         return DatasetProp._(
           id: json['id'] as String,
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
+          isSyncedWithCloud: json['is_synced_with_cloud'] as bool? ?? false,
+          isCompressed: json['is_compressed'] as bool? ?? false,
           hasEvaluated: json['has_evaluated'] as bool? ?? false,
+          deviceLocation: json['device_location'] == null
+              ? DeviceLocation.leftWrist
+              : DeviceLocation.fromValue(json['device_location'] as String),
           datasetVersion: json['dataset_version'] == null
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
-          createdAt: DateTime.parse(json['created_at'] as String),
+          createdAt:
+              DateTime.tryParse(json['created_at'] as String) ?? DateTime.now(),
         );
     }
   }
@@ -64,33 +116,74 @@ class DatasetProp extends Equatable {
         : DatasetPropVersion.fromValue(json['dataset_prop_version'] as int);
 
     switch (propVersion) {
-      // Prop v1 and v2 is backward compatible
       case DatasetPropVersion.v1:
+        return DatasetProp._(
+          // v1
+          id: id,
+          csvUrl: json['csv_url'] as String?,
+          videoUrl: json['video_url'] as String?,
+          datasetVersion:
+              DatasetVersion.fromValue(json['dataset_version'] as int),
+          // new
+          isCompressed: false,
+          hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
+          datasetPropVersion: propVersion,
+          createdAt:
+              DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
+        );
       case DatasetPropVersion.v2:
         return DatasetProp._(
+          // v2
           id: id,
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
-          hasEvaluated: false,
-          datasetVersion: json['dataset_version'] == null
-              ? DatasetVersion.v1
-              : DatasetVersion.fromValue(json['dataset_version'] as int),
+          datasetVersion:
+              DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
+          // new
+          isSyncedWithCloud: json['csv_url'] != null &&
+              json['video_url'] != null &&
+              json['thumbnail_url'] != null,
+          isCompressed: false,
+          hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
           createdAt:
-              (json['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+              DateTime.tryParse(json['dir_name'] as String) ?? DateTime.now(),
         );
       case DatasetPropVersion.v3:
+        return DatasetProp._(
+          // v3
+          id: id,
+          csvUrl: json['csv_url'] as String?,
+          videoUrl: json['video_url'] as String?,
+          thumbnailUrl: json['thumbnail_url'] as String?,
+          datasetVersion:
+              DatasetVersion.fromValue(json['dataset_version'] as int),
+          datasetPropVersion: propVersion,
+          createdAt: (json['created_at'] as Timestamp).toDate(),
+          // new
+          isSyncedWithCloud: json['csv_url'] != null &&
+              json['video_url'] != null &&
+              json['thumbnail_url'] != null,
+          isCompressed: false,
+          hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
+        );
       case DatasetPropVersion.v4:
         return DatasetProp._(
           id: id,
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
-          hasEvaluated: json['has_evaluated'] as bool? ?? false,
-          datasetVersion: json['dataset_version'] == null
-              ? DatasetVersion.v1
-              : DatasetVersion.fromValue(json['dataset_version'] as int),
+          isSyncedWithCloud: json['is_synced_with_cloud'] as bool,
+          isCompressed: json['is_compressed'] as bool,
+          hasEvaluated: json['has_evaluated'] as bool,
+          deviceLocation:
+              DeviceLocation.fromValue(json['device_location'] as String),
+          datasetVersion:
+              DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
           createdAt: (json['created_at'] as Timestamp).toDate(),
         );
@@ -99,20 +192,26 @@ class DatasetProp extends Equatable {
 
   const DatasetProp._({
     required this.id,
+    required this.isCompressed,
     required this.hasEvaluated,
+    required this.deviceLocation,
     required this.datasetVersion,
     required this.datasetPropVersion,
     required this.createdAt,
     this.csvUrl,
     this.videoUrl,
     this.thumbnailUrl,
+    this.isSyncedWithCloud,
   });
 
   final String id;
   final String? csvUrl;
   final String? videoUrl;
   final String? thumbnailUrl;
+  final bool? isSyncedWithCloud;
+  final bool isCompressed;
   final bool hasEvaluated;
+  final DeviceLocation deviceLocation;
   final DatasetVersion datasetVersion;
   final DatasetPropVersion datasetPropVersion;
   final DateTime createdAt;
@@ -124,7 +223,10 @@ class DatasetProp extends Equatable {
     String? csvUrl,
     String? videoUrl,
     String? thumbnailUrl,
+    bool? isSyncedWithCloud,
+    bool? isCompressed,
     bool? hasEvaluated,
+    DeviceLocation? deviceLocation,
     DatasetVersion? datasetVersion,
     DatasetPropVersion? datasetPropVersion,
     DateTime? createdAt,
@@ -134,7 +236,10 @@ class DatasetProp extends Equatable {
       csvUrl: csvUrl ?? this.csvUrl,
       videoUrl: videoUrl ?? this.videoUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      isSyncedWithCloud: isSyncedWithCloud ?? this.isSyncedWithCloud,
+      isCompressed: isCompressed ?? this.isCompressed,
       hasEvaluated: hasEvaluated ?? this.hasEvaluated,
+      deviceLocation: deviceLocation ?? this.deviceLocation,
       datasetVersion: datasetVersion ?? this.datasetVersion,
       datasetPropVersion: datasetPropVersion ?? this.datasetPropVersion,
       createdAt: createdAt ?? this.createdAt,
@@ -147,7 +252,13 @@ class DatasetProp extends Equatable {
       'csv_url': csvUrl,
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
+      'is_synced_with_cloud':
+          datasetPropVersion == DatasetPropVersion.values.last
+              ? isSyncedWithCloud
+              : null,
+      'is_compressed': isCompressed,
       'has_evaluated': hasEvaluated,
+      'device_location': deviceLocation.value,
       'dataset_version': datasetVersion.value,
       'dataset_prop_version': DatasetPropVersion.values.last.value,
       'created_at': createdAt.toIso8601String(),
@@ -155,15 +266,10 @@ class DatasetProp extends Equatable {
   }
 
   Map<String, dynamic> toFirestoreJson() {
-    return <String, dynamic>{
-      'csv_url': csvUrl,
-      'video_url': videoUrl,
-      'thumbnail_url': thumbnailUrl,
-      'has_evaluated': hasEvaluated,
-      'dataset_version': datasetVersion.value,
-      'dataset_prop_version': DatasetPropVersion.values.last.value,
-      'created_at': Timestamp.fromDate(createdAt),
-    };
+    return toJson()
+      ..removeWhere(
+        (key, value) => key == 'id' || key == 'is_synced_with_cloud',
+      );
   }
 
   @override
@@ -172,7 +278,10 @@ class DatasetProp extends Equatable {
         csvUrl,
         videoUrl,
         thumbnailUrl,
+        isSyncedWithCloud,
+        isCompressed,
         hasEvaluated,
+        deviceLocation,
         datasetVersion,
         datasetPropVersion,
         createdAt,

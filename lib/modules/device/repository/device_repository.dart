@@ -10,7 +10,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_sholat_ml/constants/urls.dart';
 import 'package:flutter_sholat_ml/modules/device/models/device/device.dart';
 import 'package:flutter_sholat_ml/modules/device/models/wearable.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
 class DeviceRepository {

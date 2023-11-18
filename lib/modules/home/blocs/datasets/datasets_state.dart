@@ -5,7 +5,7 @@ class HomeState extends Equatable {
     required this.isLoading,
     required this.needReviewDatasets,
     required this.reviewedDatasets,
-    required this.selectedDatasets,
+    required this.selectedDatasetIndexes,
     required this.presentationState,
   });
 
@@ -13,28 +13,29 @@ class HomeState extends Equatable {
         isLoading: false,
         needReviewDatasets: [],
         reviewedDatasets: [],
-        selectedDatasets: [],
+        selectedDatasetIndexes: [],
         presentationState: DatasetsInitial(),
       );
 
   final bool isLoading;
   final List<Dataset> needReviewDatasets;
   final List<Dataset> reviewedDatasets;
-  final List<Dataset> selectedDatasets;
+  final List<int> selectedDatasetIndexes;
   final DatasetsPresentationState presentationState;
 
   HomeState copyWith({
     bool? isLoading,
     List<Dataset>? needReviewDatasets,
     List<Dataset>? reviewedDatasets,
-    List<Dataset>? selectedDatasets,
+    List<int>? selectedDatasetIndexes,
     DatasetsPresentationState? presentationState,
   }) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
       needReviewDatasets: needReviewDatasets ?? this.needReviewDatasets,
       reviewedDatasets: reviewedDatasets ?? this.reviewedDatasets,
-      selectedDatasets: selectedDatasets ?? this.selectedDatasets,
+      selectedDatasetIndexes:
+          selectedDatasetIndexes ?? this.selectedDatasetIndexes,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -44,7 +45,7 @@ class HomeState extends Equatable {
         isLoading,
         needReviewDatasets,
         reviewedDatasets,
-        selectedDatasets,
+        selectedDatasetIndexes,
         presentationState,
       ];
 }
@@ -72,8 +73,12 @@ final class DownloadDatasetProgressState extends DatasetsPresentationState {
 }
 
 final class DownloadDatasetSuccessState extends DatasetsPresentationState {
-  const DownloadDatasetSuccessState(this.dataset);
+  const DownloadDatasetSuccessState({
+    required this.index,
+    required this.dataset,
+  });
 
+  final int index;
   final Dataset dataset;
 }
 
@@ -88,9 +93,15 @@ final class DeleteDatasetLoadingState extends DatasetsPresentationState {
 }
 
 final class DeleteDatasetSuccessState extends DatasetsPresentationState {
-  const DeleteDatasetSuccessState(this.paths);
+  const DeleteDatasetSuccessState({
+    required this.datasets,
+    required this.deletedIndexes,
+    required this.isReviewedDataset,
+  });
 
-  final List<String> paths;
+  final List<Dataset> datasets;
+  final List<int> deletedIndexes;
+  final bool isReviewedDataset;
 }
 
 final class DeleteDatasetFailureState extends DatasetsPresentationState {

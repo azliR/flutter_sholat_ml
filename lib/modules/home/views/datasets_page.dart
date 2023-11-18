@@ -68,102 +68,122 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
   }
 
   void _showDownloadProgressDialog(double? csvProgress, double? videoProgress) {
+    if (context.loaderOverlay.visible) {
+      context.loaderOverlay.progress((csvProgress, videoProgress));
+      return;
+    }
+
     final textTheme = Theme.of(context).textTheme;
 
     context.loaderOverlay.show(
-      widget: Center(
-        child: SizedBox(
-          width: 240,
-          child: Card(
-            elevation: 8,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Downloading dataset',
-                    style: textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  if (csvProgress == null && videoProgress == null) ...[
-                    LinearProgressIndicator(
-                      borderRadius: BorderRadius.circular(8),
+      widgetBuilder: (value) {
+        final (csvProgress, videoProgress) =
+            value as (double?, double?)? ?? (null, null);
+
+        return Center(
+          child: SizedBox(
+            width: 240,
+            child: Card(
+              elevation: 8,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Downloading dataset',
+                      style: textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 8),
-                    const Text('Preparing...'),
-                  ] else ...[
-                    if (csvProgress != null) ...[
+                    const SizedBox(height: 16),
+                    if (csvProgress == null && videoProgress == null) ...[
                       LinearProgressIndicator(
-                        value: csvProgress,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Downloading csv at ${(csvProgress * 100).toStringAsFixed(0)}%',
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (videoProgress != null) ...[
-                      LinearProgressIndicator(
-                        value: videoProgress,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Downloading video at ${(videoProgress * 100).toStringAsFixed(0)}%',
-                      ),
-                      const SizedBox(height: 16),
+                      const Text('Preparing...'),
+                    ] else ...[
+                      if (csvProgress != null) ...[
+                        LinearProgressIndicator(
+                          value: csvProgress,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Downloading csv at ${(csvProgress * 100).toStringAsFixed(0)}%',
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (videoProgress != null) ...[
+                        LinearProgressIndicator(
+                          value: videoProgress,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Downloading video at ${(videoProgress * 100).toStringAsFixed(0)}%',
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   void _showExportProgressDialog(double progress) {
+    if (context.loaderOverlay.visible) {
+      context.loaderOverlay.progress(progress);
+      return;
+    }
+
     final textTheme = Theme.of(context).textTheme;
 
     context.loaderOverlay.show(
-      widget: Center(
-        child: SizedBox(
-          width: 240,
-          child: Card(
-            elevation: 8,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Exporting dataset',
-                    style: textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  LinearProgressIndicator(
-                    value: progress,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Exporting at ${(progress * 100).toStringAsFixed(0)}%',
-                  ),
-                ],
+      progress: 0.0,
+      widgetBuilder: (value) {
+        final progress = value as double? ?? 0.0;
+
+        return Center(
+          child: SizedBox(
+            width: 240,
+            child: Card(
+              elevation: 8,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Exporting dataset',
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    LinearProgressIndicator(
+                      value: progress,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Exporting at ${(progress * 100).toStringAsFixed(0)}%',
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -203,9 +223,15 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             context.loaderOverlay.show();
           case DeleteDatasetSuccessState():
             context.loaderOverlay.hide();
+
+            if (!presentationState.isReviewedDataset) return;
+
             Future.wait(
-              presentationState.paths.map((path) async {
-                await _notifier.refreshDatasetDownloadStatus(path);
+              presentationState.deletedIndexes.map((index) async {
+                await _notifier.refreshDatasetStatusAt(
+                  index,
+                  isReviewedDataset: presentationState.isReviewedDataset,
+                );
               }),
             );
           case DeleteDatasetFailureState():
@@ -217,8 +243,10 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             _showDownloadProgressDialog(csvProgress, videoProgress);
           case DownloadDatasetSuccessState():
             context.loaderOverlay.hide();
-            _notifier
-                .refreshDatasetDownloadStatus(presentationState.dataset.path!);
+            _notifier.refreshDatasetStatusAt(
+              presentationState.index,
+              isReviewedDataset: true,
+            );
             showSnackbar(context, 'Dataset downloaded succesfully!');
           case DownloadDatasetFailureState():
             showErrorSnackbar(context, 'Failed to download dataset!');
@@ -257,10 +285,10 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
       }
     });
 
-    final selectedDatasets = ref.watch(
-      datasetsProvider.select((value) => value.selectedDatasets),
+    final selectedDatasetIndexes = ref.watch(
+      datasetsProvider.select((value) => value.selectedDatasetIndexes),
     );
-    final isSelectMode = selectedDatasets.isNotEmpty;
+    final isSelectMode = selectedDatasetIndexes.isNotEmpty;
 
     return WillPopScope(
       onWillPop: () async {
@@ -284,7 +312,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                           datasetsProvider
                               .select((value) => value.needReviewDatasets),
                         );
-                        if (selectedDatasets.length ==
+                        if (selectedDatasetIndexes.length ==
                             needReviewDatasets.length) {
                           return const SizedBox();
                         }
@@ -303,9 +331,12 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                     IconButton(
                       tooltip: 'Share & Export',
                       onPressed: () {
+                        final datasets =
+                            ref.read(datasetsProvider).needReviewDatasets;
+
                         _notifier.exportAndShareDatasets(
-                          selectedDatasets
-                              .map((dataset) => dataset.path!)
+                          selectedDatasetIndexes
+                              .map((index) => datasets[index].path!)
                               .toList(),
                         );
                       },

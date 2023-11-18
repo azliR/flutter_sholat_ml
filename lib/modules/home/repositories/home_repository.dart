@@ -12,7 +12,7 @@ import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:get_thumbnail_video/index.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
@@ -27,8 +27,17 @@ class HomeRepository {
   final _firestore = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
 
-  Query<Dataset> get reviewedDatasetsQuery =>
-      _firestore.collection('datasets').withConverter(
+  Future<(Failure?, List<Dataset>?)> getCloudDatasets(
+    int start,
+    int limit,
+  ) async {
+    try {
+      final query = _firestore
+          .collection('datasets')
+          .orderBy('created_at')
+          .startAt([start])
+          .limit(limit)
+          .withConverter(
             fromFirestore: (snapshot, options) {
               final property =
                   DatasetProp.fromFirestoreJson(snapshot.data()!, snapshot.id);
@@ -39,30 +48,59 @@ class HomeRepository {
             },
             toFirestore: (value, options) => value.property.toFirestoreJson(),
           );
+      final snapshot = await query.get();
+      final datasets = snapshot.docs.map((doc) => doc.data()).toList();
+      final (failure, updatedDatasets) = await loadDatasetsFromDisk(
+        datasets: datasets,
+        isReviewedDataset: true,
+        createDirIfNotExist: true,
+      );
+      if (failure != null) {
+        return (failure, null);
+      }
 
-  (Failure?, List<Dataset>?) getLocalDatasets(
-    int start,
-    int end,
-  ) {
-    try {
-      final datasetProps =
-          LocalDatasetStorageService.getDatasetRange(start, end);
-      final datasets = datasetProps.map((datasetProp) {
-        return Dataset(
-          downloaded: null,
-          property: datasetProp,
-        );
-      }).toList();
-      return (null, datasets);
+      return (null, updatedDatasets);
     } catch (e, stackTrace) {
-      const message = 'Failed getting saved datasets';
+      const message = 'Failed getting uploaded datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }
   }
 
-  Future<(Failure?, Dataset?)> loadDatasetFromDisk({
-    required Dataset dataset,
+  Future<(Failure?, List<Dataset>?)> getLocalDatasets(
+    int start,
+    int limit,
+  ) async {
+    try {
+      final datasetProps =
+          LocalDatasetStorageService.getDatasetRange(start, start + limit);
+      final datasets = datasetProps
+          .map(
+            (datasetProp) => Dataset(
+              downloaded: null,
+              property: datasetProp,
+            ),
+          )
+          .toList();
+      final (failure, updatedDatasets) = await loadDatasetsFromDisk(
+        datasets: datasets,
+        isReviewedDataset: false,
+        createDirIfNotExist: false,
+      );
+      if (failure != null) {
+        return (null, datasets);
+      }
+
+      return (null, updatedDatasets);
+    } catch (e, stackTrace) {
+      const message = 'Failed getting local saved datasets';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, List<Dataset>?)> loadDatasetsFromDisk({
+    required List<Dataset> datasets,
     required bool isReviewedDataset,
     required bool createDirIfNotExist,
   }) async {
@@ -71,23 +109,27 @@ class HomeRepository {
       final datasetDirPath = isReviewedDataset
           ? Directories.reviewedDirPath
           : Directories.needReviewDirPath;
-      final fullDir =
-          dir.directory(datasetDirPath).directory(dataset.property.id);
 
-      if (createDirIfNotExist || !fullDir.existsSync()) {
-        await fullDir.create(recursive: true);
-      }
+      final updatedDatasets = datasets.map((dataset) {
+        final fullDir =
+            dir.directory(datasetDirPath).directory(dataset.property.id);
 
-      final datasetCsvFile = fullDir.file(Paths.datasetCsv);
-      final datasetVideoFile = fullDir.file(Paths.datasetVideo);
+        if (createDirIfNotExist || !fullDir.existsSync()) {
+          fullDir.createSync(recursive: true);
+        }
 
-      final updatedDataset = dataset.copyWith(
-        path: fullDir.path,
-        downloaded:
-            datasetCsvFile.existsSync() && datasetVideoFile.existsSync(),
-      );
+        final datasetCsvFile = fullDir.file(Paths.datasetCsv);
+        final datasetVideoFile = fullDir.file(Paths.datasetVideo);
 
-      return (null, updatedDataset);
+        final updatedDataset = dataset.copyWith(
+          path: fullDir.path,
+          downloaded:
+              datasetCsvFile.existsSync() && datasetVideoFile.existsSync(),
+        );
+        return updatedDataset;
+      }).toList();
+
+      return (null, updatedDatasets);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -95,18 +137,57 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, bool?)> getDatasetDownloadStatus({
-    required String path,
+  Future<(Failure?, String?)> getDatasetThumbnail({
+    required Dataset dataset,
   }) async {
     try {
-      final fullDir = Directory(path);
+      final path = dataset.path;
+      if (path == null) return (null, null);
+
+      final thumbnailFile = Directory(path).file(Paths.datasetThumbnail);
+      if (thumbnailFile.existsSync()) {
+        return (null, thumbnailFile.path);
+      }
+      final videoFile = Directory(path).file(Paths.datasetVideo);
+      if (videoFile.existsSync()) {
+        await VideoThumbnail.thumbnailFile(
+          video: videoFile.path,
+          thumbnailPath: thumbnailFile.path,
+          imageFormat: ImageFormat.WEBP,
+        );
+      } else {
+        final thumbnailUrl = dataset.property.thumbnailUrl;
+        if (thumbnailUrl != null) {
+          final ref = _storage.refFromURL(thumbnailUrl);
+          await ref.writeToFile(thumbnailFile);
+        }
+      }
+
+      return (null, thumbnailFile.path);
+    } catch (e, stackTrace) {
+      const message = 'Failed getting dataset thumbnail';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, Dataset?)> getDatasetStatus({
+    required Dataset dataset,
+  }) async {
+    try {
+      if (dataset.path == null) return (null, null);
+
+      final fullDir = Directory(dataset.path!);
       final datasetCsvFile = fullDir.file(Paths.datasetCsv);
       final datasetVideoFile = fullDir.file(Paths.datasetVideo);
 
+      if (!fullDir.existsSync()) return (null, null);
+
       final downloaded =
           datasetCsvFile.existsSync() && datasetVideoFile.existsSync();
+      final updatedDataset = dataset.copyWith(downloaded: downloaded);
 
-      return (null, downloaded);
+      return (null, updatedDataset);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -156,48 +237,21 @@ class HomeRepository {
     }
   }
 
-  Future<(Failure?, String?)> getDatasetThumbnail(
-    String path, {
-    required Dataset dataset,
+  Future<(Failure?, void)> deleteDatasets(
+    List<String> paths, {
+    bool skipWhenError = false,
   }) async {
     try {
-      final thumbnailFile = Directory(path).file(Paths.datasetThumbnail);
-      if (thumbnailFile.existsSync()) {
-        return (null, thumbnailFile.path);
-      }
-      final videoFile = Directory(path).file(Paths.datasetVideo);
-      if (videoFile.existsSync()) {
-        await VideoThumbnail.thumbnailFile(
-          video: videoFile.path,
-          thumbnailPath: thumbnailFile.path,
-          imageFormat: ImageFormat.WEBP,
-        );
-      } else {
-        final thumbnailUrl = dataset.property.thumbnailUrl;
-        if (thumbnailUrl != null) {
-          final ref = _storage.refFromURL(thumbnailUrl);
-          await ref.writeToFile(thumbnailFile);
-        }
-      }
-
-      return (null, thumbnailFile.path);
-    } catch (e, stackTrace) {
-      const message = 'Failed getting dataset thumbnail';
-      final failure = Failure(message, error: e, stackTrace: stackTrace);
-      return (failure, null);
-    }
-  }
-
-  Future<(Failure?, void)> deleteDatasets(List<String> paths) async {
-    try {
-      for (final path in paths) {
+      for (final (i, path) in paths.indexed) {
         final dir = Directory(path);
         if (dir.existsSync()) {
           await dir.delete(recursive: true);
         }
         final result = LocalDatasetStorageService.deleteDataset(basename(path));
-        if (!result) {
-          return (Failure('Failed deleting dataset'), null);
+        if (!result && !skipWhenError) {
+          return (Failure('Failed deleting dataset at index $i'), null);
+        } else {
+          continue;
         }
       }
       return (null, null);
@@ -217,7 +271,12 @@ class HomeRepository {
 
       final tempDir = await getTemporaryDirectory();
 
-      final archivePath = tempDir.file('sholat-ml-dataset.shd').path;
+      const fileName = 'sholat-ml-dataset';
+      const fileExtension = '.shd';
+      var archiveFile = tempDir.file(fileName + fileExtension);
+      for (var i = 0; archiveFile.existsSync(); i++) {
+        archiveFile = File('$fileName (${i + 1})$fileExtension');
+      }
 
       var totalSize = 0;
 
@@ -252,7 +311,7 @@ class HomeRepository {
 
       final tarEntries = tarEntriesController.stream;
 
-      final output = File(archivePath).openWrite();
+      final output = archiveFile.openWrite();
       var processedSize = 0;
       unawaited(
         tarEntries
@@ -294,7 +353,7 @@ class HomeRepository {
       return (
         null,
         progressController.stream,
-        archivePath,
+        archiveFile.path,
       );
     } catch (e, stackTrace) {
       log('message');

@@ -91,15 +91,17 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
     }
     _notifier.onLockChanged(isLocked: true);
     context.loaderOverlay.show(
-      widget: GestureDetector(
-        onDoubleTap: () {
-          context.loaderOverlay.hide();
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        },
-        child: const ColoredBox(
-          color: Colors.black,
-        ),
-      ),
+      widgetBuilder: (_) {
+        return GestureDetector(
+          onDoubleTap: () {
+            context.loaderOverlay.hide();
+            SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+          },
+          child: const ColoredBox(
+            color: Colors.black,
+          ),
+        );
+      },
     );
     _notifier.onLockChanged(isLocked: false);
   }

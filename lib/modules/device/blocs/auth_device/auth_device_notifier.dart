@@ -11,7 +11,7 @@ import 'package:flutter_sholat_ml/constants/device_responses.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/modules/device/models/device/device.dart';
 import 'package:flutter_sholat_ml/modules/device/repository/device_repository.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 
 part 'auth_device_state.dart';
 
@@ -98,17 +98,17 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     this.services = services;
 
     _authService = services.firstWhere(
-      (service) => service.uuid.toString() == DeviceUuids.serviceMiBand2,
+      (service) => service.uuid.str128 == DeviceUuids.serviceMiBand2,
     );
     _genericAccessService = services.firstWhere(
-      (service) => service.uuid.toString() == DeviceUuids.serviceGenericAccess,
+      (service) => service.uuid.str128 == DeviceUuids.serviceGenericAccess,
     );
 
     _authChar = _authService!.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charAuth,
+      (char) => char.uuid.str128 == DeviceUuids.charAuth,
     );
     _deviceNameChar = _genericAccessService!.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charDeviceName,
+      (char) => char.uuid.str128 == DeviceUuids.charDeviceName,
     );
 
     final authChar = _authChar!;

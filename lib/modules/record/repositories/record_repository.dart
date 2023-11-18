@@ -14,7 +14,7 @@ import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -154,6 +154,7 @@ class RecordRepository {
 
   Future<(Failure?, void)> saveRecording({
     required CameraController cameraController,
+    required DeviceLocation deviceLocation,
     required List<DataItem> dataItems,
   }) async {
     final now = DateTime.now();
@@ -167,7 +168,9 @@ class RecordRepository {
     try {
       final datasetProp = DatasetProp(
         id: dirName,
+        isCompressed: false,
         hasEvaluated: false,
+        deviceLocation: deviceLocation,
         datasetVersion: DatasetVersion.values.last,
         createdAt: now,
       );
@@ -369,10 +372,7 @@ class RecordRepository {
     }
   }
 
-  List<DataItem>? handleRawSensorData(
-    Uint8List bytes,
-    DeviceLocation deviceLocation,
-  ) {
+  List<DataItem>? handleRawSensorData(Uint8List bytes) {
     final byteData = ByteData.view(bytes.buffer);
     final type = byteData.getInt8(0);
 
@@ -389,7 +389,6 @@ class RecordRepository {
           x: list[i],
           y: list[i + 1],
           z: list[i + 2],
-          deviceLocation: deviceLocation,
         );
         datasets.add(dataset);
       }

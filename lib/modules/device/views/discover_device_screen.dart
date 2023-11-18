@@ -228,7 +228,8 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 final name = device.platformName;
                 final isSupported =
                     scanResults[index].advertisementData.serviceUuids.any(
-                          (service) => service == DeviceUuids.serviceMiBand1,
+                          (service) =>
+                              service.str128 == DeviceUuids.serviceMiBand1,
                         );
                 return RoundedListTile(
                   title: Text(name.isEmpty ? 'Unknown device' : name),
@@ -254,13 +255,12 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
               itemBuilder: (context, index) {
                 final device = bondedDevices[index];
                 final name = device.platformName;
-                final isSupported = device.servicesList?.any(
-                      (service) {
-                        return service.serviceUuid.toString() ==
-                            DeviceUuids.serviceMiBand1;
-                      },
-                    ) ??
-                    false;
+                final isSupported = device.servicesList.any(
+                  (service) {
+                    return service.serviceUuid.str128 ==
+                        DeviceUuids.serviceMiBand1;
+                  },
+                );
 
                 return RoundedListTile(
                   title: Text(name),

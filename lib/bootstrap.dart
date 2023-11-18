@@ -8,6 +8,7 @@ import 'package:flutter_sholat_ml/firebase_options.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:stack_trace/stack_trace.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,9 +17,11 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     log(
       details.exceptionAsString(),
       error: details.exception,
-      stackTrace: details.stack,
+      stackTrace:
+          details.stack != null ? Trace.from(details.stack!) : details.stack,
     );
   };
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

@@ -10,7 +10,7 @@ import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/record/repositories/record_repository.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 
 part 'record_state.dart';
 
@@ -47,30 +47,29 @@ class RecordNotifier extends StateNotifier<RecordState> {
     if (state.isInitialised) return;
 
     final miBand1Service = services.firstWhere(
-      (service) => service.uuid.toString() == DeviceUuids.serviceMiBand1,
+      (service) => service.uuid.str128 == DeviceUuids.serviceMiBand1,
     );
     final heartRateService = services.firstWhere(
-      (service) => service.uuid.toString() == DeviceUuids.serviceHeartRate,
+      (service) => service.uuid.str128 == DeviceUuids.serviceHeartRate,
     );
     final alertNotificationService = services.firstWhere(
-      (service) =>
-          service.uuid.toString() == DeviceUuids.serviceAlertNotification,
+      (service) => service.uuid.str128 == DeviceUuids.serviceAlertNotification,
     );
 
     _heartRateMeasureChar = heartRateService.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charHeartRateMeasure,
+      (char) => char.uuid.str128 == DeviceUuids.charHeartRateMeasure,
     );
     _heartRateControlChar = heartRateService.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charHeartRateControl,
+      (char) => char.uuid.str128 == DeviceUuids.charHeartRateControl,
     );
     _sensorChar = miBand1Service.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charSensor,
+      (char) => char.uuid.str128 == DeviceUuids.charSensor,
     );
     _hzChar = miBand1Service.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charHz,
+      (char) => char.uuid.str128 == DeviceUuids.charHz,
     );
     _notificationChar = alertNotificationService.characteristics.firstWhere(
-      (char) => char.uuid.toString() == DeviceUuids.charNotification,
+      (char) => char.uuid.str128 == DeviceUuids.charNotification,
     );
 
     final (failure, _) = await _recordRepository.setNotifyChars(
@@ -113,10 +112,8 @@ class RecordNotifier extends StateNotifier<RecordState> {
   }
 
   void _handleAccelerometer(List<int> event) {
-    final datasets = _recordRepository.handleRawSensorData(
-      Uint8List.fromList(event),
-      state.deviceLocation!,
-    );
+    final datasets =
+        _recordRepository.handleRawSensorData(Uint8List.fromList(event));
     if (datasets != null && _stopwatch.isRunning) {
       const delay = 200;
       final lastElapsed =
@@ -244,6 +241,7 @@ class RecordNotifier extends StateNotifier<RecordState> {
     }
     final (saveFailure, _) = await _recordRepository.saveRecording(
       cameraController: cameraController,
+      deviceLocation: state.deviceLocation!,
       dataItems: state.dataItems,
     );
     if (saveFailure != null) {

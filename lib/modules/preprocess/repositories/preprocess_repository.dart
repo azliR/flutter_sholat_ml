@@ -9,9 +9,10 @@ import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
+import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 
 class PreprocessRepository {
@@ -33,7 +34,9 @@ class PreprocessRepository {
       if (!datasetPropFile.existsSync()) {
         datasetProp = DatasetProp(
           id: dirName,
+          isCompressed: false,
           hasEvaluated: false,
+          deviceLocation: DeviceLocation.leftWrist,
           datasetVersion: DatasetVersion.v1,
           createdAt: DateTime.tryParse(dirName) ?? DateTime.now(),
         );
@@ -133,7 +136,18 @@ class PreprocessRepository {
       final csvFile = File('$path/$datasetCsvPath');
       await csvFile.writeAsString(datasetStr);
 
-      if (diskOnly) return (null, path, datasetProp);
+      if (diskOnly) {
+        final updatedDatasetProp = datasetProp.copyWith(
+          isSyncedWithCloud: false,
+          datasetPropVersion: DatasetPropVersion.values.last,
+          datasetVersion: DatasetVersion.values.last,
+        );
+        final datasetPropFile = File('$path/$datasetPropPath');
+        await datasetPropFile
+            .writeAsString(jsonEncode(updatedDatasetProp.toJson()));
+
+        return (null, path, updatedDatasetProp);
+      }
 
       final (failure, updatedDatasetProp) = await saveDatasetToDatabase(
         csvFile: csvFile,
@@ -247,6 +261,7 @@ class PreprocessRepository {
         csvUrl: await datasetCsvRef.getDownloadURL(),
         videoUrl: await datasetVideoRef.getDownloadURL(),
         thumbnailUrl: await datasetThumbnailRef.getDownloadURL(),
+        isSyncedWithCloud: true,
         datasetVersion: DatasetVersion.values.last,
         datasetPropVersion: DatasetPropVersion.values.last,
       );

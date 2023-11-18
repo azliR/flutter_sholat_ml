@@ -1,19 +1,17 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 part 'datasets_state.dart';
 
@@ -34,105 +32,81 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   StreamSubscription<TaskSnapshot>? _downloadSubscription;
   StreamSubscription<double>? _exportSubscription;
 
+  final needReviewPagingController =
+      PagingController<int, Dataset>(firstPageKey: 0);
+  final reviewedPagingController =
+      PagingController<int, Dataset>(firstPageKey: 0);
+
   final needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
   final reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
 
-  Query<Dataset> get reviewedDatasetsQuery =>
-      _homeRepository.reviewedDatasetsQuery;
-
-  (Failure?, List<Dataset>?) getLocalDatasets(
+  Future<(Failure?, List<Dataset>?)> getCloudDatasets(
     int start,
-    int end,
-  ) {
-    final (failure, datasets) = _homeRepository.getLocalDatasets(start, end);
+    int limit,
+  ) async {
+    final (failure, datasets) =
+        await _homeRepository.getCloudDatasets(start, limit);
     if (failure != null) {
       return (failure, null);
     }
+    state = state.copyWith(
+      reviewedDatasets: datasets,
+    );
     return (null, datasets);
   }
 
-  Future<Dataset?> loadDatasetFromDisk({
-    required Dataset dataset,
-    required bool isReviewedDataset,
-    required bool createDirIfNotExist,
-  }) async {
-    final (failure, updatedDataset) = await _homeRepository.loadDatasetFromDisk(
-      dataset: dataset,
-      isReviewedDataset: isReviewedDataset,
-      createDirIfNotExist: createDirIfNotExist,
-    );
+  Future<(Failure?, List<Dataset>?)> getLocalDatasets(
+    int start,
+    int limit,
+  ) async {
+    final (failure, datasets) =
+        await _homeRepository.getLocalDatasets(start, limit);
     if (failure != null) {
-      state = state.copyWith(
-        presentationState: LoadDatasetsFailureState(failure),
-      );
-      return null;
+      return (failure, null);
     }
-
-    if (updatedDataset == null) {
-      state = state.copyWith(
-        needReviewDatasets: !isReviewedDataset
-            ? (state.needReviewDatasets
-              ..dropLastWhile(
-                (oldDataset) => oldDataset.property.id == dataset.property.id,
-              ))
-            : null,
-        reviewedDatasets: isReviewedDataset
-            ? (state.reviewedDatasets
-              ..dropLastWhile(
-                (oldDataset) => oldDataset.property.id == dataset.property.id,
-              ))
-            : null,
-      );
-      return null;
-    }
-
-    final datasets =
-        isReviewedDataset ? state.reviewedDatasets : state.needReviewDatasets;
-    final updatedDatasets = datasets.map((oldDataset) {
-      if (dataset.property.id == oldDataset.property.id) {
-        return dataset;
-      }
-      return oldDataset;
-    }).toList();
-
     state = state.copyWith(
-      needReviewDatasets: !isReviewedDataset
-          ? (updatedDatasets..addOrUpdate(updatedDataset))
-          : null,
-      reviewedDatasets: isReviewedDataset
-          ? (updatedDatasets..addOrUpdate(updatedDataset))
-          : null,
+      needReviewDatasets: datasets,
     );
-    return updatedDataset;
+    return (null, datasets);
   }
 
-  Future<void> refreshDatasetDownloadStatus(String path) async {
-    final (failure, downloaded) =
-        await _homeRepository.getDatasetDownloadStatus(path: path);
+  Future<void> refreshDatasetStatusAt(
+    int index, {
+    required bool isReviewedDataset,
+  }) async {
+    final dataset = isReviewedDataset
+        ? state.reviewedDatasets[index]
+        : state.needReviewDatasets[index];
+
+    final (failure, updatedDataset) =
+        await _homeRepository.getDatasetStatus(dataset: dataset);
     if (failure != null) {
       state = state.copyWith(
         presentationState: LoadDatasetsFailureState(failure),
       );
       return;
     }
-    final isReviewed = path.contains(Directories.reviewedDirPath);
-    final datasets =
-        isReviewed ? state.reviewedDatasets : state.needReviewDatasets;
-    final updatedDatasets = datasets.map((dataset) {
-      if (dataset.path == path) {
-        return dataset.copyWith(downloaded: downloaded);
-      }
-      return dataset;
-    }).toList();
+
+    final isReviewed = dataset.property.isSubmitted;
+    final datasets = [
+      ...isReviewed ? state.reviewedDatasets : state.needReviewDatasets,
+    ];
+
+    if (updatedDataset != null) {
+      datasets[index] = updatedDataset;
+    } else {
+      datasets.removeAt(index);
+    }
 
     state = state.copyWith(
-      needReviewDatasets: !isReviewed ? updatedDatasets : null,
-      reviewedDatasets: isReviewed ? updatedDatasets : null,
+      needReviewDatasets: !isReviewed ? datasets : null,
+      reviewedDatasets: isReviewed ? datasets : null,
     );
   }
 
-  Future<void> downloadDataset(
-    Dataset dataset, {
+  Future<void> downloadDatasetAt(
+    int index, {
+    required Dataset dataset,
     bool forceDownload = false,
   }) async {
     state = state.copyWith(
@@ -194,7 +168,10 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
         );
         if (lastCsvProgress == 1 && lastVideoProgress == 1) {
           state = state.copyWith(
-            presentationState: DownloadDatasetSuccessState(dataset),
+            presentationState: DownloadDatasetSuccessState(
+              index: index,
+              dataset: dataset,
+            ),
           );
         }
       },
@@ -210,14 +187,15 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     );
   }
 
-  Future<void> getThumbnail({
+  Future<void> getThumbnailAt(
+    int index, {
     required Dataset dataset,
     required bool isReviewedDatasets,
   }) async {
     if (dataset.path == null) return;
 
-    final (failure, thumbnailPath) = await _homeRepository
-        .getDatasetThumbnail(dataset.path!, dataset: dataset);
+    final (failure, thumbnailPath) =
+        await _homeRepository.getDatasetThumbnail(dataset: dataset);
 
     final thumbnail = failure == null
         ? DatasetThumbnail(
@@ -231,42 +209,41 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
             error: failure.message,
           );
 
-    final datasets =
-        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
-    final updatedDatasets = datasets.map((oldDataset) {
-      if (dataset.property.id == oldDataset.property.id) {
-        return dataset.copyWith(
-          thumbnail: thumbnail,
-        );
-      }
-      return oldDataset;
-    }).toList();
+    final datasets = [
+      ...isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets,
+    ];
+    datasets[index] = dataset.copyWith(
+      thumbnail: thumbnail,
+    );
 
     state = state.copyWith(
-      needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
-      reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
+      needReviewDatasets: !isReviewedDatasets ? datasets : null,
+      reviewedDatasets: isReviewedDatasets ? datasets : null,
     );
   }
 
-  void onSelectedDataset(Dataset dataset) {
-    final selectedDatasets = state.selectedDatasets;
-    if (selectedDatasets.contains(dataset)) {
+  void onSelectedDataset(int index) {
+    final selectedDatasetIndexes = state.selectedDatasetIndexes;
+    if (selectedDatasetIndexes.contains(index)) {
       state = state.copyWith(
-        selectedDatasets: [...selectedDatasets]..remove(dataset),
+        selectedDatasetIndexes: [...selectedDatasetIndexes]..remove(index),
       );
       return;
     }
     state = state.copyWith(
-      selectedDatasets: [...selectedDatasets, dataset],
+      selectedDatasetIndexes: [...selectedDatasetIndexes, index],
     );
   }
 
   void onSelectAllDatasets() {
-    state = state.copyWith(selectedDatasets: state.needReviewDatasets);
+    state = state.copyWith(
+      selectedDatasetIndexes:
+          List.generate(state.needReviewDatasets.length, (index) => index),
+    );
   }
 
   void clearSelections() {
-    state = state.copyWith(selectedDatasets: []);
+    state = state.copyWith(selectedDatasetIndexes: []);
   }
 
   Future<void> deleteSelectedDatasets({
@@ -274,7 +251,13 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   }) async {
     state =
         state.copyWith(presentationState: const DeleteDatasetLoadingState());
-    final selectedDatasets = state.selectedDatasets;
+
+    final datasets =
+        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
+    final selectedDatasetIndexes = state.selectedDatasetIndexes;
+    final selectedDatasets =
+        selectedDatasetIndexes.map((i) => datasets[i]).toList();
+
     final (failure, _) = await _homeRepository
         .deleteDatasets(selectedDatasets.map((e) => e.path!).toList());
 
@@ -284,29 +267,36 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return;
     }
-    final datasets =
-        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
-    final updatedDatasets = datasets
-        .where((dataset) => !selectedDatasets.contains(dataset))
-        .toList();
+
+    final updatedDatasets = selectedDatasetIndexes.fold<List<Dataset>>(
+      datasets,
+      (previousValue, i) => previousValue.drop(i),
+    );
+
     state = state.copyWith(
-      selectedDatasets: [],
+      selectedDatasetIndexes: [],
       needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
       reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
       presentationState: DeleteDatasetSuccessState(
-        state.selectedDatasets.map((e) => e.path!).toList(),
+        datasets: selectedDatasets,
+        deletedIndexes: selectedDatasetIndexes,
+        isReviewedDataset: isReviewedDatasets,
       ),
     );
   }
 
-  Future<bool> deleteDataset(
-    String path, {
+  Future<bool> deleteDatasetAt(
+    int index, {
     required bool isReviewedDatasets,
   }) async {
     state =
         state.copyWith(presentationState: const DeleteDatasetLoadingState());
 
-    final (failure, _) = await _homeRepository.deleteDatasets([path]);
+    final datasets =
+        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
+    final dataset = datasets[index];
+
+    final (failure, _) = await _homeRepository.deleteDatasets([dataset.path!]);
     if (failure != null) {
       state = state.copyWith(
         isLoading: false,
@@ -314,19 +304,22 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       );
       return false;
     }
-    final datasets =
-        isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets;
-    final updatedDatasets =
-        datasets.where((dataset) => dataset.path != path).toList();
+
+    final updatedDatasets = datasets.drop(index);
+
     state = state.copyWith(
       needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
       reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
-      presentationState: DeleteDatasetSuccessState([path]),
+      presentationState: DeleteDatasetSuccessState(
+        deletedIndexes: [index],
+        datasets: updatedDatasets,
+        isReviewedDataset: isReviewedDatasets,
+      ),
     );
     return true;
   }
 
-  Future<bool> deleteDatasetFromCloud(Dataset dataset) async {
+  Future<bool> deleteDatasetFromCloud(int index, Dataset dataset) async {
     state =
         state.copyWith(presentationState: const DeleteDatasetLoadingState());
 
@@ -339,8 +332,8 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       return false;
     }
     if (dataset.path != null) {
-      await deleteDataset(
-        dataset.path!,
+      await deleteDatasetAt(
+        index,
         isReviewedDatasets: true,
       );
     }
@@ -416,6 +409,9 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   @override
   void dispose() {
     _downloadSubscription?.cancel();
+    _exportSubscription?.cancel();
+    needReviewPagingController.dispose();
+    reviewedPagingController.dispose();
     super.dispose();
   }
 }

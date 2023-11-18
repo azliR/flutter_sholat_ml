@@ -30,13 +30,29 @@ class DatasetGridTile extends StatefulWidget {
   State<DatasetGridTile> createState() => _DatasetGridTileState();
 }
 
-class _DatasetGridTileState extends State<DatasetGridTile> {
+class _DatasetGridTileState extends State<DatasetGridTile>
+    with WidgetsBindingObserver {
   @override
   void initState() {
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onInitialise();
     });
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      widget.onInitialise();
+    }
+    super.didChangeAppLifecycleState(state);
   }
 
   @override

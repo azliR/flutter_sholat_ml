@@ -11,11 +11,17 @@ enum DatasetVersion {
   /// ```
   v2,
 
-  /// Format dataset csv in v2:
+  /// Format dataset csv in v3:
   /// ```
   /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},{note},{labelCategory},{label},{noise}'
   /// ```
-  v3;
+  v3,
+
+  /// Format dataset csv in v4:
+  /// ```
+  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{note},{labelCategory},{label},{noise}'
+  /// ```
+  v4;
 
   factory DatasetVersion.fromValue(int value) {
     return DatasetVersion.values.firstWhere((e) => e.value == value);
@@ -29,7 +35,16 @@ enum DatasetVersion {
         return 'v2';
       case DatasetVersion.v3:
         return 'v3';
+      case DatasetVersion.v4:
+        return 'v4';
     }
+  }
+
+  String nameWithIsLatest({String latestText = '', String defaultText = ''}) {
+    if (this == DatasetVersion.values.last) {
+      return name + latestText;
+    }
+    return name + defaultText;
   }
 
   int get value {
@@ -40,6 +55,8 @@ enum DatasetVersion {
         return 2;
       case DatasetVersion.v3:
         return 3;
+      case DatasetVersion.v4:
+        return 4;
     }
   }
 }

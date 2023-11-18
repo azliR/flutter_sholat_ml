@@ -1,8 +1,14 @@
 import 'dart:developer';
 
+import 'package:stack_trace/stack_trace.dart';
+
 class Failure {
   Failure(this.message, {this.code, this.error, this.stackTrace}) {
-    log(message, error: error, stackTrace: stackTrace);
+    log(
+      message,
+      error: error,
+      stackTrace: stackTrace != null ? Trace.from(stackTrace!) : stackTrace,
+    );
   }
 
   final String message;

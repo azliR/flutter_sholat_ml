@@ -2,7 +2,6 @@ import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
-import 'package:flutter_sholat_ml/enums/device_location.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
@@ -13,7 +12,6 @@ class DataItem extends Equatable {
     required this.x,
     required this.y,
     required this.z,
-    required this.deviceLocation,
     this.timestamp,
     this.heartRate,
     this.movementSetId,
@@ -37,7 +35,7 @@ class DataItem extends Equatable {
           y: int.parse(split[2]),
           z: int.parse(split[3]),
           heartRate: int.tryParse(split[4]),
-          deviceLocation: DeviceLocation.fromValue(split[5]),
+          // deviceLocation: DeviceLocation.fromValue(split[5]),
           labelCategory: split.elementAtOrNull(6).isNotNullOrBlank
               ? SholatMovementCategory.fromValue(split[6])
               : null,
@@ -54,7 +52,7 @@ class DataItem extends Equatable {
           heartRate: int.tryParse(split[4]),
           movementSetId:
               split.elementAtOrNull(5).isNotNullOrBlank ? split[5] : null,
-          deviceLocation: DeviceLocation.fromValue(split[6]),
+          // deviceLocation: DeviceLocation.fromValue(split[6]),
           note: split.elementAtOrNull(7).isNotNullOrBlank ? split[7] : null,
           labelCategory: split.elementAtOrNull(8).isNotNullOrBlank
               ? SholatMovementCategory.fromValue(split[8])
@@ -72,7 +70,7 @@ class DataItem extends Equatable {
           heartRate: int.tryParse(split[4]),
           movementSetId:
               split.elementAtOrNull(5).isNotNullOrBlank ? split[5] : null,
-          deviceLocation: DeviceLocation.fromValue(split[6]),
+          // deviceLocation: DeviceLocation.fromValue(split[6]),
           note: split.elementAtOrNull(7).isNotNullOrBlank ? split[7] : null,
           labelCategory: split.elementAtOrNull(8).isNotNullOrBlank
               ? SholatMovementCategory.fromValue(split[8])
@@ -84,6 +82,26 @@ class DataItem extends Equatable {
               ? SholatNoiseMovement.fromValue(split[10])
               : null,
         );
+      case DatasetVersion.v4:
+        return DataItem(
+          timestamp: Duration(milliseconds: int.parse(split[0])),
+          x: int.parse(split[1]),
+          y: int.parse(split[2]),
+          z: int.parse(split[3]),
+          heartRate: int.tryParse(split[4]),
+          movementSetId:
+              split.elementAtOrNull(5).isNotNullOrBlank ? split[5] : null,
+          note: split.elementAtOrNull(6).isNotNullOrBlank ? split[6] : null,
+          labelCategory: split.elementAtOrNull(7).isNotNullOrBlank
+              ? SholatMovementCategory.fromValue(split[7])
+              : null,
+          label: split.elementAtOrNull(8).isNotNullOrBlank
+              ? SholatMovement.fromValue(split[8])
+              : null,
+          noiseMovement: split.elementAtOrNull(9).isNotNullOrBlank
+              ? SholatNoiseMovement.fromValue(split[9])
+              : null,
+        );
     }
   }
 
@@ -93,7 +111,6 @@ class DataItem extends Equatable {
   final num z;
   final int? heartRate;
   final String? movementSetId;
-  final DeviceLocation deviceLocation;
   final String? note;
   final SholatMovementCategory? labelCategory;
   final SholatMovement? label;
@@ -111,7 +128,6 @@ class DataItem extends Equatable {
     num? z,
     int? heartRate,
     ValueGetter<String?>? movementSetId,
-    DeviceLocation? deviceLocation,
     String? note,
     ValueGetter<SholatMovementCategory?>? labelCategory,
     ValueGetter<SholatMovement?>? label,
@@ -125,7 +141,6 @@ class DataItem extends Equatable {
       heartRate: heartRate ?? this.heartRate,
       movementSetId:
           movementSetId != null ? movementSetId() : this.movementSetId,
-      deviceLocation: deviceLocation ?? this.deviceLocation,
       note: note ?? this.note,
       labelCategory:
           labelCategory != null ? labelCategory() : this.labelCategory,
@@ -142,14 +157,13 @@ class DataItem extends Equatable {
     final z = this.z.toString();
     final heartRate = this.heartRate ?? '';
     final movementSetId = this.movementSetId ?? '';
-    final deviceLocation = this.deviceLocation.value;
     final note = this.note ?? '';
     final labelCategory = this.labelCategory?.value ?? '';
     final label = this.label?.value ?? '';
     final noiseMovement = this.noiseMovement?.value ?? '';
 
     return '$timestamp,$x,$y,$z,$heartRate,$movementSetId,'
-        '$deviceLocation,$note,$labelCategory,$label,$noiseMovement,\n';
+        '$note,$labelCategory,$label,$noiseMovement,\n';
   }
 
   @override
@@ -160,9 +174,9 @@ class DataItem extends Equatable {
         z,
         heartRate,
         movementSetId,
-        deviceLocation,
         note,
         labelCategory,
         label,
+        noiseMovement,
       ];
 }

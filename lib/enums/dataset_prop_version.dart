@@ -10,8 +10,6 @@ enum DatasetPropVersion {
   /// ```
   v1,
 
-  /// Dataset prop v2 is backward compatible with v1.
-  ///
   /// Format dataset prop in v2:
   /// ```json
   /// {
@@ -25,9 +23,6 @@ enum DatasetPropVersion {
   /// ```
   v2,
 
-  /// Dataset prop v3 is **NOT** backward compatible with v2. This is because we
-  /// added new non-nullable `id` and `created_at` and removed `dir_name`.
-  ///
   /// Format dataset prop in v3:
   /// ```json
   /// {
@@ -42,8 +37,6 @@ enum DatasetPropVersion {
   /// ```
   v3,
 
-  /// Dataset prop v4 is backward compatible with v3.
-  ///
   /// Format dataset prop in v4:
   /// ```json
   /// {
@@ -74,6 +67,13 @@ enum DatasetPropVersion {
       case DatasetPropVersion.v4:
         return 'v4';
     }
+  }
+
+  String nameWithIsLatest({String latestText = '', String defaultText = ''}) {
+    if (this == DatasetPropVersion.values.last) {
+      return name + latestText;
+    }
+    return name + defaultText;
   }
 
   int get value {

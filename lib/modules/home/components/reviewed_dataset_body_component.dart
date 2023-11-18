@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
@@ -10,6 +9,7 @@ import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/widgets/dataset_grid_tile_widget.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class ReviewedDatasetBody extends ConsumerStatefulWidget {
@@ -20,15 +20,33 @@ class ReviewedDatasetBody extends ConsumerStatefulWidget {
 }
 
 class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
-  late final DatasetsNotifier _notifier;
-  FirestoreQueryBuilderSnapshot<Dataset>? _snapshot;
+  static const _pageSize = 20;
 
-  var _datasetsKey = UniqueKey();
+  late final DatasetsNotifier _notifier;
+
+  Future<void> _fetchPage(int pageKey) async {
+    final (failure, datasets) =
+        await _notifier.getCloudDatasets(pageKey, _pageSize);
+
+    if (failure != null) {
+      _notifier.reviewedPagingController.error = failure.error;
+      return;
+    }
+
+    final isLastPage = datasets!.length < _pageSize;
+    if (isLastPage) {
+      _notifier.reviewedPagingController.appendLastPage(datasets);
+    } else {
+      final nextPageKey = pageKey + datasets.length;
+      _notifier.reviewedPagingController.appendPage(datasets, nextPageKey);
+    }
+  }
 
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
 
+    _notifier.reviewedPagingController.addPageRequestListener(_fetchPage);
     super.initState();
   }
 
@@ -37,132 +55,111 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
     return RefreshIndicator(
       key: _notifier.reviewedRefreshKey,
       onRefresh: () async {
-        setState(() {
-          _datasetsKey = UniqueKey();
-        });
+        _notifier.reviewedPagingController.refresh();
         return Future.delayed(const Duration(seconds: 1));
       },
-      child: FirestoreQueryBuilder<Dataset>(
-        key: _datasetsKey,
-        query: _notifier.reviewedDatasetsQuery,
-        builder: (context, snapshot, _) {
-          _snapshot ??= snapshot;
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final crossAxisCount = constraints.maxWidth ~/ 180;
+          final aspectRatio =
+              constraints.maxWidth / (crossAxisCount * 200) - 0.16;
 
-          if (snapshot.hasError) {
-            return IllustrationWidget(
-              type: IllustrationWidgetType.error,
-              actions: [
-                FilledButton.tonalIcon(
-                  onPressed: () =>
-                      _notifier.reviewedRefreshKey.currentState?.show(),
-                  label: const Text('Refresh'),
-                  icon: const Icon(Symbols.refresh_rounded),
-                ),
-              ],
-            );
-          }
-          if (snapshot.docs.isEmpty) {
-            return IllustrationWidget(
-              type: IllustrationWidgetType.noData,
-              actions: [
-                FilledButton.tonalIcon(
-                  onPressed: () =>
-                      _notifier.reviewedRefreshKey.currentState?.show(),
-                  label: const Text('Refresh'),
-                  icon: const Icon(Symbols.refresh_rounded),
-                ),
-              ],
-            );
-          }
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              final crossAxisCount = constraints.maxWidth ~/ 180;
-              final aspectRatio =
-                  constraints.maxWidth / (crossAxisCount * 200) - 0.16;
-
-              return GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: aspectRatio,
-                ),
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  16,
-                  16,
-                  Dimens.bottomListPadding,
-                ),
-                itemCount: snapshot.docs.length,
-                itemBuilder: (context, index) {
-                  if (snapshot.hasMore && index + 1 == snapshot.docs.length) {
-                    snapshot.fetchMore();
-                  }
-
-                  final rawDataset = snapshot.docs[index].data();
-
-                  return Consumer(
-                    builder: (context, ref, child) {
-                      final dataset = ref.watch(
-                        datasetsProvider.select(
-                          (state) => state.reviewedDatasets.firstWhere(
-                            (dataset) =>
-                                dataset.property.id == rawDataset.property.id,
-                            orElse: () => rawDataset,
-                          ),
+          return PagedGridView(
+            pagingController: _notifier.reviewedPagingController,
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              Dimens.bottomListPadding,
+            ),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: aspectRatio,
+            ),
+            builderDelegate: PagedChildBuilderDelegate<Dataset>(
+              noItemsFoundIndicatorBuilder: (context) {
+                return IllustrationWidget(
+                  type: IllustrationWidgetType.noData,
+                  actions: [
+                    FilledButton.tonalIcon(
+                      onPressed: () =>
+                          _notifier.needReviewRefreshKey.currentState?.show(),
+                      label: const Text('Refresh'),
+                      icon: const Icon(Symbols.refresh_rounded),
+                    ),
+                  ],
+                );
+              },
+              firstPageErrorIndicatorBuilder: (context) {
+                return IllustrationWidget(
+                  type: IllustrationWidgetType.error,
+                  actions: [
+                    FilledButton.tonalIcon(
+                      onPressed: () =>
+                          _notifier.needReviewRefreshKey.currentState?.show(),
+                      label: const Text('Refresh'),
+                      icon: const Icon(Symbols.refresh_rounded),
+                    ),
+                  ],
+                );
+              },
+              itemBuilder: (context, rawDataset, index) {
+                return Consumer(
+                  builder: (context, ref, child) {
+                    final dataset = ref.watch(
+                      datasetsProvider.select(
+                        (state) => state.reviewedDatasets.firstWhere(
+                          (dataset) =>
+                              dataset.property.id == rawDataset.property.id,
+                          orElse: () => rawDataset,
                         ),
-                      );
-                      final selected = ref.watch(
-                        datasetsProvider.select(
-                          (state) => state.selectedDatasets.contains(dataset),
-                        ),
-                      );
+                      ),
+                    );
+                    final selected = ref.watch(
+                      datasetsProvider.select(
+                        (state) => state.selectedDatasetIndexes.contains(index),
+                      ),
+                    );
 
-                      return DatasetGridTile(
-                        dataset: dataset,
-                        selected: selected,
-                        labeled: true,
-                        onTap: () async {
-                          if (dataset.downloaded ?? false) {
-                            await context.router
-                                .push(PreprocessRoute(path: dataset.path!));
-                            return;
-                          }
-                          await _notifier.downloadDataset(dataset);
-                        },
-                        onInitialise: () async {
-                          var updatedDataset = dataset;
-                          if (dataset.path == null) {
-                            updatedDataset =
-                                await _notifier.loadDatasetFromDisk(
-                                      dataset: dataset,
-                                      isReviewedDataset: true,
-                                      createDirIfNotExist: true,
-                                    ) ??
-                                    dataset;
-                          }
-                          if (dataset.thumbnail == null &&
-                              updatedDataset.path != null) {
-                            await _notifier.getThumbnail(
-                              dataset: updatedDataset,
-                              isReviewedDatasets: true,
-                            );
-                          }
-                        },
-                        action: _buildMenu(dataset),
-                      );
-                    },
-                  );
-                },
-              );
-            },
+                    return DatasetGridTile(
+                      dataset: dataset,
+                      selected: selected,
+                      labeled: true,
+                      onTap: () async {
+                        if (dataset.downloaded ?? false) {
+                          await context.router
+                              .push(PreprocessRoute(path: dataset.path!));
+                          return;
+                        }
+                        await _notifier.downloadDatasetAt(
+                          index,
+                          dataset: dataset,
+                        );
+                      },
+                      onInitialise: () async {
+                        if (dataset.thumbnail == null && dataset.path != null) {
+                          await _notifier.getThumbnailAt(
+                            index,
+                            dataset: dataset,
+                            isReviewedDatasets: true,
+                          );
+                        }
+                      },
+                      action: _buildMenu(index, dataset),
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
 
-  MenuAnchor _buildMenu(Dataset dataset) {
+  MenuAnchor _buildMenu(int index, Dataset dataset) {
     final datasetPath = dataset.path;
 
     return MenuAnchor(
@@ -186,7 +183,11 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
         MenuItemButton(
           leadingIcon: const Icon(Symbols.download_rounded),
           onPressed: () async {
-            await _notifier.downloadDataset(dataset, forceDownload: true);
+            await _notifier.downloadDatasetAt(
+              index,
+              dataset: dataset,
+              forceDownload: true,
+            );
           },
           child: const Text('Force download dataset'),
         ),
@@ -194,8 +195,8 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           MenuItemButton(
             leadingIcon: const Icon(Symbols.delete_rounded),
             onPressed: () async {
-              await _notifier.deleteDataset(
-                datasetPath,
+              await _notifier.deleteDatasetAt(
+                index,
                 isReviewedDatasets: true,
               );
             },
@@ -203,9 +204,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           ),
         MenuItemButton(
           leadingIcon: const Icon(Symbols.delete_forever_rounded),
-          onPressed: () async {
-            await _notifier.deleteDatasetFromCloud(dataset);
-          },
+          onPressed: () => _notifier.deleteDatasetFromCloud(index, dataset),
           child: const Text('Delete permanently'),
         ),
       ],

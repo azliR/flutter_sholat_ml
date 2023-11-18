@@ -9,7 +9,7 @@ import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
-import 'package:flutter_sholat_ml/utils/failures/bluetooth_error.dart';
+import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:uuid/uuid.dart';
 
 part 'preprocess_state.dart';
@@ -183,6 +183,14 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
       );
     }
     clearSelectedDataItems();
+  }
+
+  void setEvaluated({required bool hasEvaluated}) {
+    state = state.copyWith(
+      datasetProp: state.datasetProp!.copyWith(
+        hasEvaluated: hasEvaluated,
+      ),
+    );
   }
 
   Future<void> saveDataset({bool diskOnly = false}) async {
