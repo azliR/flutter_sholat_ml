@@ -12,6 +12,7 @@ import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_datas
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/accelerometer_chart_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/dataset_prop_tile_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/preprocess_toolbar_widget.dart';
+import 'package:flutter_sholat_ml/utils/ui/menus.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -91,6 +92,73 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
+  Future<void> _showExitDialog() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Save changes'),
+          content: const Text(
+            "All unsaved changes will be lost if you don't save them",
+          ),
+          actions: [
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.error,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: const Text("Don't save"),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showSaveDialog();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showCompressDialog() {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          icon: const Icon(Symbols.movie_rounded),
+          title: const Text('Compress dataset'),
+          content: const Text(
+            'Current video in this dataset is not compressed. Compressing it will reduce the size of the dataset.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _notifier.compressVideo();
+              },
+              child: const Text('Compress'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _showSaveDialog() {
     final data = MediaQuery.of(context);
 
@@ -131,21 +199,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
-  Future<void> _showSpeedDialog(BuildContext context) async {
-    const offs = Offset.zero;
-    final button = context.findRenderObject()! as RenderBox;
-    final overlay =
-        Navigator.of(context).overlay!.context.findRenderObject()! as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(offs, ancestor: overlay),
-        button.localToGlobal(
-          button.size.bottomRight(Offset.zero) + offs,
-          ancestor: overlay,
-        ),
-      ),
-      Offset.zero & overlay.size,
-    );
+  Future<void> _showSpeedMenu(BuildContext context) async {
+    final position = determineMenuPosition(context);
 
     final result = await showMenu<double>(
       context: context,
@@ -242,37 +297,53 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     ref.listen(preprocessProvider.select((value) => value.presentationState),
         (previous, next) {
       switch (next) {
+        case PreprocessInitial():
+          break;
         case GetDatasetPropFailureState():
           showErrorSnackbar(context, 'Failed getting dataset info');
         case ReadDatasetsFailureState():
           showErrorSnackbar(context, 'Failed reading datasets');
+        case CompressVideoLoadingState():
+          context.loaderOverlay.show();
+        case CompressVideoSuccessState():
+          context.loaderOverlay.hide();
+          showSnackbar(context, 'Video compressed successfully!');
+        case CompressVideoFailureState():
+          context.loaderOverlay.hide();
+          showErrorSnackbar(context, 'Failed compressing video');
         case SaveDatasetLoadingState():
           context.loaderOverlay.show();
         case SaveDatasetSuccessState():
           context.loaderOverlay.hide();
-          showSnackbar(context, 'Dataset saved');
+          showSnackbar(context, 'Dataset saved successfully!');
         case SaveDatasetFailureState():
           context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed saving dataset');
-        case PreprocessInitial():
-          break;
       }
     });
     final datasetProp =
         ref.watch(preprocessProvider.select((state) => state.datasetProp));
-    final dataItems =
-        ref.watch(preprocessProvider.select((state) => state.dataItems));
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
         final isSelectMode =
             ref.read(preprocessProvider).selectedDataItems.isNotEmpty;
 
         if (isSelectMode) {
           _notifier.clearSelectedDataItems();
-          return false;
+          return;
         }
-        return true;
+
+        final isEdited = ref.read(preprocessProvider).isEdited;
+        if (isEdited) {
+          await _showExitDialog();
+          return;
+        }
+
+        Navigator.pop(context);
       },
       child: Scaffold(
         resizeToAvoidBottomInset: false,
@@ -301,6 +372,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     border: datasetProp.hasEvaluated
                         ? null
                         : Border.all(
+                            strokeAlign: BorderSide.strokeAlignOutside,
                             color: colorScheme.outline,
                           ),
                   ),
@@ -434,7 +506,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                                           ],
                                         ),
                                         onPressed: () =>
-                                            _showSpeedDialog(context),
+                                            _showSpeedMenu(context),
                                       );
                                     },
                                   ),
@@ -452,7 +524,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   ),
                   Expanded(
                     child: AccelerometerChart(
-                      dataItems: dataItems,
+                      dataItems: ref.read(preprocessProvider).dataItems,
                       primaryXAxis: _primaryXAxis,
                       zoomPanBehavior: _zoomPanBehavior,
                       trackballBehavior: _trackballBehavior,
@@ -461,6 +533,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
                         final index =
                             trackballArgs.chartPointInfo.dataPointIndex ?? 0;
+                        final dataItems =
+                            ref.read(preprocessProvider).dataItems;
 
                         _timer?.cancel();
                         _timer = Timer(const Duration(milliseconds: 300), () {
@@ -554,7 +628,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     child: PreprocessDatasetList(
                       scrollController: _scrollController,
                       trackballBehavior: _trackballBehavior,
-                      dataItems: dataItems,
                     ),
                   ),
                 ],
@@ -587,15 +660,23 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       menuChildren: [
         MenuItemButton(
           leadingIcon: datasetProp.hasEvaluated
-              ? const Icon(Symbols.close_rounded)
-              : const Icon(Symbols.done_rounded),
-          onPressed: () {
-            _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated);
-          },
+              ? const Icon(Symbols.cancel_rounded)
+              : const Icon(Symbols.check_circle_rounded),
+          onPressed: () =>
+              _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
           child: Text(
             datasetProp.hasEvaluated
                 ? 'Mark as not evaluated'
                 : 'Mark as evaluated',
+          ),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Symbols.movie_rounded),
+          onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
+          child: Text(
+            datasetProp.isCompressed
+                ? 'Dataset compressed'
+                : 'Compress dataset',
           ),
         ),
       ],

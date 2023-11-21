@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/modules/home/components/need_review_datasets_body_component.dart';
 import 'package:flutter_sholat_ml/modules/home/components/reviewed_dataset_body_component.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -21,6 +23,9 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     with SingleTickerProviderStateMixin {
   late final DatasetsNotifier _notifier;
   late final TabController _tabController;
+
+  late final PagingController<int, Dataset> _needReviewPagingController;
+  late final GlobalKey<RefreshIndicatorState> _needReviewRefreshKey;
 
   Future<void> _showDeleteDatasetsDialog({bool isLocalOnly = true}) async {
     final colorScheme = Theme.of(context).colorScheme;
@@ -57,7 +62,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
               onPressed: () {
                 Navigator.of(context).pop();
                 _notifier.deleteSelectedDatasets(isReviewedDatasets: false);
-                _notifier.needReviewRefreshKey.currentState?.show();
+                _needReviewRefreshKey.currentState?.show();
               },
               child: const Text('Delete all'),
             ),
@@ -191,6 +196,10 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
 
+    _needReviewPagingController =
+        ref.read(datasetsProvider).needReviewPagingController;
+    _needReviewRefreshKey = ref.read(datasetsProvider).needReviewRefreshKey;
+
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.index != _tabController.previousIndex) {
@@ -221,10 +230,17 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             showErrorSnackbar(context, 'Failed to load datasets');
           case DeleteDatasetLoadingState():
             context.loaderOverlay.show();
-          case DeleteDatasetSuccessState():
+          case DeleteDatasetFromDiskSuccessState():
             context.loaderOverlay.hide();
 
-            if (!presentationState.isReviewedDataset) return;
+            if (!presentationState.isReviewedDataset) {
+              _needReviewPagingController.itemList =
+                  ref.read(datasetsProvider).needReviewDatasets;
+
+              final deletedLength = presentationState.deletedIndexes.length;
+              showSnackbar(context, '$deletedLength dataset(s) deleted');
+              return;
+            }
 
             Future.wait(
               presentationState.deletedIndexes.map((index) async {
@@ -233,6 +249,13 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                   isReviewedDataset: presentationState.isReviewedDataset,
                 );
               }),
+            );
+            showSnackbar(context, 'Dataset deleted from disk');
+          case DeleteDatasetFromCloudSuccessState():
+            showSnackbar(
+              context,
+              'Dataset deleted from cloud storage',
+              hidePreviousSnackbar: true,
             );
           case DeleteDatasetFailureState():
             context.loaderOverlay.hide();
@@ -261,7 +284,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             context.loaderOverlay.show();
           case ImportDatasetSuccessState():
             context.loaderOverlay.hide();
-            _notifier.needReviewRefreshKey.currentState?.show();
+            _needReviewRefreshKey.currentState?.show();
             showSnackbar(context, 'Datasets successfully imported!');
           case ImportDatasetFailureState():
             context.loaderOverlay.hide();
@@ -290,13 +313,17 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     );
     final isSelectMode = selectedDatasetIndexes.isNotEmpty;
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return;
+
         if (isSelectMode) {
           _notifier.clearSelections();
-          return false;
+          return;
         }
-        return true;
+
+        Navigator.pop(context);
       },
       child: Material(
         child: NestedScrollView(

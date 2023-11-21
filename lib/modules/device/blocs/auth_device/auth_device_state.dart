@@ -6,6 +6,8 @@ class AuthDeviceState extends Equatable {
     required this.isInitialised,
     required this.currentDevice,
     required this.savedDevices,
+    required this.currentBluetoothDevice,
+    required this.currentServices,
     required this.presentationState,
   });
 
@@ -13,18 +15,24 @@ class AuthDeviceState extends Equatable {
         isInitialised: false,
         currentDevice: null,
         savedDevices: [],
+        currentBluetoothDevice: null,
+        currentServices: null,
         presentationState: AuthDeviceInitialState(),
       );
 
   final bool isInitialised;
   final Device? currentDevice;
   final List<Device> savedDevices;
+  final BluetoothDevice? currentBluetoothDevice;
+  final List<BluetoothService>? currentServices;
   final AuthDevicePresentationState presentationState;
 
   AuthDeviceState copyWith({
     bool? isInitialised,
     ValueGetter<Device?>? currentDevice,
     List<Device>? savedDevices,
+    ValueGetter<BluetoothDevice?>? currentBluetoothDevice,
+    ValueGetter<List<BluetoothService>?>? currentServices,
     AuthDevicePresentationState? presentationState,
   }) {
     return AuthDeviceState(
@@ -32,6 +40,11 @@ class AuthDeviceState extends Equatable {
       currentDevice:
           currentDevice != null ? currentDevice() : this.currentDevice,
       savedDevices: savedDevices ?? this.savedDevices,
+      currentBluetoothDevice: currentBluetoothDevice != null
+          ? currentBluetoothDevice()
+          : this.currentBluetoothDevice,
+      currentServices:
+          currentServices != null ? currentServices() : this.currentServices,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -41,6 +54,8 @@ class AuthDeviceState extends Equatable {
         isInitialised,
         currentDevice,
         savedDevices,
+        currentBluetoothDevice,
+        currentServices,
         presentationState,
       ];
 }

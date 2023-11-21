@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/data_item_tile_widget.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
@@ -9,13 +8,11 @@ class PreprocessDatasetList extends ConsumerStatefulWidget {
   const PreprocessDatasetList({
     required this.scrollController,
     required this.trackballBehavior,
-    required this.dataItems,
     super.key,
   });
 
   final ScrollController scrollController;
   final TrackballBehavior trackballBehavior;
-  final List<DataItem> dataItems;
 
   @override
   ConsumerState<PreprocessDatasetList> createState() =>
@@ -33,6 +30,9 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
 
   @override
   Widget build(BuildContext context) {
+    final dataItems =
+        ref.watch(preprocessProvider.select((state) => state.dataItems));
+
     return Focus(
       autofocus: true,
       onKey: (node, event) {
@@ -44,7 +44,7 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
           controller: widget.scrollController,
           cacheExtent: 32,
           itemExtent: 32,
-          itemCount: widget.dataItems.length,
+          itemCount: dataItems.length,
           itemBuilder: (context, index) {
             return Consumer(
               builder: (context, ref, child) {
@@ -56,7 +56,7 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                   preprocessProvider.select((state) => state.selectedDataItems),
                 );
 
-                final dataset = widget.dataItems[index];
+                final dataset = dataItems[index];
                 final selected = selectedDataItems.contains(dataset);
 
                 return DataItemTile(

@@ -65,7 +65,6 @@ class DeviceRepository {
       log('Scanning devices...');
       await FlutterBluePlus.startScan(
         timeout: const Duration(seconds: 15),
-        removeIfGone: const Duration(seconds: 5),
       );
 
       await Future<void>.delayed(const Duration(seconds: 15));
@@ -421,6 +420,10 @@ class DeviceRepository {
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }
+  }
+
+  List<Device> getSavedDevices() {
+    return LocalStorageService.getSavedDevices();
   }
 
   Stream<List<Device>> get savedDevicesStream =>

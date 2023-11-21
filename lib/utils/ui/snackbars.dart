@@ -11,7 +11,13 @@ void showErrorSnackbar(BuildContext context, String message) {
   );
 }
 
-void showSnackbar(BuildContext context, String message) {
+void showSnackbar(
+  BuildContext context,
+  String message, {
+  bool hidePreviousSnackbar = false,
+}) {
+  if (hidePreviousSnackbar) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(message)),
   );

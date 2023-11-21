@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dartx/dartx_io.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
@@ -14,6 +15,9 @@ import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:video_compress/video_compress.dart';
 
 class PreprocessRepository {
   final _firestore = FirebaseFirestore.instance;
@@ -112,6 +116,34 @@ class PreprocessRepository {
     }
   }
 
+  Future<(Failure?, void)> compressVideo({
+    required String path,
+  }) async {
+    try {
+      final tempDir = await getApplicationCacheDirectory();
+
+      final videoFile = File(path);
+      final tempVideo =
+          await videoFile.copy(tempDir.file(Paths.datasetVideo).path);
+
+      final result = await VideoCompress.compressVideo(
+        tempVideo.path,
+        deleteOrigin: true,
+        includeAudio: true,
+        quality: VideoQuality.MediumQuality,
+      );
+      if (result == null) {
+        return (Failure('Failed compressing video'), null);
+      }
+      await result.file?.rename(path);
+      return (null, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed compressing video';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
   Future<(Failure?, String?, DatasetProp?)> saveDataset({
     required String path,
     required List<DataItem> dataItems,
@@ -149,17 +181,22 @@ class PreprocessRepository {
         return (null, path, updatedDatasetProp);
       }
 
-      final (failure, updatedDatasetProp) = await saveDatasetToDatabase(
+      final (saveDatasetFailure, updatedDatasetProp) =
+          await saveDatasetToDatabase(
         csvFile: csvFile,
         videoFile: File('$path/$datasetVideoPath'),
         thumbnailFile: File('$path/$datasetThumbnailPath'),
         datasetProp: datasetProp,
       );
-      if (failure != null) return (failure, null, null);
+      if (saveDatasetFailure != null) return (saveDatasetFailure, null, null);
 
-      final datasetPropFile = File('$path/$datasetPropPath');
-      await datasetPropFile
-          .writeAsString(jsonEncode(updatedDatasetProp!.toJson()));
+      final (writeDatasetPropFailure, _) = await writeDatasetProp(
+        datasetPath: path,
+        datasetProp: updatedDatasetProp!,
+      );
+      if (writeDatasetPropFailure != null) {
+        return (writeDatasetPropFailure, null, null);
+      }
 
       final fullNewDir = Directory(
         path.replaceFirst(
@@ -174,13 +211,36 @@ class PreprocessRepository {
 
       await Directory(path).rename(fullNewDir.path);
 
-      LocalDatasetStorageService.deleteDataset(path.split('/').last);
+      LocalDatasetStorageService.deleteDataset(basename(path));
 
       return (null, fullNewDir.path, updatedDatasetProp);
     } catch (e, stackTrace) {
       const message = 'Failed saving dataset';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null, null);
+    }
+  }
+
+  Future<(Failure?, DatasetProp?)> writeDatasetProp({
+    required String datasetPath,
+    required DatasetProp datasetProp,
+  }) async {
+    try {
+      final updatedDatasetProp = datasetProp.copyWith(
+        datasetPropVersion: DatasetPropVersion.values.last,
+      );
+
+      const datasetPropPath = Paths.datasetProp;
+
+      final datasetPropFile = File('$datasetPath/$datasetPropPath');
+      await datasetPropFile
+          .writeAsString(jsonEncode(updatedDatasetProp.toJson()));
+
+      return (null, updatedDatasetProp);
+    } catch (e, stackTrace) {
+      const message = 'Failed writing dataset prop to disk';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
     }
   }
 

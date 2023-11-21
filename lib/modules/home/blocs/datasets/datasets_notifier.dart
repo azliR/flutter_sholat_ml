@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -16,15 +15,14 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 part 'datasets_state.dart';
 
 final datasetsProvider =
-    StateNotifierProvider.autoDispose<DatasetsNotifier, HomeState>(
-  (ref) => DatasetsNotifier(),
+    NotifierProvider.autoDispose<DatasetsNotifier, DatasetsState>(
+  DatasetsNotifier.new,
 );
 
-class DatasetsNotifier extends StateNotifier<HomeState> {
+class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
   DatasetsNotifier()
       : _homeRepository = HomeRepository(),
-        _preprocessRepository = PreprocessRepository(),
-        super(HomeState.initial());
+        _preprocessRepository = PreprocessRepository();
 
   final HomeRepository _homeRepository;
   final PreprocessRepository _preprocessRepository;
@@ -32,13 +30,17 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
   StreamSubscription<TaskSnapshot>? _downloadSubscription;
   StreamSubscription<double>? _exportSubscription;
 
-  final needReviewPagingController =
-      PagingController<int, Dataset>(firstPageKey: 0);
-  final reviewedPagingController =
-      PagingController<int, Dataset>(firstPageKey: 0);
+  @override
+  DatasetsState build() {
+    ref.onDispose(() {
+      _downloadSubscription?.cancel();
+      _exportSubscription?.cancel();
+      state.needReviewPagingController.dispose();
+      state.reviewedPagingController.dispose();
+    });
 
-  final needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
-  final reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
+    return DatasetsState.initial();
+  }
 
   Future<(Failure?, List<Dataset>?)> getCloudDatasets(
     int start,
@@ -167,11 +169,9 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
           ),
         );
         if (lastCsvProgress == 1 && lastVideoProgress == 1) {
+          _downloadSubscription?.cancel();
           state = state.copyWith(
-            presentationState: DownloadDatasetSuccessState(
-              index: index,
-              dataset: dataset,
-            ),
+            presentationState: DownloadDatasetSuccessState(index: index),
           );
         }
       },
@@ -268,17 +268,16 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       return;
     }
 
-    final updatedDatasets = selectedDatasetIndexes.fold<List<Dataset>>(
+    final updatedDatasets = selectedDatasets.fold<List<Dataset>>(
       datasets,
-      (previousValue, i) => previousValue.drop(i),
+      (previousValue, dataset) => previousValue..remove(dataset),
     );
 
     state = state.copyWith(
       selectedDatasetIndexes: [],
       needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
       reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
-      presentationState: DeleteDatasetSuccessState(
-        datasets: selectedDatasets,
+      presentationState: DeleteDatasetFromDiskSuccessState(
         deletedIndexes: selectedDatasetIndexes,
         isReviewedDataset: isReviewedDatasets,
       ),
@@ -305,14 +304,20 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
       return false;
     }
 
-    final updatedDatasets = datasets.drop(index);
+    final List<Dataset> updatedDatasets;
+    if (isReviewedDatasets) {
+      updatedDatasets = [...datasets]..[index] = dataset.copyWith(
+          downloaded: false,
+        );
+    } else {
+      updatedDatasets = [...datasets]..removeAt(index);
+    }
 
     state = state.copyWith(
       needReviewDatasets: !isReviewedDatasets ? updatedDatasets : null,
       reviewedDatasets: isReviewedDatasets ? updatedDatasets : null,
-      presentationState: DeleteDatasetSuccessState(
+      presentationState: DeleteDatasetFromDiskSuccessState(
         deletedIndexes: [index],
-        datasets: updatedDatasets,
         isReviewedDataset: isReviewedDatasets,
       ),
     );
@@ -337,6 +342,10 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
         isReviewedDatasets: true,
       );
     }
+
+    state = state.copyWith(
+      presentationState: const DeleteDatasetFromCloudSuccessState(),
+    );
     return true;
   }
 
@@ -404,14 +413,5 @@ class DatasetsNotifier extends StateNotifier<HomeState> {
     state = state.copyWith(
       presentationState: const ImportDatasetSuccessState(),
     );
-  }
-
-  @override
-  void dispose() {
-    _downloadSubscription?.cancel();
-    _exportSubscription?.cancel();
-    needReviewPagingController.dispose();
-    reviewedPagingController.dispose();
-    super.dispose();
   }
 }

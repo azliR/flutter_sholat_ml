@@ -23,39 +23,43 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
   static const _pageSize = 20;
 
   late final DatasetsNotifier _notifier;
+  late final PagingController<int, Dataset> _pagingController;
+  late final GlobalKey<RefreshIndicatorState> _refreshKey;
 
   Future<void> _fetchPage(int pageKey) async {
     final (failure, datasets) =
         await _notifier.getCloudDatasets(pageKey, _pageSize);
 
     if (failure != null) {
-      _notifier.reviewedPagingController.error = failure.error;
+      _pagingController.error = failure.error;
       return;
     }
 
     final isLastPage = datasets!.length < _pageSize;
     if (isLastPage) {
-      _notifier.reviewedPagingController.appendLastPage(datasets);
+      _pagingController.appendLastPage(datasets);
     } else {
       final nextPageKey = pageKey + datasets.length;
-      _notifier.reviewedPagingController.appendPage(datasets, nextPageKey);
+      _pagingController.appendPage(datasets, nextPageKey);
     }
   }
 
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
+    _pagingController = ref.read(datasetsProvider).reviewedPagingController;
+    _refreshKey = ref.read(datasetsProvider).reviewedRefreshKey;
 
-    _notifier.reviewedPagingController.addPageRequestListener(_fetchPage);
+    _pagingController.addPageRequestListener(_fetchPage);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      key: _notifier.reviewedRefreshKey,
+      key: _refreshKey,
       onRefresh: () async {
-        _notifier.reviewedPagingController.refresh();
+        _pagingController.refresh();
         return Future.delayed(const Duration(seconds: 1));
       },
       child: LayoutBuilder(
@@ -65,7 +69,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
               constraints.maxWidth / (crossAxisCount * 200) - 0.16;
 
           return PagedGridView(
-            pagingController: _notifier.reviewedPagingController,
+            pagingController: _pagingController,
             padding: const EdgeInsets.fromLTRB(
               16,
               16,
@@ -84,8 +88,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                   type: IllustrationWidgetType.noData,
                   actions: [
                     FilledButton.tonalIcon(
-                      onPressed: () =>
-                          _notifier.needReviewRefreshKey.currentState?.show(),
+                      onPressed: () => _refreshKey.currentState?.show(),
                       label: const Text('Refresh'),
                       icon: const Icon(Symbols.refresh_rounded),
                     ),
@@ -97,8 +100,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                   type: IllustrationWidgetType.error,
                   actions: [
                     FilledButton.tonalIcon(
-                      onPressed: () =>
-                          _notifier.needReviewRefreshKey.currentState?.show(),
+                      onPressed: () => _refreshKey.currentState?.show(),
                       label: const Text('Refresh'),
                       icon: const Icon(Symbols.refresh_rounded),
                     ),
@@ -117,16 +119,20 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                         ),
                       ),
                     );
-                    final selected = ref.watch(
-                      datasetsProvider.select(
-                        (state) => state.selectedDatasetIndexes.contains(index),
-                      ),
-                    );
 
                     return DatasetGridTile(
                       dataset: dataset,
-                      selected: selected,
+                      selected: false,
                       labeled: true,
+                      onInitialise: () async {
+                        if (dataset.thumbnail == null && dataset.path != null) {
+                          await _notifier.getThumbnailAt(
+                            index,
+                            dataset: dataset,
+                            isReviewedDatasets: true,
+                          );
+                        }
+                      },
                       onTap: () async {
                         if (dataset.downloaded ?? false) {
                           await context.router
@@ -137,15 +143,6 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                           index,
                           dataset: dataset,
                         );
-                      },
-                      onInitialise: () async {
-                        if (dataset.thumbnail == null && dataset.path != null) {
-                          await _notifier.getThumbnailAt(
-                            index,
-                            dataset: dataset,
-                            isReviewedDatasets: true,
-                          );
-                        }
                       },
                       action: _buildMenu(index, dataset),
                     );
@@ -191,7 +188,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           },
           child: const Text('Force download dataset'),
         ),
-        if (datasetPath != null)
+        if (datasetPath != null && (dataset.downloaded ?? false))
           MenuItemButton(
             leadingIcon: const Icon(Symbols.delete_rounded),
             onPressed: () async {

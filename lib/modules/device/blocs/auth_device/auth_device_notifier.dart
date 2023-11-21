@@ -16,19 +16,14 @@ import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 part 'auth_device_state.dart';
 
 final authDeviceProvider =
-    StateNotifierProvider<AuthDeviceNotifier, AuthDeviceState>(
-  (ref) => AuthDeviceNotifier(),
+    NotifierProvider<AuthDeviceNotifier, AuthDeviceState>(
+  AuthDeviceNotifier.new,
 );
 
-class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
-  AuthDeviceNotifier()
-      : _deviceRepository = DeviceRepository(),
-        super(AuthDeviceState.initial());
+class AuthDeviceNotifier extends Notifier<AuthDeviceState> {
+  AuthDeviceNotifier() : _deviceRepository = DeviceRepository();
 
   final DeviceRepository _deviceRepository;
-
-  BluetoothDevice? bluetoothDevice;
-  List<BluetoothService>? services;
 
   BluetoothService? _authService;
   BluetoothService? _genericAccessService;
@@ -38,7 +33,21 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
   StreamSubscription<List<int>>? _authSubscription;
   StreamSubscription<List<Device>>? _savedDevicesSubscription;
 
+  @override
+  AuthDeviceState build() {
+    ref.onDispose(() {
+      _authSubscription?.cancel();
+      _savedDevicesSubscription?.cancel();
+    });
+
+    return AuthDeviceState.initial();
+  }
+
   Future<Device?> getPrimaryDevice() async {
+    return _deviceRepository.getPrimaryDevice();
+  }
+
+  Future<Device?> getSavedDevices() async {
     return _deviceRepository.getPrimaryDevice();
   }
 
@@ -77,7 +86,7 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
   ) async {
     state = state.copyWith(presentationState: const AuthDeviceLoadingState());
 
-    await initialise(authKey, device, services);
+    await initialiseAuth(authKey, device, services);
 
     final (failure, _) =
         await _deviceRepository.requestRandomNumber(_authChar!);
@@ -89,13 +98,15 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
     }
   }
 
-  Future<void> initialise(
+  Future<void> initialiseAuth(
     String authKey,
     BluetoothDevice bluetoothDevice,
     List<BluetoothService> services,
   ) async {
-    this.bluetoothDevice = bluetoothDevice;
-    this.services = services;
+    state = state.copyWith(
+      currentBluetoothDevice: () => bluetoothDevice,
+      currentServices: () => services,
+    );
 
     _authService = services.firstWhere(
       (service) => service.uuid.str128 == DeviceUuids.serviceMiBand2,
@@ -182,6 +193,10 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
       }
     });
 
+    final savedDevices = _deviceRepository.getSavedDevices();
+    state = state.copyWith(
+      savedDevices: {...state.savedDevices, ...savedDevices}.toList(),
+    );
     _savedDevicesSubscription ??=
         _deviceRepository.savedDevicesStream.listen((savedDevices) {
       state = state.copyWith(savedDevices: savedDevices);
@@ -249,10 +264,11 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
   }
 
   Future<bool> disconnectCurrentDevice() async {
+    final bluetoothDevice = state.currentBluetoothDevice;
     if (bluetoothDevice == null) return false;
 
     final (disconnectFailure, _) =
-        await _deviceRepository.disconnectDevice(bluetoothDevice!);
+        await _deviceRepository.disconnectDevice(bluetoothDevice);
     if (disconnectFailure != null) {
       state = state.copyWith(
         presentationState: DisconnectDeviceFailureState(disconnectFailure),
@@ -260,19 +276,15 @@ class AuthDeviceNotifier extends StateNotifier<AuthDeviceState> {
       return false;
     }
 
-    bluetoothDevice = null;
-    services = null;
+    state = state.copyWith(
+      currentBluetoothDevice: () => null,
+      currentServices: () => null,
+    );
+
     _authChar = null;
     _authService = null;
     await _authSubscription?.cancel();
 
     return true;
-  }
-
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    _savedDevicesSubscription?.cancel();
-    super.dispose();
   }
 }

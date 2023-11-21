@@ -24,8 +24,7 @@ class AccelerometerChart extends StatelessWidget {
     final yDatasets = <num>[];
     final zDatasets = <num>[];
 
-    for (var i = 0; i < dataItems.length; i++) {
-      final dataset = dataItems[i];
+    for (final dataset in dataItems) {
       xDatasets.add(dataset.x);
       yDatasets.add(dataset.y);
       zDatasets.add(dataset.z);

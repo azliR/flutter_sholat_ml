@@ -15,14 +15,12 @@ import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 part 'record_state.dart';
 
 final recordProvider =
-    StateNotifierProvider.autoDispose<RecordNotifier, RecordState>(
-  (ref) => RecordNotifier(),
+    NotifierProvider.autoDispose<RecordNotifier, RecordState>(
+  RecordNotifier.new,
 );
 
-class RecordNotifier extends StateNotifier<RecordState> {
-  RecordNotifier()
-      : _recordRepository = RecordRepository(),
-        super(RecordState.initial());
+class RecordNotifier extends AutoDisposeNotifier<RecordState> {
+  RecordNotifier() : _recordRepository = RecordRepository();
 
   final RecordRepository _recordRepository;
 
@@ -39,6 +37,18 @@ class RecordNotifier extends StateNotifier<RecordState> {
   StreamSubscription<List<int>>? _hzSubscription;
 
   int? _lastHeartRate;
+
+  @override
+  RecordState build() {
+    ref.onDispose(() {
+      _heartRateMeasureSubscription?.cancel();
+      _sensorSubscription?.cancel();
+      _hzSubscription?.cancel();
+      _recordRepository.dispose();
+    });
+
+    return RecordState.initial();
+  }
 
   Future<void> initialise(
     BluetoothDevice device,
@@ -259,14 +269,5 @@ class RecordNotifier extends StateNotifier<RecordState> {
 
   void onLockChanged({required bool isLocked}) {
     state = state.copyWith(isLocked: isLocked);
-  }
-
-  @override
-  void dispose() {
-    _heartRateMeasureSubscription?.cancel();
-    _sensorSubscription?.cancel();
-    _hzSubscription?.cancel();
-    _recordRepository.dispose();
-    super.dispose();
   }
 }

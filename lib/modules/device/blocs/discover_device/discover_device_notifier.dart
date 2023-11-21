@@ -8,20 +8,28 @@ import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 
 part 'discover_device_state.dart';
 
-final discoverDeviceProvider = StateNotifierProvider.autoDispose<
-    DiscoverDeviceNotifier, DiscoverDeviceState>(
-  (ref) => DiscoverDeviceNotifier(),
+final discoverDeviceProvider =
+    NotifierProvider.autoDispose<DiscoverDeviceNotifier, DiscoverDeviceState>(
+  DiscoverDeviceNotifier.new,
 );
 
-class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
-  DiscoverDeviceNotifier()
-      : _deviceRepository = DeviceRepository(),
-        super(DiscoverDeviceState.initial());
+class DiscoverDeviceNotifier extends AutoDisposeNotifier<DiscoverDeviceState> {
+  DiscoverDeviceNotifier() : _deviceRepository = DeviceRepository();
 
   final DeviceRepository _deviceRepository;
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<BluetoothAdapterState>? _adapterSubscription;
+
+  @override
+  DiscoverDeviceState build() {
+    ref.onDispose(() {
+      _scanSubscription?.cancel();
+      _adapterSubscription?.cancel();
+    });
+
+    return DiscoverDeviceState.initial();
+  }
 
   void initialise() {
     if (state.isInitialised) return;
@@ -76,7 +84,6 @@ class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
       );
       return;
     }
-    if (!mounted) return;
     state = state.copyWith(isScanning: false);
   }
 
@@ -89,12 +96,5 @@ class DiscoverDeviceNotifier extends StateNotifier<DiscoverDeviceState> {
       return;
     }
     state = state.copyWith(bondedDevices: bondedDevices);
-  }
-
-  @override
-  void dispose() {
-    _scanSubscription?.cancel();
-    _adapterSubscription?.cancel();
-    super.dispose();
   }
 }

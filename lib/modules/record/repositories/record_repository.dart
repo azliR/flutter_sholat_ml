@@ -18,7 +18,6 @@ import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_compress/video_compress.dart';
 
 class RecordRepository {
   Timer? _timer;
@@ -175,8 +174,6 @@ class RecordRepository {
         createdAt: now,
       );
 
-      final videoFile = await cameraController.stopVideoRecording();
-
       const datasetCsvPath = Paths.datasetCsv;
       const datasetVideoPath = Paths.datasetVideo;
       const datasetPropPath = Paths.datasetProp;
@@ -185,11 +182,8 @@ class RecordRepository {
       final fullDatasetVideoPath = fullSavedDir.file(datasetVideoPath).path;
       final fullDatasetPropPath = fullSavedDir.file(datasetPropPath).path;
 
-      final (compressFailure, _) = await _compressVideo(
-        sourcePath: videoFile.path,
-        destPath: fullDatasetVideoPath,
-      );
-      if (compressFailure != null) return (compressFailure, null);
+      final videoFile = await cameraController.stopVideoRecording();
+      await videoFile.saveTo(fullDatasetVideoPath);
 
       final (writeDatasetFailure, _) = await writeDatasetInIsolate(
         csvPath: fullDatasetCsvPath,
@@ -322,29 +316,6 @@ class RecordRepository {
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed stopping realtime';
-      final failure = Failure(message, error: e, stackTrace: stackTrace);
-      return (failure, null);
-    }
-  }
-
-  Future<(Failure?, void)> _compressVideo({
-    required String sourcePath,
-    required String destPath,
-  }) async {
-    try {
-      final result = await VideoCompress.compressVideo(
-        sourcePath,
-        deleteOrigin: true,
-        includeAudio: true,
-        quality: VideoQuality.MediumQuality,
-      );
-      if (result == null) {
-        return (Failure('Failed compressing video'), null);
-      }
-      await result.file?.rename(destPath);
-      return (null, null);
-    } catch (e, stackTrace) {
-      const message = 'Failed compressing video';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

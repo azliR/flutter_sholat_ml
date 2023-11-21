@@ -242,17 +242,13 @@ class HomeRepository {
     bool skipWhenError = false,
   }) async {
     try {
-      for (final (i, path) in paths.indexed) {
+      for (final path in paths) {
         final dir = Directory(path);
         if (dir.existsSync()) {
           await dir.delete(recursive: true);
         }
-        final result = LocalDatasetStorageService.deleteDataset(basename(path));
-        if (!result && !skipWhenError) {
-          return (Failure('Failed deleting dataset at index $i'), null);
-        } else {
-          continue;
-        }
+        final fileName = basename(path);
+        LocalDatasetStorageService.deleteDataset(fileName);
       }
       return (null, null);
     } catch (e, stackTrace) {
@@ -376,7 +372,8 @@ class HomeRepository {
 
   Future<(Failure?, void)> importDatasets() async {
     try {
-      final result = await FilePicker.platform.pickFiles();
+      final result =
+          await FilePicker.platform.pickFiles(allowCompression: false);
       if (result == null) {
         const message = 'Cancelled by user';
         const code = ImportDatasetErrorCode.canceled;

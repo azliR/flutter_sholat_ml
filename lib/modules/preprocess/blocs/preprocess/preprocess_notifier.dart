@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
@@ -10,21 +11,25 @@ import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
+import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
 
 part 'preprocess_state.dart';
 
 final preprocessProvider =
-    StateNotifierProvider.autoDispose<PreprocessNotifier, PreprocessState>(
-  (ref) => PreprocessNotifier(),
+    NotifierProvider.autoDispose<PreprocessNotifier, PreprocessState>(
+  PreprocessNotifier.new,
 );
 
-class PreprocessNotifier extends StateNotifier<PreprocessState> {
-  PreprocessNotifier()
-      : _preprocessRepository = PreprocessRepository(),
-        super(PreprocessState.initial());
+class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
+  PreprocessNotifier() : _preprocessRepository = PreprocessRepository();
 
   final PreprocessRepository _preprocessRepository;
+
+  @override
+  PreprocessState build() {
+    return PreprocessState.initial();
+  }
 
   Future<void> initialise(String path) async {
     state = state.copyWith(path: path);
@@ -129,6 +134,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
         }
         return dataset;
       }).toList(),
+      isEdited: true,
     );
     clearSelectedDataItems();
     return movementSetId;
@@ -146,6 +152,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
         }
         return dataset;
       }).toList(),
+      isEdited: true,
     );
     clearSelectedDataItems();
   }
@@ -180,6 +187,7 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
           }
           return dataset;
         }).toList(),
+        isEdited: true,
       );
     }
     clearSelectedDataItems();
@@ -190,6 +198,44 @@ class PreprocessNotifier extends StateNotifier<PreprocessState> {
       datasetProp: state.datasetProp!.copyWith(
         hasEvaluated: hasEvaluated,
       ),
+      isEdited: true,
+    );
+  }
+
+  Future<void> compressVideo({bool diskOnly = false}) async {
+    state =
+        state.copyWith(presentationState: const CompressVideoLoadingState());
+
+    const datasetVideoName = Paths.datasetVideo;
+    final (compressFailure, _) = await _preprocessRepository.compressVideo(
+      path: join(state.path, datasetVideoName),
+    );
+    if (compressFailure != null) {
+      state = state.copyWith(
+        presentationState: CompressVideoFailureState(compressFailure),
+      );
+      return;
+    }
+
+    final datasetProp = state.datasetProp!.copyWith(
+      isCompressed: true,
+    );
+
+    final (writePropFailure, updatedDatasetProp) =
+        await _preprocessRepository.writeDatasetProp(
+      datasetPath: state.path,
+      datasetProp: datasetProp,
+    );
+    if (writePropFailure != null) {
+      state = state.copyWith(
+        presentationState: CompressVideoFailureState(writePropFailure),
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      datasetProp: updatedDatasetProp,
+      presentationState: const CompressVideoSuccessState(),
     );
   }
 

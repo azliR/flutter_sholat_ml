@@ -10,6 +10,7 @@ class PreprocessState extends Equatable {
     required this.isJumpSelectMode,
     required this.isFollowHighlightedMode,
     required this.isPlaying,
+    required this.isEdited,
     required this.dataItems,
     required this.selectedDataItems,
     required this.presentationState,
@@ -23,6 +24,7 @@ class PreprocessState extends Equatable {
         isJumpSelectMode: false,
         isFollowHighlightedMode: false,
         isPlaying: false,
+        isEdited: false,
         dataItems: [],
         selectedDataItems: [],
         presentationState: PreprocessInitial(),
@@ -35,6 +37,7 @@ class PreprocessState extends Equatable {
   final bool isJumpSelectMode;
   final bool isFollowHighlightedMode;
   final bool isPlaying;
+  final bool isEdited;
   final List<DataItem> dataItems;
   final List<DataItem> selectedDataItems;
   final PreprocessPresentationState presentationState;
@@ -47,6 +50,7 @@ class PreprocessState extends Equatable {
     bool? isJumpSelectMode,
     bool? isFollowHighlightedMode,
     bool? isPlaying,
+    bool? isEdited,
     List<DataItem>? dataItems,
     List<DataItem>? selectedDataItems,
     PreprocessPresentationState? presentationState,
@@ -63,6 +67,7 @@ class PreprocessState extends Equatable {
       isFollowHighlightedMode:
           isFollowHighlightedMode ?? this.isFollowHighlightedMode,
       isPlaying: isPlaying ?? this.isPlaying,
+      isEdited: isEdited ?? this.isEdited,
       dataItems: dataItems ?? this.dataItems,
       selectedDataItems: selectedDataItems ?? this.selectedDataItems,
       presentationState: presentationState ?? this.presentationState,
@@ -100,6 +105,20 @@ final class GetDatasetPropFailureState extends PreprocessPresentationState {
 
 final class ReadDatasetsFailureState extends PreprocessPresentationState {
   const ReadDatasetsFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class CompressVideoLoadingState extends PreprocessPresentationState {
+  const CompressVideoLoadingState();
+}
+
+final class CompressVideoSuccessState extends PreprocessPresentationState {
+  const CompressVideoSuccessState();
+}
+
+final class CompressVideoFailureState extends PreprocessPresentationState {
+  const CompressVideoFailureState(this.failure);
 
   final Failure failure;
 }

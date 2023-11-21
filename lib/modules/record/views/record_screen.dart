@@ -41,11 +41,10 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
     return showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async {
-          Navigator.pop(context);
-          await context.router.pop();
-          return true;
+      builder: (context) => PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) async {
+          context.router.popUntilRoot();
         },
         child: AlertDialog(
           title: const Text('Device location'),

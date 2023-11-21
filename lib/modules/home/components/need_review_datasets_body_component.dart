@@ -27,30 +27,36 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
   static const _pageSize = 20;
 
   late final DatasetsNotifier _notifier;
+  late final PagingController<int, Dataset> _pagingController;
+  late final GlobalKey<RefreshIndicatorState> _refreshKey;
 
   Future<void> _fetchPage(int pageKey) async {
     final (failure, datasets) =
         await _notifier.getLocalDatasets(pageKey, _pageSize);
 
     if (failure != null) {
-      _notifier.needReviewPagingController.error = failure.error;
+      _pagingController.error = failure.error;
       return;
     }
 
     final isLastPage = datasets!.length < _pageSize;
     if (isLastPage) {
-      _notifier.needReviewPagingController.appendLastPage(datasets);
+      _pagingController.appendLastPage(datasets);
     } else {
       final nextPageKey = pageKey + datasets.length;
-      _notifier.needReviewPagingController.appendPage(datasets, nextPageKey);
+      _pagingController.appendPage(datasets, nextPageKey);
     }
   }
 
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
+    _pagingController = ref.read(datasetsProvider).needReviewPagingController;
+    _refreshKey = ref.read(datasetsProvider).needReviewRefreshKey;
 
-    _notifier.needReviewPagingController.addPageRequestListener(_fetchPage);
+    _pagingController
+      ..removePageRequestListener(_fetchPage)
+      ..addPageRequestListener(_fetchPage);
     super.initState();
   }
 
@@ -60,9 +66,9 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
     final textTheme = Theme.of(context).textTheme;
 
     return RefreshIndicator(
-      key: _notifier.needReviewRefreshKey,
+      key: _refreshKey,
       onRefresh: () async {
-        _notifier.needReviewPagingController.refresh();
+        _pagingController.refresh();
         return Future.delayed(const Duration(seconds: 1));
       },
       child: LayoutBuilder(
@@ -133,7 +139,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
     final aspectRatio = constraints.maxWidth / (crossAxisCount * 200) - 0.1;
 
     return PagedSliverGrid(
-      pagingController: _notifier.needReviewPagingController,
+      pagingController: _pagingController,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: 12,
@@ -151,8 +157,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                 icon: const Icon(Symbols.upload_rounded),
               ),
               FilledButton.tonalIcon(
-                onPressed: () =>
-                    _notifier.needReviewRefreshKey.currentState?.show(),
+                onPressed: () => _refreshKey.currentState?.show(),
                 label: const Text('Refresh'),
                 icon: const Icon(Symbols.refresh_rounded),
               ),
@@ -164,8 +169,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
             type: IllustrationWidgetType.error,
             actions: [
               FilledButton.tonalIcon(
-                onPressed: () =>
-                    _notifier.needReviewRefreshKey.currentState?.show(),
+                onPressed: () => _refreshKey.currentState?.show(),
                 label: const Text('Refresh'),
                 icon: const Icon(Symbols.refresh_rounded),
               ),
@@ -192,6 +196,15 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                 labeled: false,
                 dataset: dataset,
                 selected: selected,
+                onInitialise: () async {
+                  if (dataset.thumbnail == null && dataset.path != null) {
+                    await _notifier.getThumbnailAt(
+                      index,
+                      dataset: dataset,
+                      isReviewedDatasets: false,
+                    );
+                  }
+                },
                 onTap: () async {
                   if (widget.isSelectMode) {
                     _notifier.onSelectedDataset(index);
@@ -204,15 +217,6 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                   //   isReviewedDataset: false,
                   //   createDirIfNotExist: false,
                   // );
-                },
-                onInitialise: () async {
-                  if (dataset.thumbnail == null && dataset.path != null) {
-                    await _notifier.getThumbnailAt(
-                      index,
-                      dataset: dataset,
-                      isReviewedDatasets: false,
-                    );
-                  }
                 },
                 onLongPress: () => _notifier.onSelectedDataset(index),
                 action: _buildMenu(index, dataset.path),
@@ -258,7 +262,6 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                 index,
                 isReviewedDatasets: false,
               );
-              await _notifier.needReviewRefreshKey.currentState?.show();
             },
             child: const Text('Delete from device'),
           ),

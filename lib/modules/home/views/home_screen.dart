@@ -36,10 +36,9 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  late final AuthDeviceNotifier _authDeviceNotifier;
-  late final DatasetsNotifier _datasetsNotifier;
-
   final _tabsRouterCompleter = Completer<TabsRouter>();
+
+  late final GlobalKey<RefreshIndicatorState> _needReviewRefreshKey;
 
   var _currentPage = 0;
 
@@ -79,8 +78,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _onRecordPressed() async {
-    final connectedDevice = _authDeviceNotifier.bluetoothDevice;
-    if (connectedDevice == null) {
+    final currentBluetoothDevice =
+        ref.read(authDeviceProvider).currentBluetoothDevice;
+    final currentServices = ref.read(authDeviceProvider).currentServices;
+
+    if (currentBluetoothDevice == null || currentServices == null) {
       showSnackbar(context, 'No connected device found');
       final tabRouter = await _tabsRouterCompleter.future;
       tabRouter.setActiveIndex(HomeScreenNavigation.savedDevice.index);
@@ -88,10 +90,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
     await context.router.push(
       RecordRoute(
-        device: connectedDevice,
-        services: _authDeviceNotifier.services!,
+        device: currentBluetoothDevice,
+        services: currentServices,
         onRecordSuccess: () {
-          _datasetsNotifier.needReviewRefreshKey.currentState?.show();
+          _needReviewRefreshKey.currentState?.show();
         },
       ),
     );
@@ -99,8 +101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void initState() {
-    _authDeviceNotifier = ref.read(authDeviceProvider.notifier);
-    _datasetsNotifier = ref.read(datasetsProvider.notifier);
+    _needReviewRefreshKey = ref.read(datasetsProvider).needReviewRefreshKey;
 
     _tabsRouterCompleter.future.then((value) {
       value.addListener(() {
