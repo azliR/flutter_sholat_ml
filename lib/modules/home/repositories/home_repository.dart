@@ -28,14 +28,14 @@ class HomeRepository {
   final _storage = FirebaseStorage.instance;
 
   Future<(Failure?, List<Dataset>?)> getCloudDatasets(
-    int start,
+    DateTime startAfter,
     int limit,
   ) async {
     try {
       final query = _firestore
           .collection('datasets')
-          .orderBy('created_at')
-          .startAt([start])
+          .orderBy('created_at', descending: true)
+          .startAfter([startAfter])
           .limit(limit)
           .withConverter(
             fromFirestore: (snapshot, options) {
@@ -267,12 +267,10 @@ class HomeRepository {
 
       final tempDir = await getTemporaryDirectory();
 
-      const fileName = 'sholat-ml-dataset';
-      const fileExtension = '.shd';
-      var archiveFile = tempDir.file(fileName + fileExtension);
-      for (var i = 0; archiveFile.existsSync(); i++) {
-        archiveFile = File('$fileName (${i + 1})$fileExtension');
-      }
+      const fileName = 'sholat-ml-dataset.shd';
+      final archiveFile = tempDir.file(fileName);
+
+      if (archiveFile.existsSync()) await archiveFile.delete();
 
       var totalSize = 0;
 
@@ -474,10 +472,7 @@ class HomeRepository {
               ).copyWith(id: datasetOutputDirName),
             );
 
-        LocalDatasetStorageService.putDataset(
-          datasetOutputDirName,
-          datasetProp,
-        );
+        LocalDatasetStorageService.putDataset(datasetProp);
       }
 
       return (null, null);

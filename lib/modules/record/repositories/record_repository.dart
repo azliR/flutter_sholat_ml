@@ -193,7 +193,7 @@ class RecordRepository {
       );
       if (writeDatasetFailure != null) return (writeDatasetFailure, null);
 
-      LocalDatasetStorageService.putDataset(dirName, datasetProp);
+      LocalDatasetStorageService.putDataset(datasetProp);
 
       return (null, null);
     } catch (e, stackTrace) {

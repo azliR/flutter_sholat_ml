@@ -6,37 +6,21 @@ class DatasetsState extends Equatable {
     required this.needReviewDatasets,
     required this.reviewedDatasets,
     required this.selectedDatasetIndexes,
-    required this.needReviewPagingController,
-    required this.reviewedPagingController,
-    required this.needReviewRefreshKey,
-    required this.reviewedRefreshKey,
     required this.presentationState,
   });
 
-  factory DatasetsState.initial() => DatasetsState(
+  factory DatasetsState.initial() => const DatasetsState(
         isLoading: false,
-        needReviewDatasets: const [],
-        reviewedDatasets: const [],
-        selectedDatasetIndexes: const [],
-        needReviewPagingController: PagingController<int, Dataset>(
-          firstPageKey: 0,
-        ),
-        reviewedPagingController: PagingController<int, Dataset>(
-          firstPageKey: 0,
-        ),
-        needReviewRefreshKey: GlobalKey<RefreshIndicatorState>(),
-        reviewedRefreshKey: GlobalKey<RefreshIndicatorState>(),
-        presentationState: const DatasetsInitial(),
+        needReviewDatasets: [],
+        reviewedDatasets: [],
+        selectedDatasetIndexes: [],
+        presentationState: DatasetsInitial(),
       );
 
   final bool isLoading;
   final List<Dataset> needReviewDatasets;
   final List<Dataset> reviewedDatasets;
   final List<int> selectedDatasetIndexes;
-  final PagingController<int, Dataset> needReviewPagingController;
-  final PagingController<int, Dataset> reviewedPagingController;
-  final GlobalKey<RefreshIndicatorState> needReviewRefreshKey;
-  final GlobalKey<RefreshIndicatorState> reviewedRefreshKey;
   final DatasetsPresentationState presentationState;
 
   DatasetsState copyWith({
@@ -52,10 +36,6 @@ class DatasetsState extends Equatable {
       reviewedDatasets: reviewedDatasets ?? this.reviewedDatasets,
       selectedDatasetIndexes:
           selectedDatasetIndexes ?? this.selectedDatasetIndexes,
-      needReviewPagingController: needReviewPagingController,
-      reviewedPagingController: reviewedPagingController,
-      needReviewRefreshKey: needReviewRefreshKey,
-      reviewedRefreshKey: reviewedRefreshKey,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -66,10 +46,6 @@ class DatasetsState extends Equatable {
         needReviewDatasets,
         reviewedDatasets,
         selectedDatasetIndexes,
-        needReviewPagingController,
-        reviewedPagingController,
-        needReviewRefreshKey,
-        reviewedRefreshKey,
         presentationState,
       ];
 }

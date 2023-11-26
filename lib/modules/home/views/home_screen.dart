@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
-import 'package:flutter_sholat_ml/modules/home/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -29,7 +28,12 @@ class AdaptiveScaffoldDestination {
 
 @RoutePage()
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    this.initialNavigation = HomeScreenNavigation.savedDevice,
+    super.key,
+  });
+
+  final HomeScreenNavigation initialNavigation;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -37,17 +41,24 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _tabsRouterCompleter = Completer<TabsRouter>();
-
-  late final GlobalKey<RefreshIndicatorState> _needReviewRefreshKey;
+  final _needReviewRefreshKeyCompleter =
+      Completer<GlobalKey<RefreshIndicatorState>>();
 
   var _currentPage = 0;
 
-  List<PageRouteInfo<void>> get _routes =>
+  List<PageRouteInfo<dynamic>> get _routes =>
       HomeScreenNavigation.values.map((section) {
         return switch (section) {
           HomeScreenNavigation.savedDevice => const SavedDevicesPage(),
-          HomeScreenNavigation.datasets => const DatasetsPage(),
-        };
+          HomeScreenNavigation.datasets => DatasetsPage(
+              onInitialised: (
+                needReviewRefreshKey,
+                reviewedRefreshKey,
+              ) {
+                _needReviewRefreshKeyCompleter.complete(reviewedRefreshKey);
+              },
+            ),
+        } as PageRouteInfo<dynamic>;
       }).toList();
 
   List<AdaptiveScaffoldDestination> get _destinations {
@@ -92,8 +103,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       RecordRoute(
         device: currentBluetoothDevice,
         services: currentServices,
-        onRecordSuccess: () {
-          _needReviewRefreshKey.currentState?.show();
+        onRecordSuccess: () async {
+          if (!_needReviewRefreshKeyCompleter.isCompleted) return;
+          final needReviewRefreshKey =
+              await _needReviewRefreshKeyCompleter.future;
+          await needReviewRefreshKey.currentState?.show();
         },
       ),
     );
@@ -101,15 +115,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void initState() {
-    _needReviewRefreshKey = ref.read(datasetsProvider).needReviewRefreshKey;
-
-    _tabsRouterCompleter.future.then((value) {
-      value.addListener(() {
-        if (!context.mounted) return;
-        setState(() {
-          _currentPage = value.activeIndex;
+    _tabsRouterCompleter.future.then((tabsController) {
+      tabsController
+        ..setActiveIndex(widget.initialNavigation.index)
+        ..addListener(() {
+          if (!context.mounted) return;
+          setState(() {
+            _currentPage = tabsController.activeIndex;
+          });
         });
-      });
     });
     super.initState();
   }

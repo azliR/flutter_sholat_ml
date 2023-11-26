@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -60,14 +59,13 @@ class _DatasetGridTileState extends State<DatasetGridTile>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final createdAt = widget.dataset.property.createdAt;
+    final dataset = widget.dataset;
+    final datasetProp = widget.dataset.property;
+    final createdAt = datasetProp.createdAt;
     final formattedDatasetName =
         DateFormat("EEEE 'at' HH:mm - d MMM yyy").format(createdAt);
-    final datasetVersion = widget.dataset.property.datasetVersion;
-    final datasetVersionName = '${datasetVersion.name}'
-        '${DatasetVersion.values.last == datasetVersion ? ' (latest)' : ''}';
-    final downloaded = widget.dataset.downloaded;
-    final hasEvaluated = widget.dataset.property.hasEvaluated;
+    final downloaded = dataset.downloaded;
+    final hasEvaluated = datasetProp.hasEvaluated;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -96,17 +94,17 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                 child: Stack(
                   alignment: Alignment.topRight,
                   children: [
-                    if (widget.dataset.thumbnail == null)
+                    if (dataset.thumbnail == null)
                       const Center(
                         child: CircularProgressIndicator(),
                       )
-                    else if (widget.dataset.thumbnail!.error != null)
+                    else if (dataset.thumbnail!.error != null)
                       const Center(
                         child: Icon(Symbols.broken_image_rounded),
                       )
                     else
                       Image.file(
-                        File(widget.dataset.thumbnail!.thumbnailPath!),
+                        File(dataset.thumbnail!.thumbnailPath!),
                         errorBuilder: (context, error, stackTrace) {
                           return const Center(
                             child: Icon(Symbols.broken_image_rounded),
@@ -154,46 +152,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
               ],
             ),
             const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Symbols.csv_rounded,
-                    size: 16,
-                    weight: 600,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Dataset $datasetVersionName',
-                      style: textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 4),
-            //   Padding(
-            //     padding: const EdgeInsets.symmetric(horizontal: 8),
-            //     child: Row(
-            //       children: [
-            //         Icon(
-            //           Symbols.cloud_done_rounded,
-            //           size: 16,
-            //           opticalSize: 20,
-            //           color: colorScheme.primary,
-            //         ),
-            //         const SizedBox(width: 6),
-            //         Expanded(
-            //           child: Text('Uploaded', style: textTheme.bodySmall),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-
-            if (widget.labeled && (downloaded != null && !downloaded))
+            if (widget.labeled && (downloaded != null && !downloaded)) ...[
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
@@ -218,27 +177,39 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                   ],
                 ),
               ),
-            if (hasEvaluated)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.check_rounded,
-                      size: 16,
-                      opticalSize: 20,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Has evaluated',
-                        style: textTheme.bodySmall,
+              const SizedBox(height: 6),
+            ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    hasEvaluated
+                        ? Symbols.check_circle_rounded
+                        : Symbols.pending,
+                    size: 16,
+                    opticalSize: 20,
+                    weight: hasEvaluated ? 500 : 400,
+                    color: hasEvaluated
+                        ? colorScheme.primary
+                        : colorScheme.outline,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      hasEvaluated ? 'Has evaluated' : 'Not evaluated',
+                      style: textTheme.bodySmall?.copyWith(
+                        fontWeight:
+                            hasEvaluated ? FontWeight.bold : FontWeight.normal,
+                        color: hasEvaluated
+                            ? colorScheme.primary
+                            : colorScheme.onBackground,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
           ],
         ),
       ),

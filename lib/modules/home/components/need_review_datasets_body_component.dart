@@ -12,11 +12,13 @@ import 'package:material_symbols_icons/symbols.dart';
 
 class NeedReviewDatasetBody extends ConsumerStatefulWidget {
   const NeedReviewDatasetBody({
-    required this.isSelectMode,
+    required this.refreshKey,
+    required this.pagingController,
     super.key,
   });
 
-  final bool isSelectMode;
+  final GlobalKey<RefreshIndicatorState> refreshKey;
+  final PagingController<int, Dataset> pagingController;
 
   @override
   ConsumerState<NeedReviewDatasetBody> createState() =>
@@ -24,39 +26,12 @@ class NeedReviewDatasetBody extends ConsumerStatefulWidget {
 }
 
 class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
-  static const _pageSize = 20;
-
   late final DatasetsNotifier _notifier;
-  late final PagingController<int, Dataset> _pagingController;
-  late final GlobalKey<RefreshIndicatorState> _refreshKey;
-
-  Future<void> _fetchPage(int pageKey) async {
-    final (failure, datasets) =
-        await _notifier.getLocalDatasets(pageKey, _pageSize);
-
-    if (failure != null) {
-      _pagingController.error = failure.error;
-      return;
-    }
-
-    final isLastPage = datasets!.length < _pageSize;
-    if (isLastPage) {
-      _pagingController.appendLastPage(datasets);
-    } else {
-      final nextPageKey = pageKey + datasets.length;
-      _pagingController.appendPage(datasets, nextPageKey);
-    }
-  }
 
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
-    _pagingController = ref.read(datasetsProvider).needReviewPagingController;
-    _refreshKey = ref.read(datasetsProvider).needReviewRefreshKey;
 
-    _pagingController
-      ..removePageRequestListener(_fetchPage)
-      ..addPageRequestListener(_fetchPage);
     super.initState();
   }
 
@@ -66,9 +41,10 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
     final textTheme = Theme.of(context).textTheme;
 
     return RefreshIndicator(
-      key: _refreshKey,
+      key: widget.refreshKey,
       onRefresh: () async {
-        _pagingController.refresh();
+        _notifier.refreshDatasets(isReviewedDataset: false);
+        widget.pagingController.refresh();
         return Future.delayed(const Duration(seconds: 1));
       },
       child: LayoutBuilder(
@@ -77,7 +53,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
             slivers: [
               SliverToBoxAdapter(
                 child: Card(
-                  color: colorScheme.secondaryContainer,
+                  color: colorScheme.errorContainer,
                   shape: const RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(16)),
                   ),
@@ -87,12 +63,16 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                     padding: const EdgeInsets.all(8),
                     child: Row(
                       children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(
+                            Symbols.warning_rounded,
+                            color: colorScheme.error,
+                          ),
+                        ),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
+                            padding: const EdgeInsets.all(8),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -108,10 +88,6 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                               ],
                             ),
                           ),
-                        ),
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Symbols.close_rounded),
                         ),
                       ],
                     ),
@@ -139,7 +115,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
     final aspectRatio = constraints.maxWidth / (crossAxisCount * 200) - 0.1;
 
     return PagedSliverGrid(
-      pagingController: _pagingController,
+      pagingController: widget.pagingController,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         mainAxisSpacing: 12,
@@ -157,7 +133,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                 icon: const Icon(Symbols.upload_rounded),
               ),
               FilledButton.tonalIcon(
-                onPressed: () => _refreshKey.currentState?.show(),
+                onPressed: () => widget.refreshKey.currentState?.show(),
                 label: const Text('Refresh'),
                 icon: const Icon(Symbols.refresh_rounded),
               ),
@@ -169,7 +145,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
             type: IllustrationWidgetType.error,
             actions: [
               FilledButton.tonalIcon(
-                onPressed: () => _refreshKey.currentState?.show(),
+                onPressed: () => widget.refreshKey.currentState?.show(),
                 label: const Text('Refresh'),
                 icon: const Icon(Symbols.refresh_rounded),
               ),
@@ -206,7 +182,13 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                   }
                 },
                 onTap: () async {
-                  if (widget.isSelectMode) {
+                  final isSelectMode = ref.read(
+                    datasetsProvider.select(
+                      (value) => value.selectedDatasetIndexes.isNotEmpty,
+                    ),
+                  );
+
+                  if (isSelectMode) {
                     _notifier.onSelectedDataset(index);
                     return;
                   }

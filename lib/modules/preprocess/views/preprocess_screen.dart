@@ -161,6 +161,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   Future<void> _showSaveDialog() {
     final data = MediaQuery.of(context);
+    final isUploaded = ref.read(preprocessProvider).datasetProp!.isUploaded;
 
     return showModalBottomSheet<void>(
       context: context,
@@ -174,17 +175,26 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
               subtitle: const Text(
                 'Dataset will be saved in the disk only',
               ),
-              leading: const Icon(Symbols.save_rounded),
+              leading: const Icon(Symbols.sd_card_rounded),
               contentPadding: const EdgeInsets.symmetric(horizontal: 24),
               onTap: () {
                 Navigator.pop(context);
                 _notifier.saveDataset(diskOnly: true);
               },
             ),
+            const Divider(height: 8, indent: 16, endIndent: 16),
             ListTile(
-              title: const Text('Upload to the cloud'),
-              subtitle: const Text('Dataset will be uploaded'),
-              leading: const Icon(Symbols.cloud_upload_rounded),
+              title: Text(
+                isUploaded ? 'Sync to the cloud' : 'Upload to the cloud',
+              ),
+              subtitle: Text(
+                isUploaded
+                    ? 'Dataset will be updated'
+                    : 'Dataset will be uploaded',
+              ),
+              leading: isUploaded
+                  ? const Icon(Symbols.sync_rounded)
+                  : const Icon(Symbols.cloud_upload_rounded),
               contentPadding: const EdgeInsets.symmetric(horizontal: 24),
               onTap: () {
                 Navigator.pop(context);
@@ -207,6 +217,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       position: position,
       initialValue: _videoPlayerController.value.playbackSpeed,
       items: [
+        const PopupMenuItem(
+          height: 40,
+          value: 0.1,
+          child: Text('0.1'),
+        ),
         const PopupMenuItem(
           height: 40,
           value: 0.25,
@@ -251,7 +266,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
     if (result != null) {
       await _videoPlayerController.setPlaybackSpeed(result);
-      setState(() {});
+      _notifier.setVideoPlaybackSpeed(result);
     }
   }
 
@@ -268,13 +283,22 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      unawaited(_notifier.initialise(path));
-
+      await _notifier.initialise(path);
       await _videoPlayerController.initialize();
 
       _videoPlayerController.addListener(_videoListener);
 
+      final isCompressed = ref.read(
+        preprocessProvider
+            .select((value) => value.datasetProp?.isCompressed ?? false),
+      );
+
+      if (!isCompressed) {
+        await _showCompressDialog();
+      }
+
       if (!mounted) return;
+
       setState(() {});
     });
     super.initState();
@@ -282,7 +306,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   @override
   void dispose() {
-    _videoPlayerController.removeListener(_videoListener);
+    _videoPlayerController
+      ..removeListener(_videoListener)
+      ..dispose();
     super.dispose();
   }
 
@@ -402,7 +428,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        datasetProp.isSubmitted ? 'Update' : 'Save',
+                        datasetProp.isUploaded ? 'Update' : 'Save',
                       ),
                       const SizedBox(width: 8),
                       const Icon(Symbols.arrow_drop_down_rounded),
@@ -496,12 +522,21 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                                               weight: 300,
                                             ),
                                             const SizedBox(width: 2),
-                                            Text(
-                                              _videoPlayerController
-                                                  .value.playbackSpeed
-                                                  .toStringAsFixed(2)
-                                                  .removeSuffix('0'),
-                                              style: textTheme.bodyMedium,
+                                            Consumer(
+                                              builder: (context, ref, child) {
+                                                final playbackSpeed = ref.watch(
+                                                  preprocessProvider.select(
+                                                    (value) => value
+                                                        .videoPlaybackSpeed,
+                                                  ),
+                                                );
+                                                return Text(
+                                                  playbackSpeed
+                                                      .toStringAsFixed(2)
+                                                      .removeSuffix('0'),
+                                                  style: textTheme.bodyMedium,
+                                                );
+                                              },
                                             ),
                                           ],
                                         ),
@@ -674,9 +709,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           leadingIcon: const Icon(Symbols.movie_rounded),
           onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
           child: Text(
-            datasetProp.isCompressed
-                ? 'Dataset compressed'
-                : 'Compress dataset',
+            datasetProp.isCompressed ? 'Video compressed' : 'Compress video',
           ),
         ),
       ],

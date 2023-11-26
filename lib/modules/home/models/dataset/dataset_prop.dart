@@ -177,7 +177,7 @@ class DatasetProp extends Equatable {
           csvUrl: json['csv_url'] as String?,
           videoUrl: json['video_url'] as String?,
           thumbnailUrl: json['thumbnail_url'] as String?,
-          isSyncedWithCloud: json['is_synced_with_cloud'] as bool,
+          isSyncedWithCloud: true, // default true when fetching from firestore
           isCompressed: json['is_compressed'] as bool,
           hasEvaluated: json['has_evaluated'] as bool,
           deviceLocation:
@@ -216,7 +216,7 @@ class DatasetProp extends Equatable {
   final DatasetPropVersion datasetPropVersion;
   final DateTime createdAt;
 
-  bool get isSubmitted => csvUrl != null && videoUrl != null;
+  bool get isUploaded => csvUrl != null && videoUrl != null;
 
   DatasetProp copyWith({
     String? id,
@@ -269,7 +269,8 @@ class DatasetProp extends Equatable {
     return toJson()
       ..removeWhere(
         (key, value) => key == 'id' || key == 'is_synced_with_cloud',
-      );
+      )
+      ..['created_at'] = Timestamp.fromDate(createdAt);
   }
 
   @override

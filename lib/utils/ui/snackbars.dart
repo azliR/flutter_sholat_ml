@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 
 void showErrorSnackbar(BuildContext context, String message) {
   final colorScheme = Theme.of(context).colorScheme;
+  final textTheme = Theme.of(context).textTheme;
 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message),
+      content: Text(
+        message,
+        style: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onError,
+        ),
+      ),
       backgroundColor: colorScheme.error,
     ),
   );

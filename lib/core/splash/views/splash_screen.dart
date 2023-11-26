@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/modules/device/blocs/auth_device/auth_device_notifier.dart';
+import 'package:flutter_sholat_ml/modules/home/views/home_screen.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -40,7 +41,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> onSuccess() async {
     await context.router.pushAndPopUntil(
-      const DatasetsPage(),
+      HomeRoute(initialNavigation: HomeScreenNavigation.datasets),
       predicate: (_) => false,
     );
   }

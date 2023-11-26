@@ -13,53 +13,35 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class ReviewedDatasetBody extends ConsumerStatefulWidget {
-  const ReviewedDatasetBody({super.key});
+  const ReviewedDatasetBody({
+    required this.pagingController,
+    required this.refreshKey,
+    super.key,
+  });
+
+  final PagingController<int, Dataset> pagingController;
+  final GlobalKey<RefreshIndicatorState> refreshKey;
 
   @override
   ConsumerState<ReviewedDatasetBody> createState() => _ReviewedDatasetState();
 }
 
 class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
-  static const _pageSize = 20;
-
   late final DatasetsNotifier _notifier;
-  late final PagingController<int, Dataset> _pagingController;
-  late final GlobalKey<RefreshIndicatorState> _refreshKey;
-
-  Future<void> _fetchPage(int pageKey) async {
-    final (failure, datasets) =
-        await _notifier.getCloudDatasets(pageKey, _pageSize);
-
-    if (failure != null) {
-      _pagingController.error = failure.error;
-      return;
-    }
-
-    final isLastPage = datasets!.length < _pageSize;
-    if (isLastPage) {
-      _pagingController.appendLastPage(datasets);
-    } else {
-      final nextPageKey = pageKey + datasets.length;
-      _pagingController.appendPage(datasets, nextPageKey);
-    }
-  }
 
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
-    _pagingController = ref.read(datasetsProvider).reviewedPagingController;
-    _refreshKey = ref.read(datasetsProvider).reviewedRefreshKey;
-
-    _pagingController.addPageRequestListener(_fetchPage);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      key: _refreshKey,
+      key: widget.refreshKey,
       onRefresh: () async {
-        _pagingController.refresh();
+        _notifier.refreshDatasets(isReviewedDataset: true);
+        widget.pagingController.refresh();
         return Future.delayed(const Duration(seconds: 1));
       },
       child: LayoutBuilder(
@@ -69,7 +51,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
               constraints.maxWidth / (crossAxisCount * 200) - 0.16;
 
           return PagedGridView(
-            pagingController: _pagingController,
+            pagingController: widget.pagingController,
             padding: const EdgeInsets.fromLTRB(
               16,
               16,
@@ -88,7 +70,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                   type: IllustrationWidgetType.noData,
                   actions: [
                     FilledButton.tonalIcon(
-                      onPressed: () => _refreshKey.currentState?.show(),
+                      onPressed: () => widget.refreshKey.currentState?.show(),
                       label: const Text('Refresh'),
                       icon: const Icon(Symbols.refresh_rounded),
                     ),
@@ -100,7 +82,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                   type: IllustrationWidgetType.error,
                   actions: [
                     FilledButton.tonalIcon(
-                      onPressed: () => _refreshKey.currentState?.show(),
+                      onPressed: () => widget.refreshKey.currentState?.show(),
                       label: const Text('Refresh'),
                       icon: const Icon(Symbols.refresh_rounded),
                     ),

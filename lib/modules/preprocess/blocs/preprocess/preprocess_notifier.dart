@@ -70,6 +70,10 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     state = state.copyWith(currentHighlightedIndex: index);
   }
 
+  void setVideoPlaybackSpeed(double playbackSpeed) {
+    state = state.copyWith(videoPlaybackSpeed: playbackSpeed);
+  }
+
   void setSelectedDataset(int index) {
     final datasets = state.dataItems;
     final selectedDatItems = state.selectedDataItems;
@@ -219,6 +223,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
     final datasetProp = state.datasetProp!.copyWith(
       isCompressed: true,
+      isSyncedWithCloud: false,
     );
 
     final (writePropFailure, updatedDatasetProp) =
@@ -232,6 +237,8 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       );
       return;
     }
+
+    _preprocessRepository.saveDatasetToLocal(updatedDatasetProp!);
 
     state = state.copyWith(
       datasetProp: updatedDatasetProp,
@@ -260,6 +267,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     state = state.copyWith(
       path: newPath,
       datasetProp: datasetProp,
+      isEdited: false,
       presentationState: const SaveDatasetSuccessState(),
     );
   }

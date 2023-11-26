@@ -55,9 +55,14 @@ abstract class $AppRouter extends _i10.RootStackRouter {
       );
     },
     DatasetsPage.name: (routeData) {
+      final args = routeData.argsAs<DatasetsPageArgs>(
+          orElse: () => const DatasetsPageArgs());
       return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i3.DatasetsPage(),
+        child: _i3.DatasetsPage(
+          onInitialised: args.onInitialised,
+          key: args.key,
+        ),
       );
     },
     DiscoverDeviceRoute.name: (routeData) {
@@ -67,9 +72,14 @@ abstract class $AppRouter extends _i10.RootStackRouter {
       );
     },
     HomeRoute.name: (routeData) {
+      final args =
+          routeData.argsAs<HomeRouteArgs>(orElse: () => const HomeRouteArgs());
       return _i10.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i5.HomeScreen(),
+        child: _i5.HomeScreen(
+          initialNavigation: args.initialNavigation,
+          key: args.key,
+        ),
       );
     },
     PreprocessRoute.name: (routeData) {
@@ -198,16 +208,46 @@ class AuthWithXiaomiAccountRouteArgs {
 
 /// generated route for
 /// [_i3.DatasetsPage]
-class DatasetsPage extends _i10.PageRouteInfo<void> {
-  const DatasetsPage({List<_i10.PageRouteInfo>? children})
-      : super(
+class DatasetsPage extends _i10.PageRouteInfo<DatasetsPageArgs> {
+  DatasetsPage({
+    void Function(
+      _i12.GlobalKey<_i12.RefreshIndicatorState>,
+      _i12.GlobalKey<_i12.RefreshIndicatorState>,
+    )? onInitialised,
+    _i12.Key? key,
+    List<_i10.PageRouteInfo>? children,
+  }) : super(
           DatasetsPage.name,
+          args: DatasetsPageArgs(
+            onInitialised: onInitialised,
+            key: key,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'DatasetsPage';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
+  static const _i10.PageInfo<DatasetsPageArgs> page =
+      _i10.PageInfo<DatasetsPageArgs>(name);
+}
+
+class DatasetsPageArgs {
+  const DatasetsPageArgs({
+    this.onInitialised,
+    this.key,
+  });
+
+  final void Function(
+    _i12.GlobalKey<_i12.RefreshIndicatorState>,
+    _i12.GlobalKey<_i12.RefreshIndicatorState>,
+  )? onInitialised;
+
+  final _i12.Key? key;
+
+  @override
+  String toString() {
+    return 'DatasetsPageArgs{onInitialised: $onInitialised, key: $key}';
+  }
 }
 
 /// generated route for
@@ -226,16 +266,41 @@ class DiscoverDeviceRoute extends _i10.PageRouteInfo<void> {
 
 /// generated route for
 /// [_i5.HomeScreen]
-class HomeRoute extends _i10.PageRouteInfo<void> {
-  const HomeRoute({List<_i10.PageRouteInfo>? children})
-      : super(
+class HomeRoute extends _i10.PageRouteInfo<HomeRouteArgs> {
+  HomeRoute({
+    _i5.HomeScreenNavigation initialNavigation =
+        _i5.HomeScreenNavigation.savedDevice,
+    _i12.Key? key,
+    List<_i10.PageRouteInfo>? children,
+  }) : super(
           HomeRoute.name,
+          args: HomeRouteArgs(
+            initialNavigation: initialNavigation,
+            key: key,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'HomeRoute';
 
-  static const _i10.PageInfo<void> page = _i10.PageInfo<void>(name);
+  static const _i10.PageInfo<HomeRouteArgs> page =
+      _i10.PageInfo<HomeRouteArgs>(name);
+}
+
+class HomeRouteArgs {
+  const HomeRouteArgs({
+    this.initialNavigation = _i5.HomeScreenNavigation.savedDevice,
+    this.key,
+  });
+
+  final _i5.HomeScreenNavigation initialNavigation;
+
+  final _i12.Key? key;
+
+  @override
+  String toString() {
+    return 'HomeRouteArgs{initialNavigation: $initialNavigation, key: $key}';
+  }
 }
 
 /// generated route for

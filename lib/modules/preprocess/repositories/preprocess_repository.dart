@@ -163,7 +163,6 @@ class PreprocessRepository {
       const datasetCsvPath = Paths.datasetCsv;
       const datasetVideoPath = Paths.datasetVideo;
       const datasetThumbnailPath = Paths.datasetThumbnail;
-      const datasetPropPath = Paths.datasetProp;
 
       final csvFile = File('$path/$datasetCsvPath');
       await csvFile.writeAsString(datasetStr);
@@ -174,15 +173,21 @@ class PreprocessRepository {
           datasetPropVersion: DatasetPropVersion.values.last,
           datasetVersion: DatasetVersion.values.last,
         );
-        final datasetPropFile = File('$path/$datasetPropPath');
-        await datasetPropFile
-            .writeAsString(jsonEncode(updatedDatasetProp.toJson()));
+        final (writeDatasetPropFailure, _) = await writeDatasetProp(
+          datasetPath: path,
+          datasetProp: updatedDatasetProp,
+        );
+        if (writeDatasetPropFailure != null) {
+          return (writeDatasetPropFailure, null, null);
+        }
+
+        saveDatasetToLocal(updatedDatasetProp);
 
         return (null, path, updatedDatasetProp);
       }
 
       final (saveDatasetFailure, updatedDatasetProp) =
-          await saveDatasetToDatabase(
+          await _saveDatasetToDatabase(
         csvFile: csvFile,
         videoFile: File('$path/$datasetVideoPath'),
         thumbnailFile: File('$path/$datasetThumbnailPath'),
@@ -244,20 +249,41 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, DatasetProp?)> saveDatasetToDatabase({
+  void saveDatasetToLocal(
+    DatasetProp datasetProp,
+  ) {
+    LocalDatasetStorageService.putDataset(datasetProp);
+  }
+
+  Future<(Failure?, DatasetProp?)> _saveDatasetToDatabase({
     required File csvFile,
     required File videoFile,
     required File thumbnailFile,
     required DatasetProp datasetProp,
   }) async {
     final ref = _firestore.collection('datasets');
-    final docRef = ref.doc(datasetProp.isSubmitted ? datasetProp.id : null);
+    final docRef = ref.doc(datasetProp.isUploaded ? datasetProp.id : null);
     try {
-      final (failure, updatedDatasetProp) = await uploadDataset(
+      final bool forceReupload;
+      if (datasetProp.isUploaded) {
+        final doc = await docRef.get();
+        final oldDatasetProp =
+            DatasetProp.fromFirestoreJson(doc.data()!, datasetProp.id);
+        if (oldDatasetProp.isCompressed != datasetProp.isCompressed) {
+          forceReupload = true;
+        } else {
+          forceReupload = false;
+        }
+      } else {
+        forceReupload = false;
+      }
+
+      final (failure, updatedDatasetProp) = await _uploadDataset(
         datasetProp: datasetProp.copyWith(id: docRef.id),
         csvFile: csvFile,
         videoFile: videoFile,
         thumbnailFile: thumbnailFile,
+        forceReupload: forceReupload,
       );
       if (failure != null) throw Exception(failure.message);
 
@@ -268,7 +294,7 @@ class PreprocessRepository {
 
       return (null, updatedDatasetProp);
     } catch (e, stackTrace) {
-      if (!datasetProp.isSubmitted) {
+      if (!datasetProp.isUploaded) {
         log('Deleting uploaded dataset...');
         final (deleteFailure, _) = await deleteDatasetFromCloud(docRef.id);
         if (deleteFailure != null) return (deleteFailure, null);
@@ -279,11 +305,12 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, DatasetProp?)> uploadDataset({
+  Future<(Failure?, DatasetProp?)> _uploadDataset({
     required DatasetProp datasetProp,
     required File csvFile,
     required File videoFile,
     required File thumbnailFile,
+    bool forceReupload = false,
   }) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
@@ -304,13 +331,13 @@ class PreprocessRepository {
           },
         ),
       );
-      if (datasetProp.isSubmitted || datasetProp.videoUrl == null) {
+      if (forceReupload || datasetProp.videoUrl == null) {
         await datasetVideoRef.putFile(
           videoFile,
           SettableMetadata(contentType: 'video/mp4'),
         );
       }
-      if (datasetProp.isSubmitted || datasetProp.thumbnailUrl == null) {
+      if (forceReupload || datasetProp.thumbnailUrl == null) {
         await datasetThumbnailRef.putFile(
           thumbnailFile,
           SettableMetadata(contentType: 'image/webp'),
@@ -328,7 +355,7 @@ class PreprocessRepository {
 
       return (null, updatedDatasetProp);
     } catch (e, stackTrace) {
-      if (!datasetProp.isSubmitted) {
+      if (!datasetProp.isUploaded) {
         log('Deleting uploaded dataset...');
         final (deleteFailure, _) = await deleteDatasetFromCloud(datasetProp.id);
         if (deleteFailure != null) return (deleteFailure, null);

@@ -9,33 +9,19 @@ enum SholatNoiseMovement {
     return SholatNoiseMovement.values.firstWhere((e) => e.value == value);
   }
 
-  String get name {
-    switch (this) {
-      case SholatNoiseMovement.menggaruk:
-        return 'Menggaruk';
-      case SholatNoiseMovement.menahanRambut:
-        return 'Menahan Rambut';
-      case SholatNoiseMovement.menahanPakaian:
-        return 'Menahan Pakaian';
-      case SholatNoiseMovement.menyelangJari:
-        return 'Menyelang Jari';
-      case SholatNoiseMovement.berdiriTidakStabil:
-        return 'Berdiri Tidak Stabil';
-    }
-  }
+  String get name => switch (this) {
+        SholatNoiseMovement.menggaruk => 'Menggaruk',
+        SholatNoiseMovement.menahanRambut => 'Menahan Rambut',
+        SholatNoiseMovement.menahanPakaian => 'Menahan Pakaian',
+        SholatNoiseMovement.menyelangJari => 'Menyelang Jari',
+        SholatNoiseMovement.berdiriTidakStabil => 'Berdiri Tidak Stabil',
+      };
 
-  String? get value {
-    switch (this) {
-      case SholatNoiseMovement.menggaruk:
-        return 'menggaruk';
-      case SholatNoiseMovement.menahanRambut:
-        return 'menahan_rambut';
-      case SholatNoiseMovement.menahanPakaian:
-        return 'menahan_pakaian';
-      case SholatNoiseMovement.menyelangJari:
-        return 'menyelang_jari';
-      case SholatNoiseMovement.berdiriTidakStabil:
-        return 'berdiri_tidak_stabil';
-    }
-  }
+  String? get value => switch (this) {
+        SholatNoiseMovement.menggaruk => 'menggaruk',
+        SholatNoiseMovement.menahanRambut => 'menahan_rambut',
+        SholatNoiseMovement.menahanPakaian => 'menahan_pakaian',
+        SholatNoiseMovement.menyelangJari => 'menyelang_jari',
+        SholatNoiseMovement.berdiriTidakStabil => 'berdiri_tidak_stabil',
+      };
 }

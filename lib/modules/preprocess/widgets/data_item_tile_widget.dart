@@ -53,7 +53,6 @@ class DataItemTile extends StatelessWidget {
     } else if (dataItem.isLabeled) {
       final category = dataItem.labelCategory!;
       final iconPath = switch (category) {
-        SholatMovementCategory.persiapan => AssetImages.persiapan,
         SholatMovementCategory.takbir => AssetImages.takbir,
         SholatMovementCategory.berdiri => AssetImages.berdiri,
         SholatMovementCategory.ruku => AssetImages.ruku,
@@ -61,7 +60,7 @@ class DataItemTile extends StatelessWidget {
         SholatMovementCategory.qunut => AssetImages.qunut,
         SholatMovementCategory.sujud => AssetImages.sujud,
         SholatMovementCategory.duduk => AssetImages.duduk,
-        SholatMovementCategory.lainnya => AssetImages.persiapan,
+        SholatMovementCategory.transisi => AssetImages.transisi,
       };
       icon = SvgPicture.asset(
         iconPath,

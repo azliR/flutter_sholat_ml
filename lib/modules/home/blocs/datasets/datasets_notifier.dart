@@ -10,7 +10,6 @@ import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_thumbnail.
 import 'package:flutter_sholat_ml/modules/home/repositories/home_repository.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 
 part 'datasets_state.dart';
 
@@ -35,8 +34,6 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
     ref.onDispose(() {
       _downloadSubscription?.cancel();
       _exportSubscription?.cancel();
-      state.needReviewPagingController.dispose();
-      state.reviewedPagingController.dispose();
     });
 
     return DatasetsState.initial();
@@ -46,13 +43,17 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
     int start,
     int limit,
   ) async {
+    final oldDatasets = state.reviewedDatasets;
+    final startAfter = oldDatasets.isEmpty
+        ? DateTime.now()
+        : oldDatasets[start - 1].property.createdAt;
     final (failure, datasets) =
-        await _homeRepository.getCloudDatasets(start, limit);
+        await _homeRepository.getCloudDatasets(startAfter, limit);
     if (failure != null) {
       return (failure, null);
     }
     state = state.copyWith(
-      reviewedDatasets: datasets,
+      reviewedDatasets: [...state.reviewedDatasets, ...datasets!],
     );
     return (null, datasets);
   }
@@ -67,9 +68,16 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
       return (failure, null);
     }
     state = state.copyWith(
-      needReviewDatasets: datasets,
+      needReviewDatasets: [...state.needReviewDatasets, ...datasets!],
     );
     return (null, datasets);
+  }
+
+  void refreshDatasets({required bool isReviewedDataset}) {
+    state = state.copyWith(
+      needReviewDatasets: isReviewedDataset ? null : const [],
+      reviewedDatasets: !isReviewedDataset ? null : const [],
+    );
   }
 
   Future<void> refreshDatasetStatusAt(
@@ -89,7 +97,7 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
       return;
     }
 
-    final isReviewed = dataset.property.isSubmitted;
+    final isReviewed = dataset.property.isUploaded;
     final datasets = [
       ...isReviewed ? state.reviewedDatasets : state.needReviewDatasets,
     ];
@@ -210,8 +218,11 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
           );
 
     final datasets = [
-      ...isReviewedDatasets ? state.reviewedDatasets : state.needReviewDatasets,
+      ...(isReviewedDatasets
+          ? state.reviewedDatasets
+          : state.needReviewDatasets),
     ];
+
     datasets[index] = dataset.copyWith(
       thumbnail: thumbnail,
     );

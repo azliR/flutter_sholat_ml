@@ -6,21 +6,13 @@ enum DeviceLocation {
     return DeviceLocation.values.firstWhere((e) => e.value == value);
   }
 
-  String get name {
-    switch (this) {
-      case DeviceLocation.leftWrist:
-        return 'Left wrist';
-      case DeviceLocation.rightWrist:
-        return 'Right wrist';
-    }
-  }
+  String get name => switch (this) {
+        DeviceLocation.leftWrist => 'Left wrist',
+        DeviceLocation.rightWrist => 'Right wrist',
+      };
 
-  String get value {
-    switch (this) {
-      case DeviceLocation.leftWrist:
-        return 'left_wrist';
-      case DeviceLocation.rightWrist:
-        return 'right_wrist';
-    }
-  }
+  String get value => switch (this) {
+        DeviceLocation.leftWrist => 'left_wrist',
+        DeviceLocation.rightWrist => 'right_wrist',
+      };
 }

@@ -48,6 +48,9 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
           builder: (context, ref, child) {
             final selectedCategory = ref.watch(categoryProvider);
             final movement = ref.watch(movementProvider);
+            final movements = selectedCategory != null
+                ? SholatMovement.getByCategory(selectedCategory)
+                : <SholatMovement>[];
 
             return Dialog(
               child: Padding(
@@ -69,8 +72,13 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                           ref.read(categoryProvider.notifier).update(
                                 (state) => value,
                               );
+
+                          final movements =
+                              SholatMovement.getByCategory(value!);
                           ref.read(movementProvider.notifier).update(
-                                (state) => null,
+                                (state) => movements.length == 1
+                                    ? movements.first
+                                    : null,
                               );
                         }
                       },
@@ -81,8 +89,6 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                             value: category,
                             leadingIcon: SvgPicture.asset(
                               switch (category) {
-                                SholatMovementCategory.persiapan =>
-                                  AssetImages.persiapan,
                                 SholatMovementCategory.takbir =>
                                   AssetImages.takbir,
                                 SholatMovementCategory.berdiri =>
@@ -96,8 +102,8 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                                   AssetImages.sujud,
                                 SholatMovementCategory.duduk =>
                                   AssetImages.duduk,
-                                SholatMovementCategory.lainnya =>
-                                  AssetImages.persiapan,
+                                SholatMovementCategory.transisi =>
+                                  AssetImages.transisi,
                               },
                               width: 24,
                               height: 24,
@@ -110,7 +116,8 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                         },
                       ).toList(),
                     ),
-                    if (selectedCategory != null) ...[
+                    if (selectedCategory != null &&
+                        (movements.isNotEmpty && movements.length != 1)) ...[
                       const SizedBox(height: 16),
                       DropdownMenu<SholatMovement>(
                         expandedInsets: EdgeInsets.zero,
@@ -121,8 +128,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                         onSelected: (value) => ref
                             .read(movementProvider.notifier)
                             .update((state) => value),
-                        dropdownMenuEntries:
-                            SholatMovement.getByCategory(selectedCategory).map(
+                        dropdownMenuEntries: movements.map(
                           (movement) {
                             return DropdownMenuEntry(
                               value: movement,

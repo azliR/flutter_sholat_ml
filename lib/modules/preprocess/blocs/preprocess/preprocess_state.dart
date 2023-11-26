@@ -7,6 +7,7 @@ class PreprocessState extends Equatable {
     required this.datasetProp,
     required this.lastSelectedIndex,
     required this.currentHighlightedIndex,
+    required this.videoPlaybackSpeed,
     required this.isJumpSelectMode,
     required this.isFollowHighlightedMode,
     required this.isPlaying,
@@ -18,6 +19,7 @@ class PreprocessState extends Equatable {
 
   factory PreprocessState.initial() => const PreprocessState(
         path: '',
+        videoPlaybackSpeed: 1,
         datasetProp: null,
         lastSelectedIndex: 0,
         currentHighlightedIndex: 0,
@@ -34,6 +36,7 @@ class PreprocessState extends Equatable {
   final DatasetProp? datasetProp;
   final int currentHighlightedIndex;
   final int? lastSelectedIndex;
+  final double videoPlaybackSpeed;
   final bool isJumpSelectMode;
   final bool isFollowHighlightedMode;
   final bool isPlaying;
@@ -47,6 +50,7 @@ class PreprocessState extends Equatable {
     DatasetProp? datasetProp,
     int? currentHighlightedIndex,
     ValueGetter<int?>? lastSelectedIndex,
+    double? videoPlaybackSpeed,
     bool? isJumpSelectMode,
     bool? isFollowHighlightedMode,
     bool? isPlaying,
@@ -63,6 +67,7 @@ class PreprocessState extends Equatable {
       lastSelectedIndex: lastSelectedIndex != null
           ? lastSelectedIndex()
           : this.lastSelectedIndex,
+      videoPlaybackSpeed: videoPlaybackSpeed ?? this.videoPlaybackSpeed,
       isJumpSelectMode: isJumpSelectMode ?? this.isJumpSelectMode,
       isFollowHighlightedMode:
           isFollowHighlightedMode ?? this.isFollowHighlightedMode,
@@ -77,6 +82,7 @@ class PreprocessState extends Equatable {
   @override
   List<Object?> get props => [
         path,
+        videoPlaybackSpeed,
         datasetProp,
         lastSelectedIndex,
         currentHighlightedIndex,

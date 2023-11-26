@@ -1,24 +1,25 @@
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 
 enum SholatMovement {
-  persiapan,
   takbiratulihram,
-  berdiri,
-  berdiriDariSujudTanpaDudukTanpaTakbir,
-  berdiriDariSujudTanpaDudukDenganTakbir,
-  berdiriDariSujudDenganDudukTanpaTakbir,
-  berdiriDariSujudDenganDudukDenganTakbir,
-  rukuTanpaTakbir,
-  rukuDenganTakbir,
-  iktidalTanpaBersedekap,
+  bersedekap,
+  ruku,
   iktidalBersedekap,
+  iktidalTanpaBersedekap,
   qunut,
   qunutMembalikkanTangan,
-  sujudDariBerdiri,
-  sujudDariDuduk,
+  sujud,
   dudukAntaraDuaSujud,
-  dudukTasyahud,
-  lainnya;
+  dudukIstirohah,
+  dudukTasyahudAwal,
+  dudukTasyahudAkhir,
+  transisiBersedekapKeRuku,
+  transisiRukuKeIktidal,
+  transisiIktidalKeSujud,
+  transisiSujudKeDuduk,
+  transisiDudukKeSujud,
+  transisiSujudKeBersedekap,
+  transisiDudukKeBersedekap;
 
   factory SholatMovement.fromValue(String value) {
     return SholatMovement.values.firstWhere((e) => e.value == value);
@@ -26,31 +27,22 @@ enum SholatMovement {
 
   static List<SholatMovement> getByCategory(SholatMovementCategory category) {
     switch (category) {
-      case SholatMovementCategory.persiapan:
-        return [
-          SholatMovement.persiapan,
-        ];
       case SholatMovementCategory.takbir:
         return [
           SholatMovement.takbiratulihram,
         ];
       case SholatMovementCategory.berdiri:
         return [
-          SholatMovement.berdiri,
-          SholatMovement.berdiriDariSujudTanpaDudukTanpaTakbir,
-          SholatMovement.berdiriDariSujudTanpaDudukDenganTakbir,
-          SholatMovement.berdiriDariSujudDenganDudukTanpaTakbir,
-          SholatMovement.berdiriDariSujudDenganDudukDenganTakbir,
+          SholatMovement.bersedekap,
         ];
       case SholatMovementCategory.ruku:
         return [
-          SholatMovement.rukuTanpaTakbir,
-          SholatMovement.rukuDenganTakbir,
+          SholatMovement.ruku,
         ];
       case SholatMovementCategory.iktidal:
         return [
-          SholatMovement.iktidalTanpaBersedekap,
           SholatMovement.iktidalBersedekap,
+          SholatMovement.iktidalTanpaBersedekap,
         ];
       case SholatMovementCategory.qunut:
         return [
@@ -59,100 +51,75 @@ enum SholatMovement {
         ];
       case SholatMovementCategory.sujud:
         return [
-          SholatMovement.sujudDariBerdiri,
-          SholatMovement.sujudDariDuduk,
+          SholatMovement.sujud,
         ];
       case SholatMovementCategory.duduk:
         return [
           SholatMovement.dudukAntaraDuaSujud,
-          SholatMovement.dudukTasyahud,
+          SholatMovement.dudukIstirohah,
+          SholatMovement.dudukTasyahudAwal,
+          SholatMovement.dudukTasyahudAkhir,
         ];
-      case SholatMovementCategory.lainnya:
+      case SholatMovementCategory.transisi:
         return [
-          SholatMovement.lainnya,
+          SholatMovement.transisiBersedekapKeRuku,
+          SholatMovement.transisiRukuKeIktidal,
+          SholatMovement.transisiIktidalKeSujud,
+          SholatMovement.transisiSujudKeDuduk,
+          SholatMovement.transisiDudukKeSujud,
+          SholatMovement.transisiSujudKeBersedekap,
+          SholatMovement.transisiDudukKeBersedekap,
         ];
     }
   }
 
-  String get name {
-    switch (this) {
-      case SholatMovement.persiapan:
-        return 'Persiapan';
-      case SholatMovement.takbiratulihram:
-        return 'Takbiratul Ihram';
-      case SholatMovement.berdiri:
-        return 'Berdiri';
-      case SholatMovement.berdiriDariSujudTanpaDudukTanpaTakbir:
-        return 'Berdiri dari Sujud tanpa Duduk tanpa Takbir';
-      case SholatMovement.berdiriDariSujudTanpaDudukDenganTakbir:
-        return 'Berdiri dari Sujud tanpa Duduk dengan Takbir';
-      case SholatMovement.berdiriDariSujudDenganDudukTanpaTakbir:
-        return 'Berdiri dari Sujud dengan Duduk tanpa Takbir';
-      case SholatMovement.berdiriDariSujudDenganDudukDenganTakbir:
-        return 'Berdiri dari Sujud dengan Duduk dengan Takbir';
-      case SholatMovement.rukuTanpaTakbir:
-        return 'Ruku tanpa Takbir';
-      case SholatMovement.rukuDenganTakbir:
-        return 'Ruku dengan Takbir';
-      case SholatMovement.iktidalTanpaBersedekap:
-        return 'Iktidal tanpa Bersedekap';
-      case SholatMovement.iktidalBersedekap:
-        return 'Iktidal Bersedekap';
-      case SholatMovement.qunut:
-        return 'Qunut';
-      case SholatMovement.qunutMembalikkanTangan:
-        return 'Qunut Membalikkan Tangan';
-      case SholatMovement.sujudDariBerdiri:
-        return 'Sujud dari Berdiri';
-      case SholatMovement.sujudDariDuduk:
-        return 'Sujud dari Duduk';
-      case SholatMovement.dudukAntaraDuaSujud:
-        return 'Duduk antara dua Sujud';
-      case SholatMovement.dudukTasyahud:
-        return 'Duduk Tasyahud';
-      case SholatMovement.lainnya:
-        return 'Lainnya';
-    }
-  }
+  String get name => switch (this) {
+        SholatMovement.takbiratulihram => 'Takbiratulihram',
+        SholatMovement.bersedekap => 'Bersedekap',
+        SholatMovement.ruku => 'Ruku',
+        SholatMovement.iktidalBersedekap => 'Iktidal Bersedekap',
+        SholatMovement.iktidalTanpaBersedekap => 'Iktidal Tanpa Bersedekap',
+        SholatMovement.qunut => 'Qunut',
+        SholatMovement.qunutMembalikkanTangan => 'Qunut Membalikkan Tangan',
+        SholatMovement.sujud => 'Sujud',
+        SholatMovement.dudukAntaraDuaSujud => 'Duduk Antara Dua Sujud',
+        SholatMovement.dudukIstirohah => 'Duduk Istirohah',
+        SholatMovement.dudukTasyahudAwal => 'Duduk Tasyahud Awal',
+        SholatMovement.dudukTasyahudAkhir => 'Duduk Tasyahud Akhir',
+        SholatMovement.transisiBersedekapKeRuku =>
+          'Transisi Bersedekap ke Ruku',
+        SholatMovement.transisiRukuKeIktidal => 'Transisi Ruku ke Iktidal',
+        SholatMovement.transisiIktidalKeSujud => 'Transisi Iktidal ke Sujud',
+        SholatMovement.transisiSujudKeDuduk => 'Transisi Sujud ke Duduk',
+        SholatMovement.transisiDudukKeSujud => 'Transisi Duduk ke Sujud',
+        SholatMovement.transisiSujudKeBersedekap =>
+          'Transisi Sujud ke Bersedekap',
+        SholatMovement.transisiDudukKeBersedekap =>
+          'Transisi Duduk ke Bersedekap',
+      };
 
-  String get value {
-    switch (this) {
-      case SholatMovement.persiapan:
-        return 'persiapan';
-      case SholatMovement.takbiratulihram:
-        return 'takbiratulihram';
-      case SholatMovement.berdiri:
-        return 'berdiri';
-      case SholatMovement.berdiriDariSujudTanpaDudukTanpaTakbir:
-        return 'berdiri_dari_sujud_tanpa_duduk_tanpa_takbir';
-      case SholatMovement.berdiriDariSujudTanpaDudukDenganTakbir:
-        return 'berdiri_dari_sujud_tanpa_duduk_dengan_takbir';
-      case SholatMovement.berdiriDariSujudDenganDudukTanpaTakbir:
-        return 'berdiri_dari_sujud_dengan_duduk_tanpa_takbir';
-      case SholatMovement.berdiriDariSujudDenganDudukDenganTakbir:
-        return 'berdiri_dari_sujud_dengan_duduk_dengan_takbir';
-      case SholatMovement.rukuTanpaTakbir:
-        return 'ruku_tanpa_takbir';
-      case SholatMovement.rukuDenganTakbir:
-        return 'ruku_dengan_takbir';
-      case SholatMovement.iktidalTanpaBersedekap:
-        return 'iktidal_tanpa_bersedekap';
-      case SholatMovement.iktidalBersedekap:
-        return 'iktidal_bersedekap';
-      case SholatMovement.qunut:
-        return 'qunut';
-      case SholatMovement.qunutMembalikkanTangan:
-        return 'qunut_membalikkan_tangan';
-      case SholatMovement.sujudDariBerdiri:
-        return 'sujud_dari_berdiri';
-      case SholatMovement.sujudDariDuduk:
-        return 'sujud_dari_duduk';
-      case SholatMovement.dudukAntaraDuaSujud:
-        return 'duduk_antara_dua_sujud';
-      case SholatMovement.dudukTasyahud:
-        return 'dudu_tasyahud';
-      case SholatMovement.lainnya:
-        return 'lainnya';
-    }
-  }
+  String get value => switch (this) {
+        SholatMovement.takbiratulihram => 'takbiratulihram',
+        SholatMovement.bersedekap => 'bersedekap',
+        SholatMovement.ruku => 'ruku',
+        SholatMovement.iktidalBersedekap => 'iktidal_bersedekap',
+        SholatMovement.iktidalTanpaBersedekap => 'iktidal_tanpa_bersedekap',
+        SholatMovement.qunut => 'qunut',
+        SholatMovement.qunutMembalikkanTangan => 'qunut_membalikkan_tangan',
+        SholatMovement.sujud => 'sujud',
+        SholatMovement.dudukAntaraDuaSujud => 'duduk_antara_dua_sujud',
+        SholatMovement.dudukIstirohah => 'duduk_istirohah',
+        SholatMovement.dudukTasyahudAwal => 'duduk_tasyahud_awal',
+        SholatMovement.dudukTasyahudAkhir => 'duduk_tasyahud_akhir',
+        SholatMovement.transisiBersedekapKeRuku =>
+          'transisi_bersedekap_ke_ruku',
+        SholatMovement.transisiRukuKeIktidal => 'transisi_ruku_ke_iktidal',
+        SholatMovement.transisiIktidalKeSujud => 'transisi_iktidal_ke_sujud',
+        SholatMovement.transisiSujudKeDuduk => 'transisi_sujud_ke_duduk',
+        SholatMovement.transisiDudukKeSujud => 'transisi_duduk_ke_sujud',
+        SholatMovement.transisiSujudKeBersedekap =>
+          'transisi_sujud_ke_bersedekap',
+        SholatMovement.transisiDudukKeBersedekap =>
+          'transisi_duduk_ke_bersedekap',
+      };
 }

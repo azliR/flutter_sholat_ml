@@ -13,11 +13,15 @@ class LocalDatasetStorageService {
     if (_box.length == 0) {
       return [];
     }
-    return _box.getRange(min(start, _box.length), min(end, _box.length));
+    final keys = _box.keys.toList()
+      ..sort((previous, current) => current.compareTo(previous));
+    final keyRange =
+        keys.getRange(min(start, keys.length), min(end, keys.length));
+    return _box.getAll(keyRange).cast<DatasetProp>();
   }
 
-  static void putDataset(String key, DatasetProp dataset) {
-    return _box.put(key, dataset);
+  static void putDataset(DatasetProp datasetProp) {
+    return _box.put(datasetProp.id, datasetProp);
   }
 
   static bool deleteDataset(String key) {

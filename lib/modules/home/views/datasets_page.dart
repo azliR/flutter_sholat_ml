@@ -13,7 +13,12 @@ import 'package:material_symbols_icons/symbols.dart';
 
 @RoutePage()
 class DatasetsPage extends ConsumerStatefulWidget {
-  const DatasetsPage({super.key});
+  const DatasetsPage({this.onInitialised, super.key});
+
+  final void Function(
+    GlobalKey<RefreshIndicatorState> needReviewKey,
+    GlobalKey<RefreshIndicatorState> reviewedKey,
+  )? onInitialised;
 
   @override
   ConsumerState<DatasetsPage> createState() => _DatasetsPageState();
@@ -24,8 +29,14 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
   late final DatasetsNotifier _notifier;
   late final TabController _tabController;
 
-  late final PagingController<int, Dataset> _needReviewPagingController;
-  late final GlobalKey<RefreshIndicatorState> _needReviewRefreshKey;
+  static const _pageSize = 20;
+
+  final _needReviewPagingController =
+      PagingController<int, Dataset>(firstPageKey: 0);
+  final _reviewedPagingController =
+      PagingController<int, Dataset>(firstPageKey: 0);
+  final _needReviewRefreshKey = GlobalKey<RefreshIndicatorState>();
+  final _reviewedRefreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _showDeleteDatasetsDialog({bool isLocalOnly = true}) async {
     final colorScheme = Theme.of(context).colorScheme;
@@ -192,13 +203,50 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     );
   }
 
+  Future<void> _fetchLocalDatasetsPage(int pageKey) async {
+    final (failure, datasets) =
+        await _notifier.getLocalDatasets(pageKey, _pageSize);
+
+    if (failure != null) {
+      _needReviewPagingController.error = failure.error;
+      return;
+    }
+
+    final isLastPage = datasets!.length < _pageSize;
+    if (isLastPage) {
+      _needReviewPagingController.appendLastPage(datasets);
+    } else {
+      final nextPageKey = pageKey + datasets.length;
+      _needReviewPagingController.appendPage(datasets, nextPageKey);
+    }
+  }
+
+  Future<void> _fetchCloudDatasetsPage(int pageKey) async {
+    final (failure, datasets) =
+        await _notifier.getCloudDatasets(pageKey, _pageSize);
+
+    if (failure != null) {
+      _reviewedPagingController.error = failure.error;
+      return;
+    }
+
+    final isLastPage = datasets!.length < _pageSize;
+    if (isLastPage) {
+      _reviewedPagingController.appendLastPage(datasets);
+    } else {
+      final nextPageKey = pageKey + datasets.length;
+      _reviewedPagingController.appendPage(datasets, nextPageKey);
+    }
+  }
+
   @override
   void initState() {
     _notifier = ref.read(datasetsProvider.notifier);
 
-    _needReviewPagingController =
-        ref.read(datasetsProvider).needReviewPagingController;
-    _needReviewRefreshKey = ref.read(datasetsProvider).needReviewRefreshKey;
+    widget.onInitialised?.call(_needReviewRefreshKey, _reviewedRefreshKey);
+
+    _needReviewPagingController.addPageRequestListener(_fetchLocalDatasetsPage);
+    _reviewedPagingController.addPageRequestListener(_fetchCloudDatasetsPage);
 
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
@@ -212,6 +260,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
   @override
   void dispose() {
+    _needReviewPagingController.dispose();
+    _reviewedPagingController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -332,6 +382,18 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
               SliverAppBar.medium(
                 title: const Text('Datasets'),
                 actions: [
+                  IconButton(
+                    tooltip: 'Refresh',
+                    onPressed: () {
+                      switch (_tabController.index) {
+                        case 0:
+                          _needReviewRefreshKey.currentState?.show();
+                        case 1:
+                          _reviewedRefreshKey.currentState?.show();
+                      }
+                    },
+                    icon: const Icon(Symbols.refresh_rounded),
+                  ),
                   if (isSelectMode && _tabController.index == 0) ...[
                     Consumer(
                       builder: (context, ref, child) {
@@ -405,9 +467,13 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             controller: _tabController,
             children: [
               NeedReviewDatasetBody(
-                isSelectMode: isSelectMode,
+                pagingController: _needReviewPagingController,
+                refreshKey: _needReviewRefreshKey,
               ),
-              const ReviewedDatasetBody(),
+              ReviewedDatasetBody(
+                pagingController: _reviewedPagingController,
+                refreshKey: _reviewedRefreshKey,
+              ),
             ],
           ),
         ),

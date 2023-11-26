@@ -27,18 +27,12 @@ enum DatasetVersion {
     return DatasetVersion.values.firstWhere((e) => e.value == value);
   }
 
-  String get name {
-    switch (this) {
-      case DatasetVersion.v1:
-        return 'v1';
-      case DatasetVersion.v2:
-        return 'v2';
-      case DatasetVersion.v3:
-        return 'v3';
-      case DatasetVersion.v4:
-        return 'v4';
-    }
-  }
+  String get name => switch (this) {
+        DatasetVersion.v1 => 'v1',
+        DatasetVersion.v2 => 'v2',
+        DatasetVersion.v3 => 'v3',
+        DatasetVersion.v4 => 'v4',
+      };
 
   String nameWithIsLatest({String latestText = '', String defaultText = ''}) {
     if (this == DatasetVersion.values.last) {
@@ -47,16 +41,10 @@ enum DatasetVersion {
     return name + defaultText;
   }
 
-  int get value {
-    switch (this) {
-      case DatasetVersion.v1:
-        return 1;
-      case DatasetVersion.v2:
-        return 2;
-      case DatasetVersion.v3:
-        return 3;
-      case DatasetVersion.v4:
-        return 4;
-    }
-  }
+  int get value => switch (this) {
+        DatasetVersion.v1 => 1,
+        DatasetVersion.v2 => 2,
+        DatasetVersion.v3 => 3,
+        DatasetVersion.v4 => 4,
+      };
 }
