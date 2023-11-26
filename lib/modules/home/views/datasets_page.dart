@@ -439,12 +439,8 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                   controller: _tabController,
                   isScrollable: data.size.width > 480,
                   tabs: const [
-                    Tab(
-                      child: Text('Local'),
-                    ),
-                    Tab(
-                      child: Text('Uploaded'),
-                    ),
+                    Tab(text: 'Local'),
+                    Tab(text: 'Cloud'),
                   ],
                 ),
               ),

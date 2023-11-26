@@ -75,24 +75,23 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   void setSelectedDataset(int index) {
-    final datasets = state.dataItems;
-    final selectedDatItems = state.selectedDataItems;
-    final dataset = datasets[index];
-    if (selectedDatItems.contains(dataset)) {
+    final selectedDataItemIndexes = state.selectedDataItemIndexes;
+    if (selectedDataItemIndexes.contains(index)) {
       state = state.copyWith(
         lastSelectedIndex: () => index,
-        selectedDataItems: [...selectedDatItems]..remove(dataset),
+        selectedDataItemIndexes: {...selectedDataItemIndexes}..remove(index),
       );
     } else {
       state = state.copyWith(
         lastSelectedIndex: () => index,
-        selectedDataItems: [...selectedDatItems, dataset],
+        selectedDataItemIndexes: {...selectedDataItemIndexes, index},
       );
     }
   }
 
   void clearSelectedDataItems() {
-    state = state.copyWith(selectedDataItems: [], isJumpSelectMode: false);
+    state =
+        state.copyWith(selectedDataItemIndexes: {}, isJumpSelectMode: false);
   }
 
   void setJumpSelectMode({required bool enable}) {
@@ -104,19 +103,27 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   Future<void> jumpSelect(int endIndex) async {
-    final startJumpIndex = state.selectedDataItems.isEmpty
+    final startJumpIndex = state.selectedDataItemIndexes.isEmpty
         ? state.currentHighlightedIndex
         : state.lastSelectedIndex;
     if (startJumpIndex == null) return;
 
-    final selectedDataItems = state.dataItems.sublist(
-      min(startJumpIndex, endIndex),
-      max(startJumpIndex, endIndex + 1),
+    // final selectedDataItems = state.dataItems.sublist(
+    //   min(startJumpIndex, endIndex),
+    //   max(startJumpIndex, endIndex + 1),
+    // );
+
+    final selectedDataItemIndexes = List.generate(
+      (max(startJumpIndex, endIndex + 1) - min(startJumpIndex, endIndex) + 1)
+          .toInt(),
+      (index) => min(startJumpIndex, endIndex) + index,
     );
 
     state = state.copyWith(
-      selectedDataItems:
-          {...state.selectedDataItems, ...selectedDataItems}.toList(),
+      selectedDataItemIndexes: {
+        ...state.selectedDataItemIndexes,
+        ...selectedDataItemIndexes,
+      },
       lastSelectedIndex: () => endIndex,
       isJumpSelectMode: false,
     );
@@ -124,20 +131,24 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
   String setDataItemLabels(
     SholatMovementCategory labelCategory,
-    SholatMovement label,
-  ) {
-    final movementSetId = const Uuid().v4();
+    SholatMovement label, {
+    String? movementCategorySetId,
+    String? movementSetId,
+  }) {
+    movementCategorySetId ??= const Uuid().v4();
+    movementSetId ??= const Uuid().v4();
+
+    final updatedDataItems = [...state.dataItems];
+    for (final index in state.selectedDataItemIndexes) {
+      updatedDataItems[index] = updatedDataItems[index].copyWith(
+        movementSetId: () => movementSetId,
+        labelCategory: () => labelCategory,
+        label: () => label,
+      );
+    }
+
     state = state.copyWith(
-      dataItems: state.dataItems.map((dataset) {
-        if (state.selectedDataItems.contains(dataset)) {
-          return dataset.copyWith(
-            movementSetId: () => movementSetId,
-            labelCategory: () => labelCategory,
-            label: () => label,
-          );
-        }
-        return dataset;
-      }).toList(),
+      dataItems: updatedDataItems,
       isEdited: true,
     );
     clearSelectedDataItems();
@@ -147,15 +158,15 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   void setDataItemNoises(
     SholatNoiseMovement? noiseMovement,
   ) {
+    final updatedDataItems = [...state.dataItems];
+    for (final index in state.selectedDataItemIndexes) {
+      updatedDataItems[index] = updatedDataItems[index].copyWith(
+        noiseMovement: () => noiseMovement,
+      );
+    }
+
     state = state.copyWith(
-      dataItems: state.dataItems.map((dataset) {
-        if (state.selectedDataItems.contains(dataset)) {
-          return dataset.copyWith(
-            noiseMovement: () => noiseMovement,
-          );
-        }
-        return dataset;
-      }).toList(),
+      dataItems: updatedDataItems,
       isEdited: true,
     );
     clearSelectedDataItems();
@@ -163,34 +174,35 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
   void removeDataItemLabels({bool includeSameMovementIds = false}) {
     if (includeSameMovementIds) {
-      final movementIds = state.selectedDataItems
-          .map((dataItem) => dataItem.movementSetId)
+      final movementIds = state.selectedDataItemIndexes
+          .map((index) => state.dataItems[index].movementSetId)
           .toSet()
           .toList();
+      final updatedDataItems = state.dataItems.map((dataset) {
+        if (movementIds.contains(dataset.movementSetId)) {
+          return dataset.copyWith(
+            movementSetId: () => null,
+            labelCategory: () => null,
+            label: () => null,
+          );
+        }
+        return dataset;
+      }).toList();
       state = state.copyWith(
-        dataItems: state.dataItems.map((dataset) {
-          if (movementIds.contains(dataset.movementSetId)) {
-            return dataset.copyWith(
-              movementSetId: () => null,
-              labelCategory: () => null,
-              label: () => null,
-            );
-          }
-          return dataset;
-        }).toList(),
+        dataItems: updatedDataItems,
+        isEdited: true,
       );
     } else {
+      final updatedDataItems = [...state.dataItems];
+      for (final index in state.selectedDataItemIndexes) {
+        updatedDataItems[index] = updatedDataItems[index].copyWith(
+          movementSetId: () => null,
+          labelCategory: () => null,
+          label: () => null,
+        );
+      }
       state = state.copyWith(
-        dataItems: state.dataItems.map((dataset) {
-          if (state.selectedDataItems.contains(dataset)) {
-            return dataset.copyWith(
-              movementSetId: () => null,
-              labelCategory: () => null,
-              label: () => null,
-            );
-          }
-          return dataset;
-        }).toList(),
+        dataItems: updatedDataItems,
         isEdited: true,
       );
     }

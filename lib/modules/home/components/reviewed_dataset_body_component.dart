@@ -50,87 +50,90 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           final aspectRatio =
               constraints.maxWidth / (crossAxisCount * 200) - 0.16;
 
-          return PagedGridView(
-            pagingController: widget.pagingController,
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              16,
-              16,
-              Dimens.bottomListPadding,
-            ),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: aspectRatio,
-            ),
-            builderDelegate: PagedChildBuilderDelegate<Dataset>(
-              noItemsFoundIndicatorBuilder: (context) {
-                return IllustrationWidget(
-                  type: IllustrationWidgetType.noData,
-                  actions: [
-                    FilledButton.tonalIcon(
-                      onPressed: () => widget.refreshKey.currentState?.show(),
-                      label: const Text('Refresh'),
-                      icon: const Icon(Symbols.refresh_rounded),
-                    ),
-                  ],
-                );
-              },
-              firstPageErrorIndicatorBuilder: (context) {
-                return IllustrationWidget(
-                  type: IllustrationWidgetType.error,
-                  actions: [
-                    FilledButton.tonalIcon(
-                      onPressed: () => widget.refreshKey.currentState?.show(),
-                      label: const Text('Refresh'),
-                      icon: const Icon(Symbols.refresh_rounded),
-                    ),
-                  ],
-                );
-              },
-              itemBuilder: (context, rawDataset, index) {
-                return Consumer(
-                  builder: (context, ref, child) {
-                    final dataset = ref.watch(
-                      datasetsProvider.select(
-                        (state) => state.reviewedDatasets.firstWhere(
-                          (dataset) =>
-                              dataset.property.id == rawDataset.property.id,
-                          orElse: () => rawDataset,
-                        ),
+          return Scrollbar(
+            child: PagedGridView(
+              pagingController: widget.pagingController,
+              padding: const EdgeInsets.fromLTRB(
+                16,
+                16,
+                16,
+                Dimens.bottomListPadding,
+              ),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: aspectRatio,
+              ),
+              builderDelegate: PagedChildBuilderDelegate<Dataset>(
+                noItemsFoundIndicatorBuilder: (context) {
+                  return IllustrationWidget(
+                    type: IllustrationWidgetType.noData,
+                    actions: [
+                      FilledButton.tonalIcon(
+                        onPressed: () => widget.refreshKey.currentState?.show(),
+                        label: const Text('Refresh'),
+                        icon: const Icon(Symbols.refresh_rounded),
                       ),
-                    );
+                    ],
+                  );
+                },
+                firstPageErrorIndicatorBuilder: (context) {
+                  return IllustrationWidget(
+                    type: IllustrationWidgetType.error,
+                    actions: [
+                      FilledButton.tonalIcon(
+                        onPressed: () => widget.refreshKey.currentState?.show(),
+                        label: const Text('Refresh'),
+                        icon: const Icon(Symbols.refresh_rounded),
+                      ),
+                    ],
+                  );
+                },
+                itemBuilder: (context, rawDataset, index) {
+                  return Consumer(
+                    builder: (context, ref, child) {
+                      final dataset = ref.watch(
+                        datasetsProvider.select(
+                          (state) => state.reviewedDatasets.firstWhere(
+                            (dataset) =>
+                                dataset.property.id == rawDataset.property.id,
+                            orElse: () => rawDataset,
+                          ),
+                        ),
+                      );
 
-                    return DatasetGridTile(
-                      dataset: dataset,
-                      selected: false,
-                      labeled: true,
-                      onInitialise: () async {
-                        if (dataset.thumbnail == null && dataset.path != null) {
-                          await _notifier.getThumbnailAt(
+                      return DatasetGridTile(
+                        dataset: dataset,
+                        selected: false,
+                        labeled: true,
+                        onInitialise: () async {
+                          if (dataset.thumbnail == null &&
+                              dataset.path != null) {
+                            await _notifier.getThumbnailAt(
+                              index,
+                              dataset: dataset,
+                              isReviewedDatasets: true,
+                            );
+                          }
+                        },
+                        onTap: () async {
+                          if (dataset.downloaded ?? false) {
+                            await context.router
+                                .push(PreprocessRoute(path: dataset.path!));
+                            return;
+                          }
+                          await _notifier.downloadDatasetAt(
                             index,
                             dataset: dataset,
-                            isReviewedDatasets: true,
                           );
-                        }
-                      },
-                      onTap: () async {
-                        if (dataset.downloaded ?? false) {
-                          await context.router
-                              .push(PreprocessRoute(path: dataset.path!));
-                          return;
-                        }
-                        await _notifier.downloadDatasetAt(
-                          index,
-                          dataset: dataset,
-                        );
-                      },
-                      action: _buildMenu(index, dataset),
-                    );
-                  },
-                );
-              },
+                        },
+                        action: _buildMenu(index, dataset),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           );
         },

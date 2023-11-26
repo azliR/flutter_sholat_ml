@@ -49,61 +49,63 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Card(
-                  color: colorScheme.errorContainer,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                  ),
-                  margin: const EdgeInsets.all(8),
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(
-                            Symbols.warning_rounded,
-                            color: colorScheme.error,
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
+          return Scrollbar(
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Card(
+                    color: colorScheme.errorContainer,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                    ),
+                    margin: const EdgeInsets.all(8),
+                    elevation: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Row(
+                        children: [
+                          Padding(
                             padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Be careful!',
-                                  style: textTheme.titleMedium,
-                                ),
-                                const SizedBox(height: 2),
-                                const Text(
-                                  'Dataset that saved in local will deleted when the app uninstalled.',
-                                ),
-                              ],
+                            child: Icon(
+                              Symbols.warning_rounded,
+                              color: colorScheme.error,
                             ),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Be careful!',
+                                    style: textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Dataset that saved in local will deleted when the app uninstalled.',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  16,
-                  16,
-                  Dimens.bottomListPadding,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    16,
+                    16,
+                    16,
+                    Dimens.bottomListPadding,
+                  ),
+                  sliver: _buildGrid(constraints),
                 ),
-                sliver: _buildGrid(constraints),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

@@ -1,3 +1,4 @@
+import 'package:dartx/dartx_io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
@@ -47,7 +48,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
         return Consumer(
           builder: (context, ref, child) {
             final selectedCategory = ref.watch(categoryProvider);
-            final movement = ref.watch(movementProvider);
+            final selectedMovement = ref.watch(movementProvider);
             final movements = selectedCategory != null
                 ? SholatMovement.getByCategory(selectedCategory)
                 : <SholatMovement>[];
@@ -116,13 +117,13 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                         },
                       ).toList(),
                     ),
-                    if (selectedCategory != null &&
-                        (movements.isNotEmpty && movements.length != 1)) ...[
+                    if (selectedCategory != null) ...[
                       const SizedBox(height: 16),
                       DropdownMenu<SholatMovement>(
+                        initialSelection: selectedMovement,
                         expandedInsets: EdgeInsets.zero,
                         label: const Text('Movement'),
-                        errorText: movement == null
+                        errorText: selectedMovement == null
                             ? 'Please select a movement'
                             : null,
                         onSelected: (value) => ref
@@ -153,20 +154,11 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                             child: const Text('Cancel'),
                           ),
                           FilledButton(
-                            onPressed: movement != null
-                                ? () {
-                                    Navigator.pop(context);
-                                    final movementSetId =
-                                        _notifier.setDataItemLabels(
+                            onPressed: selectedMovement != null
+                                ? () => _setDataItemsLabels(
                                       selectedCategory!,
-                                      movement,
-                                    );
-                                    showSnackbar(
-                                      context,
-                                      'Data items labeled with movement ID: \n'
-                                      '$movementSetId',
-                                    );
-                                  }
+                                      selectedMovement,
+                                    )
                                 : null,
                             child: const Text('Save'),
                           ),
@@ -178,6 +170,64 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  Future<void> _setDataItemsLabels(
+    SholatMovementCategory category,
+    SholatMovement movement,
+  ) async {
+    Navigator.pop(context);
+    final dataItems = ref.read(preprocessProvider).dataItems;
+    final indexBeforeSelected =
+        ref.read(preprocessProvider).selectedDataItemIndexes.min()! - 1;
+    String? movementSetId;
+    if (indexBeforeSelected >= 0) {
+      final dataItem = dataItems[indexBeforeSelected];
+      if (dataItem.label == movement) {
+        final merge = await _showMergeLabelsDialog();
+        if (merge != null && merge == true) {
+          movementSetId = dataItem.movementSetId;
+        }
+      }
+    }
+    movementSetId = _notifier.setDataItemLabels(
+      category,
+      movement,
+      movementSetId: movementSetId,
+    );
+    if (!context.mounted) return;
+    showSnackbar(
+      context,
+      'Data items labeled with movement ID: \n'
+      '$movementSetId',
+    );
+  }
+
+  Future<bool?> _showMergeLabelsDialog() async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Merge labels'),
+          content: const Text(
+              'The selected labels is the same as previous data item label. Do you want to merge them with the same movement IDs?'),
+          actions: [
+            OutlinedButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Create new ID'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Merge'),
+            ),
+          ],
         );
       },
     );
@@ -373,8 +423,8 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final selectedDataItems = ref.watch(
-      preprocessProvider.select((state) => state.selectedDataItems),
+    final selectedDataItemIndexes = ref.watch(
+      preprocessProvider.select((state) => state.selectedDataItemIndexes),
     );
     final isPlaying = ref.watch(
       preprocessProvider.select((state) => state.isPlaying),
@@ -387,7 +437,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
     );
     final startJumpIndex = ref.watch(
       preprocessProvider.select(
-        (state) => state.selectedDataItems.isEmpty
+        (state) => state.selectedDataItemIndexes.isEmpty
             ? state.currentHighlightedIndex
             : state.lastSelectedIndex,
       ),
@@ -398,11 +448,11 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          if (!isJumpSelectMode && selectedDataItems.isNotEmpty)
+          if (!isJumpSelectMode && selectedDataItemIndexes.isNotEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                '${selectedDataItems.length} selected',
+                '${selectedDataItemIndexes.length} selected',
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),
@@ -415,7 +465,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
               ),
             ),
           const Spacer(),
-          if (selectedDataItems.isNotEmpty && !isJumpSelectMode) ...[
+          if (selectedDataItemIndexes.isNotEmpty && !isJumpSelectMode) ...[
             IconButton(
               tooltip: isJumpSelectMode
                   ? 'Disable jump select mode'
@@ -457,8 +507,9 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
               ),
               onPressed: () async {
                 if (_showWarning) {
-                  final anyLabeled =
-                      selectedDataItems.any((dataItem) => dataItem.isLabeled);
+                  final dataItems = ref.read(preprocessProvider).dataItems;
+                  final anyLabeled = selectedDataItemIndexes
+                      .any((index) => dataItems[index].isLabeled);
                   if (anyLabeled) {
                     final shouldChangeLabel = await _showWarningDialog();
                     if (shouldChangeLabel != true) {
@@ -480,11 +531,18 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                 weight: 300,
               ),
               onPressed: () async {
-                final anyLabeled =
-                    selectedDataItems.any((dataItem) => dataItem.isLabeled);
+                final dataItems = ref.read(preprocessProvider).dataItems;
+                final anyLabeled = selectedDataItemIndexes
+                    .any((index) => dataItems[index].isLabeled);
                 if (anyLabeled) {
                   await _showRemoveLabelsDialog();
-                } else {}
+                } else {
+                  showSnackbar(
+                    context,
+                    'No labels to remove',
+                    hidePreviousSnackbar: true,
+                  );
+                }
               },
             ),
             const VerticalDivider(),

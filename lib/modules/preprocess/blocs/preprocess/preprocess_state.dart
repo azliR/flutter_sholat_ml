@@ -13,7 +13,7 @@ class PreprocessState extends Equatable {
     required this.isPlaying,
     required this.isEdited,
     required this.dataItems,
-    required this.selectedDataItems,
+    required this.selectedDataItemIndexes,
     required this.presentationState,
   });
 
@@ -28,7 +28,7 @@ class PreprocessState extends Equatable {
         isPlaying: false,
         isEdited: false,
         dataItems: [],
-        selectedDataItems: [],
+        selectedDataItemIndexes: {},
         presentationState: PreprocessInitial(),
       );
 
@@ -42,7 +42,7 @@ class PreprocessState extends Equatable {
   final bool isPlaying;
   final bool isEdited;
   final List<DataItem> dataItems;
-  final List<DataItem> selectedDataItems;
+  final Set<int> selectedDataItemIndexes;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -56,7 +56,7 @@ class PreprocessState extends Equatable {
     bool? isPlaying,
     bool? isEdited,
     List<DataItem>? dataItems,
-    List<DataItem>? selectedDataItems,
+    Set<int>? selectedDataItemIndexes,
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(
@@ -74,7 +74,8 @@ class PreprocessState extends Equatable {
       isPlaying: isPlaying ?? this.isPlaying,
       isEdited: isEdited ?? this.isEdited,
       dataItems: dataItems ?? this.dataItems,
-      selectedDataItems: selectedDataItems ?? this.selectedDataItems,
+      selectedDataItemIndexes:
+          selectedDataItemIndexes ?? this.selectedDataItemIndexes,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -90,7 +91,7 @@ class PreprocessState extends Equatable {
         isFollowHighlightedMode,
         isPlaying,
         dataItems,
-        selectedDataItems,
+        selectedDataItemIndexes,
         presentationState,
       ];
 }

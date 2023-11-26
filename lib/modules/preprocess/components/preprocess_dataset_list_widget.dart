@@ -52,12 +52,13 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                   preprocessProvider
                       .select((value) => value.currentHighlightedIndex),
                 );
-                final selectedDataItems = ref.watch(
-                  preprocessProvider.select((state) => state.selectedDataItems),
+                final selectedDataItemIndexes = ref.watch(
+                  preprocessProvider
+                      .select((state) => state.selectedDataItemIndexes),
                 );
 
                 final dataset = dataItems[index];
-                final selected = selectedDataItems.contains(dataset);
+                final selected = selectedDataItemIndexes.contains(index);
 
                 return DataItemTile(
                   index: index,
@@ -71,7 +72,7 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                     );
                     if (isJumpSelectMode) {
                       await _notifier.jumpSelect(index);
-                    } else if (selectedDataItems.isNotEmpty) {
+                    } else if (selectedDataItemIndexes.isNotEmpty) {
                       _notifier.setSelectedDataset(index);
                     }
                     _notifier.setCurrentHighlightedIndex(index);

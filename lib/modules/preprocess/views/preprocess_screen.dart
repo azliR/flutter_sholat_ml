@@ -315,6 +315,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   @override
   Widget build(BuildContext context) {
     final data = MediaQuery.of(context);
+    final width = data.size.width;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -356,7 +357,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         if (didPop) return;
 
         final isSelectMode =
-            ref.read(preprocessProvider).selectedDataItems.isNotEmpty;
+            ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
 
         if (isSelectMode) {
           _notifier.clearSelectedDataItems();
@@ -417,9 +418,40 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           scrolledUnderElevation: 0,
           actions: [
             if (datasetProp != null) ...[
+              if (width >= 800)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FilledButton.tonalIcon(
+                    onPressed:
+                        datasetProp.isCompressed ? null : _showCompressDialog,
+                    icon: const Icon(Symbols.movie_rounded),
+                    label: Text(
+                      datasetProp.isCompressed
+                          ? 'Video compressed'
+                          : 'Compress video',
+                    ),
+                  ),
+                ),
+              if (width >= 600)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: FilledButton.tonalIcon(
+                    onPressed: () => _notifier.setEvaluated(
+                      hasEvaluated: !datasetProp.hasEvaluated,
+                    ),
+                    icon: datasetProp.hasEvaluated
+                        ? const Icon(Symbols.cancel_rounded)
+                        : const Icon(Symbols.check_circle_rounded),
+                    label: Text(
+                      datasetProp.hasEvaluated
+                          ? 'Mark as not evaluated'
+                          : 'Mark as evaluated',
+                    ),
+                  ),
+                ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: FilledButton.tonal(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: FilledButton(
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
                   ),
@@ -436,7 +468,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   ),
                 ),
               ),
-              _buildMenu(datasetProp),
+              if (width < 800) _buildMenu(datasetProp),
               const SizedBox(width: 12),
             ],
           ],
@@ -675,6 +707,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   }
 
   Widget _buildMenu(DatasetProp datasetProp) {
+    final data = MediaQuery.of(context);
+    final width = data.size.width;
+
     return MenuAnchor(
       builder: (context, controller, child) {
         return IconButton(
@@ -693,25 +728,27 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         );
       },
       menuChildren: [
-        MenuItemButton(
-          leadingIcon: datasetProp.hasEvaluated
-              ? const Icon(Symbols.cancel_rounded)
-              : const Icon(Symbols.check_circle_rounded),
-          onPressed: () =>
-              _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
-          child: Text(
-            datasetProp.hasEvaluated
-                ? 'Mark as not evaluated'
-                : 'Mark as evaluated',
+        if (width < 600)
+          MenuItemButton(
+            leadingIcon: datasetProp.hasEvaluated
+                ? const Icon(Symbols.cancel_rounded)
+                : const Icon(Symbols.check_circle_rounded),
+            onPressed: () =>
+                _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
+            child: Text(
+              datasetProp.hasEvaluated
+                  ? 'Mark as not evaluated'
+                  : 'Mark as evaluated',
+            ),
           ),
-        ),
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.movie_rounded),
-          onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
-          child: Text(
-            datasetProp.isCompressed ? 'Video compressed' : 'Compress video',
+        if (width < 800)
+          MenuItemButton(
+            leadingIcon: const Icon(Symbols.movie_rounded),
+            onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
+            child: Text(
+              datasetProp.isCompressed ? 'Video compressed' : 'Compress video',
+            ),
           ),
-        ),
       ],
       child: const Icon(Symbols.more_vert_rounded),
     );
