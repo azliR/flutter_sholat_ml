@@ -1,48 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class AccelerometerChart extends StatelessWidget {
   const AccelerometerChart({
-    required this.dataItems,
-    required this.primaryXAxis,
+    required this.x,
+    required this.y,
+    required this.z,
     required this.onTrackballChanged,
     required this.trackballBehavior,
     required this.zoomPanBehavior,
+    required this.primaryXAxis,
+    required this.onActualRangeChanged,
     super.key,
   });
 
-  final List<DataItem> dataItems;
-  final ChartAxis primaryXAxis;
+  final List<num> x;
+  final List<num> y;
+  final List<num> z;
+  final NumericAxis primaryXAxis;
   final TrackballBehavior trackballBehavior;
   final ZoomPanBehavior zoomPanBehavior;
   final void Function(TrackballArgs trackballArgs) onTrackballChanged;
+  final void Function(ActualRangeChangedArgs args) onActualRangeChanged;
 
   @override
   Widget build(BuildContext context) {
-    final xDatasets = <num>[];
-    final yDatasets = <num>[];
-    final zDatasets = <num>[];
-
-    for (final dataset in dataItems) {
-      xDatasets.add(dataset.x);
-      yDatasets.add(dataset.y);
-      zDatasets.add(dataset.z);
+    if (x.isEmpty && y.isEmpty && z.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
     }
-
     return SfCartesianChart(
       legend: const Legend(
         isVisible: true,
         position: LegendPosition.top,
         height: '10%',
       ),
-      primaryXAxis: NumericAxis(
-        visibleMaximum: 400,
-        decimalPlaces: 0,
-        majorGridLines: const MajorGridLines(width: 0),
-        axisLine: const AxisLine(width: 0.4),
-        borderWidth: 0,
-      ),
+      primaryXAxis: primaryXAxis,
       plotAreaBorderWidth: 0,
       primaryYAxis: NumericAxis(
         axisLine: const AxisLine(width: 0),
@@ -56,31 +50,32 @@ class AccelerometerChart extends StatelessWidget {
       zoomPanBehavior: zoomPanBehavior,
       trackballBehavior: trackballBehavior,
       onTrackballPositionChanging: onTrackballChanged,
+      onActualRangeChanged: onActualRangeChanged,
       series: [
         SplineSeries(
           width: 1.4,
-          cardinalSplineTension: 1,
-          dataSource: xDatasets,
+          dataSource: x,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
+          cardinalSplineTension: 1,
           color: Colors.red,
           legendItemText: 'x',
         ),
         SplineSeries(
           width: 1.4,
-          cardinalSplineTension: 1,
-          dataSource: yDatasets,
+          dataSource: y,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
+          cardinalSplineTension: 1,
           color: Colors.green,
           legendItemText: 'y',
         ),
         SplineSeries(
           width: 1.4,
-          cardinalSplineTension: 1,
-          dataSource: zDatasets,
+          dataSource: z,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
+          cardinalSplineTension: 1,
           color: Colors.blue,
           legendItemText: 'z',
         ),

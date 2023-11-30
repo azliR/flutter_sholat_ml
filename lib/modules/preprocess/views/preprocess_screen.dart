@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:dartx/dartx_io.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_dataset_list_widget.dart';
@@ -38,6 +40,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   final _trackballBehavior = TrackballBehavior(
     enable: true,
     shouldAlwaysShow: true,
+    tooltipAlignment: ChartAlignment.far,
     tooltipDisplayMode: TrackballDisplayMode.groupAllPoints,
     markerSettings: const TrackballMarkerSettings(
       markerVisibility: TrackballVisibilityMode.visible,
@@ -51,12 +54,20 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     zoomMode: ZoomMode.x,
   );
   final _primaryXAxis = NumericAxis(
-    visibleMaximum: 400,
+    visibleMaximum: 200,
+    majorGridLines: const MajorGridLines(width: 0),
+    axisLine: const AxisLine(width: 0.4),
+    borderWidth: 0,
   );
+  final _xDataItems = <num>[];
+  final _yDataItems = <num>[];
+  final _zDataItems = <num>[];
 
   Timer? _timer;
+  double? _lastZoomFactor;
+  double? _lastZoomPosition;
 
-  void _videoListener() {
+  Future<void> _videoListener() async {
     if (!mounted) return;
 
     _notifier.setIsPlaying(
@@ -65,7 +76,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
     if (!_videoPlayerController.value.isPlaying) return;
 
-    final dataItems = ref.read(preprocessProvider).dataItems;
+    final state = ref.read(preprocessProvider);
+    final dataItems = state.dataItems;
     final currentPosition =
         _videoPlayerController.value.position.inMilliseconds;
     var index = 0;
@@ -78,9 +90,42 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     }
 
     _notifier.setCurrentHighlightedIndex(index);
-    _trackballBehavior.showByIndex(index);
-    if (ref.read(preprocessProvider).isFollowHighlightedMode) {
+
+    if (state.isFollowHighlightedMode) {
       _scrollToDataItemTile(index);
+    }
+  }
+
+  Future<void> _scrollChart(int index, int dataItemsLength) async {
+    if (_lastZoomFactor == null || _lastZoomPosition == null) return;
+
+    final maxVisible = dataItemsLength * _lastZoomFactor!;
+    final minIndex = dataItemsLength * _lastZoomPosition!;
+    final maxIndex = minIndex + maxVisible;
+
+    if (index >= maxIndex) {
+      // final multiplier = (index / maxIndex).floor();
+      // _lastZoomPosition = _lastZoomPosition! + (_lastZoomFactor! * multiplier);
+      _lastZoomPosition =
+          (index / dataItemsLength) - (maxVisible / dataItemsLength);
+
+      _zoomPanBehavior.zoomToSingleAxis(
+        _primaryXAxis,
+        _lastZoomPosition!,
+        _lastZoomFactor!,
+      );
+    } else if (index <= minIndex) {
+      // final multiplier = (minIndex / (maxVisible + index)).floor() + 1;
+      // _lastZoomPosition = _lastZoomPosition! - (_lastZoomFactor! * multiplier);
+      _lastZoomPosition = index / dataItemsLength;
+
+      _zoomPanBehavior.zoomToSingleAxis(
+        _primaryXAxis,
+        _lastZoomPosition!,
+        _lastZoomFactor!,
+      );
+    } else {
+      _trackballBehavior.showByIndex(index);
     }
   }
 
@@ -270,6 +315,30 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     }
   }
 
+  Future<void> _generateDataSources(List<DataItem> dataItems) async {
+    final (x, y, z) =
+        await compute<List<DataItem>, (List<num>, List<num>, List<num>)>(
+      (dataItems) {
+        final x = <num>[];
+        final y = <num>[];
+        final z = <num>[];
+
+        for (final dataItem in dataItems) {
+          x.add(dataItem.x);
+          y.add(dataItem.y);
+          z.add(dataItem.z);
+        }
+        return (x, y, z);
+      },
+      dataItems,
+    );
+    setState(() {
+      _xDataItems.addAll(x);
+      _yDataItems.addAll(y);
+      _zDataItems.addAll(z);
+    });
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
@@ -285,8 +354,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       await _notifier.initialise(path);
       await _videoPlayerController.initialize();
-
       _videoPlayerController.addListener(_videoListener);
+
+      await _generateDataSources(ref.read(preprocessProvider).dataItems);
 
       final isCompressed = ref.read(
         preprocessProvider
@@ -298,8 +368,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       }
 
       if (!mounted) return;
-
-      setState(() {});
     });
     super.initState();
   }
@@ -321,33 +389,46 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
     final shouldVertical = data.size.width < 720;
 
-    ref.listen(preprocessProvider.select((value) => value.presentationState),
+    final dataItemsLength = ref.read(preprocessProvider).dataItems.length;
+
+    ref
+      ..listen(preprocessProvider.select((value) => value.presentationState),
+          (previous, next) {
+        switch (next) {
+          case PreprocessInitial():
+            break;
+          case GetDatasetPropFailureState():
+            showErrorSnackbar(context, 'Failed getting dataset info');
+          case ReadDatasetsFailureState():
+            showErrorSnackbar(context, 'Failed reading datasets');
+          case CompressVideoLoadingState():
+            context.loaderOverlay.show();
+          case CompressVideoSuccessState():
+            context.loaderOverlay.hide();
+            showSnackbar(context, 'Video compressed successfully!');
+          case CompressVideoFailureState():
+            context.loaderOverlay.hide();
+            showErrorSnackbar(context, 'Failed compressing video');
+          case SaveDatasetLoadingState():
+            context.loaderOverlay.show();
+          case SaveDatasetSuccessState():
+            context.loaderOverlay.hide();
+            showSnackbar(context, 'Dataset saved successfully!');
+          case SaveDatasetFailureState():
+            context.loaderOverlay.hide();
+            showErrorSnackbar(context, 'Failed saving dataset');
+        }
+      })
+      ..listen(
+        preprocessProvider.select((value) => value.currentHighlightedIndex),
         (previous, next) {
-      switch (next) {
-        case PreprocessInitial():
-          break;
-        case GetDatasetPropFailureState():
-          showErrorSnackbar(context, 'Failed getting dataset info');
-        case ReadDatasetsFailureState():
-          showErrorSnackbar(context, 'Failed reading datasets');
-        case CompressVideoLoadingState():
-          context.loaderOverlay.show();
-        case CompressVideoSuccessState():
-          context.loaderOverlay.hide();
-          showSnackbar(context, 'Video compressed successfully!');
-        case CompressVideoFailureState():
-          context.loaderOverlay.hide();
-          showErrorSnackbar(context, 'Failed compressing video');
-        case SaveDatasetLoadingState():
-          context.loaderOverlay.show();
-        case SaveDatasetSuccessState():
-          context.loaderOverlay.hide();
-          showSnackbar(context, 'Dataset saved successfully!');
-        case SaveDatasetFailureState():
-          context.loaderOverlay.hide();
-          showErrorSnackbar(context, 'Failed saving dataset');
-      }
-    });
+          _scrollChart(next, dataItemsLength);
+        },
+      )
+      ..listen(
+          preprocessProvider.select((value) => value.selectedDataItemIndexes),
+          (previous, next) {});
+
     final datasetProp =
         ref.watch(preprocessProvider.select((state) => state.datasetProp));
 
@@ -482,6 +563,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Expanded(
+                    flex: 4,
                     child: Row(
                       children: [
                         AspectRatio(
@@ -541,7 +623,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                                   Builder(
                                     builder: (context) {
                                       return IconButton(
-                                        tooltip: 'Speed',
+                                        tooltip: 'Speed\n'
+                                            'z (decrease)\n'
+                                            'x (increase)',
                                         visualDensity: VisualDensity.compact,
                                         style: IconButton.styleFrom(
                                           tapTargetSize:
@@ -590,8 +674,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     color: colorScheme.outline,
                   ),
                   Expanded(
+                    flex: 3,
                     child: AccelerometerChart(
-                      dataItems: ref.read(preprocessProvider).dataItems,
+                      x: _xDataItems,
+                      y: _yDataItems,
+                      z: _zDataItems,
                       primaryXAxis: _primaryXAxis,
                       zoomPanBehavior: _zoomPanBehavior,
                       trackballBehavior: _trackballBehavior,
@@ -615,6 +702,15 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                           }
                         });
                       },
+                      onActualRangeChanged: (args) {
+                        final visibleMax = args.visibleMax as num;
+                        final visibleMin = args.visibleMin as num;
+                        final actualMax = args.actualMax as num;
+                        final actualVisible = visibleMax - visibleMin;
+
+                        _lastZoomFactor = actualVisible / actualMax;
+                        _lastZoomPosition = visibleMin / actualMax;
+                      },
                     ),
                   ),
                 ],
@@ -626,9 +722,12 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                 color: colorScheme.outline,
               )
             else
-              VerticalDivider(
-                width: 0,
-                color: colorScheme.outline,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1),
+                child: VerticalDivider(
+                  width: 1,
+                  color: colorScheme.outline,
+                ),
               ),
             Expanded(
               flex: 4,
@@ -694,7 +793,18 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   Expanded(
                     child: PreprocessDatasetList(
                       scrollController: _scrollController,
+                      videoPlayerController: _videoPlayerController,
                       trackballBehavior: _trackballBehavior,
+                      onDataItemPressed: (index) async {
+                        final state = ref.read(preprocessProvider);
+
+                        if (state.isJumpSelectMode) {
+                          await _notifier.jumpSelect(index);
+                        } else if (state.selectedDataItemIndexes.isNotEmpty) {
+                          _notifier.setSelectedDataset(index);
+                        }
+                        _notifier.setCurrentHighlightedIndex(index);
+                      },
                     ),
                   ),
                 ],

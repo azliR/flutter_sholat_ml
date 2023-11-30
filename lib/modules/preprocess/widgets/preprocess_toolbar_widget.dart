@@ -467,9 +467,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
           const Spacer(),
           if (selectedDataItemIndexes.isNotEmpty && !isJumpSelectMode) ...[
             IconButton(
-              tooltip: isJumpSelectMode
-                  ? 'Disable jump select mode'
-                  : 'Enable jump select mode',
+              tooltip: 'Enable jump select mode (shift)',
               visualDensity: VisualDensity.compact,
               style: IconButton.styleFrom(
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,

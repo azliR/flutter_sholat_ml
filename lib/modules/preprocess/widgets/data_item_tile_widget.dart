@@ -33,14 +33,14 @@ class DataItemTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    var color = Colors.transparent;
+    var backgroundColor = colorScheme.background;
     if (selected) {
-      color = colorScheme.primaryContainer;
+      backgroundColor = colorScheme.primaryContainer;
     } else if (dataItem.isLabeled) {
       final splittedId = dataItem.movementSetId!.substring(0, 6);
       final hexColor = int.parse('ff$splittedId', radix: 16);
       final generatedColor = Color(hexColor);
-      color = Color.lerp(color, generatedColor, 0.5)!;
+      backgroundColor = Color.lerp(backgroundColor, generatedColor, 0.5)!;
     }
 
     Widget? icon;
@@ -73,27 +73,25 @@ class DataItemTile extends StatelessWidget {
       );
     }
 
-    return DefaultTextStyle(
-      style: textTheme.bodyMedium!.copyWith(
-        color: _isColorDark(color) ? Colors.white : Colors.black,
-      ),
-      child: Material(
-        color: color,
-        shape: RoundedRectangleBorder(
-          borderRadius: highlighted
-              ? const BorderRadius.all(Radius.circular(12))
-              : BorderRadius.zero,
-          side: highlighted
-              ? BorderSide(
-                  color: colorScheme.outline,
-                )
-              : BorderSide.none,
+    return InkWell(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: DefaultTextStyle(
+        style: textTheme.bodyMedium!.copyWith(
+          color: _isColorDark(backgroundColor) ? Colors.white : Colors.black,
         ),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
+        child: Container(
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            border: Border.all(
+              color: highlighted ? colorScheme.outline : Colors.transparent,
+            ),
+            borderRadius: highlighted
+                ? const BorderRadius.all(Radius.circular(12))
+                : BorderRadius.zero,
+          ),
           child: SizedBox(
-            height: 32,
+            height: 30,
             child: Row(
               children: [
                 Expanded(

@@ -108,14 +108,10 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
         : state.lastSelectedIndex;
     if (startJumpIndex == null) return;
 
-    // final selectedDataItems = state.dataItems.sublist(
-    //   min(startJumpIndex, endIndex),
-    //   max(startJumpIndex, endIndex + 1),
-    // );
-
     final selectedDataItemIndexes = List.generate(
-      (max(startJumpIndex, endIndex + 1) - min(startJumpIndex, endIndex) + 1)
-          .toInt(),
+      1 +
+          max<int>(startJumpIndex, endIndex) -
+          min<int>(startJumpIndex, endIndex),
       (index) => min(startJumpIndex, endIndex) + index,
     );
 
