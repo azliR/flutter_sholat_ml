@@ -10,7 +10,8 @@ import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
-import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_dataset_list_widget.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_dataset_list_body.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/views/preprocess_shortcuts.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/accelerometer_chart_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/dataset_prop_tile_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/preprocess_toolbar_widget.dart';
@@ -36,6 +37,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   late final VideoPlayerController _videoPlayerController;
 
+  var _isPressingShortcut = false;
+
   final _scrollController = ScrollController();
   final _trackballBehavior = TrackballBehavior(
     enable: true,
@@ -54,9 +57,10 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     zoomMode: ZoomMode.x,
   );
   final _primaryXAxis = NumericAxis(
-    visibleMaximum: 200,
+    visibleMaximum: 100,
     majorGridLines: const MajorGridLines(width: 0),
     axisLine: const AxisLine(width: 0.4),
+    decimalPlaces: 0,
     borderWidth: 0,
   );
   final _xDataItems = <num>[];
@@ -104,8 +108,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     final maxIndex = minIndex + maxVisible;
 
     if (index >= maxIndex) {
-      // final multiplier = (index / maxIndex).floor();
-      // _lastZoomPosition = _lastZoomPosition! + (_lastZoomFactor! * multiplier);
       _lastZoomPosition =
           (index / dataItemsLength) - (maxVisible / dataItemsLength);
 
@@ -115,8 +117,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         _lastZoomFactor!,
       );
     } else if (index <= minIndex) {
-      // final multiplier = (minIndex / (maxVisible + index)).floor() + 1;
-      // _lastZoomPosition = _lastZoomPosition! - (_lastZoomFactor! * multiplier);
       _lastZoomPosition = index / dataItemsLength;
 
       _zoomPanBehavior.zoomToSingleAxis(
@@ -383,11 +383,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   @override
   Widget build(BuildContext context) {
     final data = MediaQuery.of(context);
-    final width = data.size.width;
+    final deviceWidth = data.size.width;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final shouldVertical = data.size.width < 720;
+    final shouldVertical = deviceWidth < 720;
 
     final dataItemsLength = ref.read(preprocessProvider).dataItems.length;
 
@@ -414,6 +414,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           case SaveDatasetAutoSavingState():
             break;
           case SaveDatasetSuccessState():
+            if (next.isAutosave) break;
             context.loaderOverlay.hide();
             showSnackbar(context, 'Dataset saved successfully!');
           case SaveDatasetFailureState():
@@ -428,9 +429,12 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         },
       )
       ..listen(
-        preprocessProvider.select((value) => value.isEdited),
+        preprocessProvider
+            .select((value) => (value.isEdited, value.isAutosave)),
         (previous, next) {
-          if (next) {
+          final isEdited = next.$1;
+          final isAutosave = next.$2;
+          if (isEdited && isAutosave) {
             _notifier.saveDataset(diskOnly: true, isAutoSaving: true);
           }
         },
@@ -439,452 +443,491 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     final datasetProp =
         ref.watch(preprocessProvider.select((state) => state.datasetProp));
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (didPop) return;
-
-        final isSelectMode =
-            ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
-
-        if (isSelectMode) {
-          _notifier.clearSelectedDataItems();
-          return;
-        }
-
-        final isEdited = ref.read(preprocessProvider).isEdited;
-        if (isEdited) {
-          await _showExitDialog();
-          return;
-        }
-
-        Navigator.pop(context);
+    return PreprocessShortcuts(
+      scrollController: _scrollController,
+      videoPlayerController: _videoPlayerController,
+      onHighlightChanged: (value) {
+        _isPressingShortcut = value;
       },
-      child: Scaffold(
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+      child: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) async {
+          if (didPop) return;
+
+          final isSelectMode =
+              ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
+
+          if (isSelectMode) {
+            _notifier.clearSelectedDataItems();
+            return;
+          }
+
+          final isEdited = ref.read(preprocessProvider).isEdited;
+          if (isEdited) {
+            await _showExitDialog();
+            return;
+          }
+
+          Navigator.pop(context);
+        },
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            title: _buildAppBarTitle(datasetProp),
+            scrolledUnderElevation: 0,
+            actions: _buildAppBarActions(datasetProp),
+          ),
+          body: Flex(
+            direction: shouldVertical ? Axis.vertical : Axis.horizontal,
             children: [
-              Row(
-                children: [
-                  Text(
-                    'Preprocess',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontSize: 20,
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Row(
+                        children: [
+                          _buildVideoPlayer(),
+                          _buildDatasetInfo(datasetProp),
+                        ],
+                      ),
                     ),
+                    Divider(
+                      height: 0,
+                      color: colorScheme.outline,
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: AccelerometerChart(
+                        x: _xDataItems,
+                        y: _yDataItems,
+                        z: _zDataItems,
+                        primaryXAxis: _primaryXAxis,
+                        zoomPanBehavior: _zoomPanBehavior,
+                        trackballBehavior: _trackballBehavior,
+                        onTrackballChanged: (trackballArgs) {
+                          if (_videoPlayerController.value.isPlaying) return;
+
+                          if (_isPressingShortcut) return;
+
+                          final index =
+                              trackballArgs.chartPointInfo.dataPointIndex ?? 0;
+                          final dataItems =
+                              ref.read(preprocessProvider).dataItems;
+
+                          _timer?.cancel();
+                          _timer = Timer(const Duration(milliseconds: 300), () {
+                            _videoPlayerController
+                                .seekTo(dataItems[index].timestamp!);
+                            _notifier.setCurrentHighlightedIndex(index);
+                            if (ref
+                                .read(preprocessProvider)
+                                .isFollowHighlightedMode) {
+                              _scrollToDataItemTile(index);
+                            }
+                          });
+                        },
+                        onActualRangeChanged: (args) {
+                          final visibleMax = args.visibleMax as num;
+                          final visibleMin = args.visibleMin as num;
+                          final actualMax = args.actualMax as num;
+                          final actualVisible = visibleMax - visibleMin;
+
+                          _lastZoomFactor = actualVisible / actualMax;
+                          _lastZoomPosition = visibleMin / actualMax;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (shouldVertical)
+                Divider(
+                  height: 0,
+                  color: colorScheme.outline,
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1),
+                  child: VerticalDivider(
+                    width: 1,
+                    color: colorScheme.outline,
                   ),
-                  if (datasetProp != null) ...[
-                    const SizedBox(width: 16),
-                    Row(
-                      children: [
-                        if (datasetProp.isSyncedWithCloud) ...[
-                          const Icon(
-                            Symbols.cloud_done_rounded,
-                            size: 20,
+                ),
+              Expanded(
+                flex: 4,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PreprocessToolbar(
+                      videoPlayerController: _videoPlayerController,
+                      onFollowHighlighted: () {
+                        _scrollToDataItemTile(
+                          ref.read(preprocessProvider).currentHighlightedIndex,
+                        );
+                      },
+                    ),
+                    Divider(
+                      height: 0,
+                      color: colorScheme.outline,
+                    ),
+                    DefaultTextStyle(
+                      style: textTheme.bodyMedium!.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      child: const Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Center(child: Text('i')),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Saved in cloud',
-                            style: textTheme.bodySmall,
+                          Expanded(
+                            flex: 3,
+                            child: Center(
+                              child: Text('timestamp'),
+                            ),
                           ),
-                        ] else ...[
-                          const Icon(
-                            Symbols.cloud_off_rounded,
-                            size: 20,
+                          Expanded(
+                            flex: 2,
+                            child: Center(child: Text('x')),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Saved in local',
-                            style: textTheme.bodySmall,
+                          Expanded(
+                            flex: 2,
+                            child: Center(child: Text('y')),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Center(child: Text('z')),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Center(
+                              child: Text('noise'),
+                            ),
+                          ),
+                          Expanded(
+                            child: SizedBox(),
                           ),
                         ],
+                      ),
+                    ),
+                    Divider(
+                      height: 0,
+                      color: colorScheme.outline,
+                    ),
+                    Expanded(
+                      child: PreprocessDatasetList(
+                        scrollController: _scrollController,
+                        videoPlayerController: _videoPlayerController,
+                        trackballBehavior: _trackballBehavior,
+                        onDataItemPressed: (index) async {
+                          final state = ref.read(preprocessProvider);
+
+                          if (state.isJumpSelectMode) {
+                            await _notifier.jumpSelect(index);
+                          } else if (state.selectedDataItemIndexes.isNotEmpty) {
+                            _notifier.setSelectedDataset(index);
+                          }
+                          _notifier.setCurrentHighlightedIndex(index);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildAppBarActions(DatasetProp? datasetProp) {
+    final data = MediaQuery.of(context);
+    final width = data.size.width;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return [
+      if (datasetProp != null) ...[
+        if (width >= 600)
+          Consumer(
+            builder: (context, ref, child) {
+              final isAutosave = ref.watch(
+                preprocessProvider.select((value) => value.isAutosave),
+              );
+              final isAutosaving = ref.watch(
+                preprocessProvider.select(
+                  (value) =>
+                      value.presentationState ==
+                      const SaveDatasetAutoSavingState(),
+                ),
+              );
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isAutosaving)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: colorScheme.secondaryContainer,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(width: 4),
+                        Text(
+                          'AutoSave',
+                          style: textTheme.titleSmall,
+                        ),
+                        const SizedBox(width: 4),
+                        SizedBox(
+                          height: 40,
+                          child: FittedBox(
+                            fit: BoxFit.fill,
+                            child: Switch(
+                              value: isAutosave,
+                              onChanged: (value) {
+                                _notifier.setIsAutosave(isAutosave: value);
+                              },
+                            ),
+                          ),
+                        ),
                       ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
+            ),
+            onPressed: _showSaveDialog,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  datasetProp.isUploaded ? 'Update' : 'Save',
+                ),
+                const SizedBox(width: 8),
+                const Icon(Symbols.arrow_drop_down_rounded),
+              ],
+            ),
+          ),
+        ),
+        _buildMenu(datasetProp),
+        const SizedBox(width: 12),
+      ],
+    ];
+  }
+
+  Widget _buildAppBarTitle(DatasetProp? datasetProp) {
+    final data = MediaQuery.of(context);
+    final width = data.size.width;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final isEdited = ref.watch(
+                    preprocessProvider.select((value) => value.isEdited),
+                  );
+                  return Text(
+                    'Preprocess${isEdited ? '*' : ''}',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontSize: 18,
+                    ),
+                  );
+                },
+              ),
+            ),
+            if (datasetProp != null) ...[
+              if (width >= 480)
+                const SizedBox(width: 16)
+              else
+                const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (datasetProp.isSyncedWithCloud) ...[
+                    const Icon(
+                      Symbols.cloud_done_rounded,
+                      size: 20,
+                    ),
+                  ] else ...[
+                    const Icon(
+                      Symbols.cloud_off_rounded,
+                      size: 20,
+                    ),
+                  ],
+                  if (width >= 480) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      datasetProp.isSyncedWithCloud
+                          ? 'Saved in cloud'
+                          : 'Saved in local',
+                      style: textTheme.bodySmall,
                     ),
                   ],
                 ],
               ),
-              if (datasetProp != null) ...[
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 2),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 1,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color:
-                        datasetProp.hasEvaluated ? colorScheme.secondary : null,
-                    border: datasetProp.hasEvaluated
-                        ? null
-                        : Border.all(
-                            strokeAlign: BorderSide.strokeAlignOutside,
-                            color: colorScheme.outline,
-                          ),
-                  ),
-                  child: Text(
-                    datasetProp.hasEvaluated ? 'Evaluated' : 'Not evaluated',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: datasetProp.hasEvaluated
-                          ? colorScheme.onSecondary
-                          : colorScheme.onSurface,
+            ],
+          ],
+        ),
+        if (datasetProp != null) ...[
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 1,
+            ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              color: datasetProp.hasEvaluated ? colorScheme.secondary : null,
+              border: datasetProp.hasEvaluated
+                  ? null
+                  : Border.all(
+                      strokeAlign: BorderSide.strokeAlignOutside,
+                      color: colorScheme.outline,
                     ),
+            ),
+            child: Text(
+              datasetProp.hasEvaluated ? 'Evaluated' : 'Not evaluated',
+              style: textTheme.bodySmall?.copyWith(
+                color: datasetProp.hasEvaluated
+                    ? colorScheme.onSecondary
+                    : colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDatasetInfo(DatasetProp? datasetProp) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Expanded(
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: [
+                if (datasetProp != null) ...[
+                  DatasetPropTile(
+                    label: 'Dataset ID',
+                    content: datasetProp.id,
+                    icon: Symbols.key_rounded,
                   ),
-                ),
+                  DatasetPropTile(
+                    label: 'Device Location',
+                    content: datasetProp.deviceLocation.name,
+                    icon: Symbols.watch_rounded,
+                  ),
+                  DatasetPropTile(
+                    label: 'Dataset prop version',
+                    content: datasetProp.datasetPropVersion.nameWithIsLatest(
+                      latestText: ' (latest)',
+                    ),
+                    icon: Symbols.manufacturing_rounded,
+                  ),
+                  DatasetPropTile(
+                    label: 'Dataset version',
+                    content: datasetProp.datasetVersion.nameWithIsLatest(
+                      latestText: ' (latest)',
+                    ),
+                    icon: Symbols.dataset_rounded,
+                  ),
+                  const Divider(),
+                  DatasetPropTile(
+                    label: 'Duration',
+                    content: _videoPlayerController.value.duration.toString(),
+                    icon: Symbols.timer_rounded,
+                  ),
+                ],
               ],
+            ),
+          ),
+          const Divider(height: 0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Builder(
+                builder: (context) {
+                  return IconButton(
+                    tooltip: 'Speed\n'
+                        'z (decrease)\n'
+                        'x (increase)',
+                    visualDensity: VisualDensity.compact,
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: Row(
+                      children: [
+                        const Icon(
+                          Symbols.speed_rounded,
+                          weight: 300,
+                        ),
+                        const SizedBox(width: 2),
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final playbackSpeed = ref.watch(
+                              preprocessProvider.select(
+                                (value) => value.videoPlaybackSpeed,
+                              ),
+                            );
+                            return Text(
+                              playbackSpeed
+                                  .toStringAsFixed(2)
+                                  .removeSuffix('0'),
+                              style: textTheme.bodyMedium,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    onPressed: () => _showSpeedMenu(context),
+                  );
+                },
+              ),
             ],
           ),
-          scrolledUnderElevation: 0,
-          actions: [
-            if (datasetProp != null) ...[
-              if (width >= 600)
-                Consumer(
-                  builder: (context, ref, child) {
-                    final isAutosave = ref.watch(
-                      preprocessProvider.select((value) => value.isAutosave),
-                    );
-                    final isAutosaving = ref.watch(
-                      preprocessProvider.select(
-                        (value) =>
-                            value.presentationState ==
-                            const SaveDatasetAutoSavingState(),
-                      ),
-                    );
-
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isAutosaving)
-                          const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
-                            ),
-                          ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: colorScheme.secondaryContainer,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const SizedBox(width: 4),
-                              Text(
-                                'AutoSave',
-                                style: textTheme.titleSmall,
-                              ),
-                              const SizedBox(width: 4),
-                              SizedBox(
-                                height: 40,
-                                child: FittedBox(
-                                  fit: BoxFit.fill,
-                                  child: Switch(
-                                    value: isAutosave,
-                                    onChanged: (value) {
-                                      _notifier.setIsAutosave(
-                                          isAutosave: value);
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
-                  ),
-                  onPressed: _showSaveDialog,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        datasetProp.isUploaded ? 'Update' : 'Save',
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Symbols.arrow_drop_down_rounded),
-                    ],
-                  ),
-                ),
-              ),
-              _buildMenu(datasetProp),
-              const SizedBox(width: 12),
-            ],
-          ],
-        ),
-        body: Flex(
-          direction: shouldVertical ? Axis.vertical : Axis.horizontal,
-          children: [
-            Expanded(
-              flex: 4,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Row(
-                      children: [
-                        AspectRatio(
-                          aspectRatio: _videoPlayerController.value.aspectRatio,
-                          child: VideoPlayer(_videoPlayerController),
-                        ),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: ListView(
-                                  children: [
-                                    if (datasetProp != null) ...[
-                                      DatasetPropTile(
-                                        label: 'Dataset ID',
-                                        content: datasetProp.id,
-                                        icon: Symbols.key_rounded,
-                                      ),
-                                      DatasetPropTile(
-                                        label: 'Device Location',
-                                        content:
-                                            datasetProp.deviceLocation.name,
-                                        icon: Symbols.watch_rounded,
-                                      ),
-                                      DatasetPropTile(
-                                        label: 'Dataset prop version',
-                                        content: datasetProp.datasetPropVersion
-                                            .nameWithIsLatest(
-                                          latestText: ' (latest)',
-                                        ),
-                                        icon: Symbols.manufacturing_rounded,
-                                      ),
-                                      DatasetPropTile(
-                                        label: 'Dataset version',
-                                        content: datasetProp.datasetVersion
-                                            .nameWithIsLatest(
-                                          latestText: ' (latest)',
-                                        ),
-                                        icon: Symbols.dataset_rounded,
-                                      ),
-                                      const Divider(),
-                                      DatasetPropTile(
-                                        label: 'Duration',
-                                        content: _videoPlayerController
-                                            .value.duration
-                                            .toString(),
-                                        icon: Symbols.timer_rounded,
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                              const Divider(height: 0),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  Builder(
-                                    builder: (context) {
-                                      return IconButton(
-                                        tooltip: 'Speed\n'
-                                            'z (decrease)\n'
-                                            'x (increase)',
-                                        visualDensity: VisualDensity.compact,
-                                        style: IconButton.styleFrom(
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        icon: Row(
-                                          children: [
-                                            const Icon(
-                                              Symbols.speed_rounded,
-                                              weight: 300,
-                                            ),
-                                            const SizedBox(width: 2),
-                                            Consumer(
-                                              builder: (context, ref, child) {
-                                                final playbackSpeed = ref.watch(
-                                                  preprocessProvider.select(
-                                                    (value) => value
-                                                        .videoPlaybackSpeed,
-                                                  ),
-                                                );
-                                                return Text(
-                                                  playbackSpeed
-                                                      .toStringAsFixed(2)
-                                                      .removeSuffix('0'),
-                                                  style: textTheme.bodyMedium,
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                        onPressed: () =>
-                                            _showSpeedMenu(context),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    height: 0,
-                    color: colorScheme.outline,
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: AccelerometerChart(
-                      x: _xDataItems,
-                      y: _yDataItems,
-                      z: _zDataItems,
-                      primaryXAxis: _primaryXAxis,
-                      zoomPanBehavior: _zoomPanBehavior,
-                      trackballBehavior: _trackballBehavior,
-                      onTrackballChanged: (trackballArgs) {
-                        if (_videoPlayerController.value.isPlaying) return;
-
-                        final index =
-                            trackballArgs.chartPointInfo.dataPointIndex ?? 0;
-                        final dataItems =
-                            ref.read(preprocessProvider).dataItems;
-
-                        _timer?.cancel();
-                        _timer = Timer(const Duration(milliseconds: 300), () {
-                          _videoPlayerController
-                              .seekTo(dataItems[index].timestamp!);
-                          _notifier.setCurrentHighlightedIndex(index);
-                          if (ref
-                              .read(preprocessProvider)
-                              .isFollowHighlightedMode) {
-                            _scrollToDataItemTile(index);
-                          }
-                        });
-                      },
-                      onActualRangeChanged: (args) {
-                        final visibleMax = args.visibleMax as num;
-                        final visibleMin = args.visibleMin as num;
-                        final actualMax = args.actualMax as num;
-                        final actualVisible = visibleMax - visibleMin;
-
-                        _lastZoomFactor = actualVisible / actualMax;
-                        _lastZoomPosition = visibleMin / actualMax;
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (shouldVertical)
-              Divider(
-                height: 0,
-                color: colorScheme.outline,
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1),
-                child: VerticalDivider(
-                  width: 1,
-                  color: colorScheme.outline,
-                ),
-              ),
-            Expanded(
-              flex: 4,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  PreprocessToolbar(
-                    videoPlayerController: _videoPlayerController,
-                    onFollowHighlighted: () {
-                      _scrollToDataItemTile(
-                        ref.read(preprocessProvider).currentHighlightedIndex,
-                      );
-                    },
-                  ),
-                  Divider(
-                    height: 0,
-                    color: colorScheme.outline,
-                  ),
-                  DefaultTextStyle(
-                    style: textTheme.bodyMedium!.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                    child: const Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Center(child: Text('i')),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Center(
-                            child: Text('timestamp'),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(child: Text('x')),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(child: Text('y')),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(child: Text('z')),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Center(
-                            child: Text('noise'),
-                          ),
-                        ),
-                        Expanded(
-                          child: SizedBox(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(
-                    height: 0,
-                    color: colorScheme.outline,
-                  ),
-                  Expanded(
-                    child: PreprocessDatasetList(
-                      scrollController: _scrollController,
-                      videoPlayerController: _videoPlayerController,
-                      trackballBehavior: _trackballBehavior,
-                      onDataItemPressed: (index) async {
-                        final state = ref.read(preprocessProvider);
-
-                        if (state.isJumpSelectMode) {
-                          await _notifier.jumpSelect(index);
-                        } else if (state.selectedDataItemIndexes.isNotEmpty) {
-                          _notifier.setSelectedDataset(index);
-                        }
-                        _notifier.setCurrentHighlightedIndex(index);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildVideoPlayer() {
+    return AspectRatio(
+      aspectRatio: _videoPlayerController.value.aspectRatio,
+      child: VideoPlayer(_videoPlayerController),
     );
   }
 
@@ -908,16 +951,14 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       },
       menuChildren: [
         MenuItemButton(
-          leadingIcon: datasetProp.hasEvaluated
-              ? const Icon(Symbols.cancel_rounded)
-              : const Icon(Symbols.check_circle_rounded),
+          leadingIcon: const SizedBox(width: 24),
+          trailingIcon: Checkbox(
+            value: datasetProp.hasEvaluated,
+            onChanged: (value) => _notifier.setEvaluated(hasEvaluated: value!),
+          ),
           onPressed: () =>
               _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
-          child: Text(
-            datasetProp.hasEvaluated
-                ? 'Mark as not evaluated'
-                : 'Mark as evaluated',
-          ),
+          child: const Text('Has evaluated'),
         ),
         MenuItemButton(
           leadingIcon: const Icon(Symbols.movie_rounded),

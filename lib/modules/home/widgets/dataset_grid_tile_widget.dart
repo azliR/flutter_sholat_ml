@@ -66,6 +66,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
         DateFormat("EEEE 'at' HH:mm - d MMM yyy").format(createdAt);
     final downloaded = dataset.downloaded;
     final hasEvaluated = datasetProp.hasEvaluated;
+    final isSyncedWithCloud = datasetProp.isSyncedWithCloud;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -152,31 +153,65 @@ class _DatasetGridTileState extends State<DatasetGridTile>
               ],
             ),
             const SizedBox(height: 8),
-            if (widget.labeled && (downloaded != null && !downloaded)) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      downloaded
-                          ? Symbols.offline_pin_rounded
-                          : Symbols.download_rounded,
-                      size: 16,
-                      opticalSize: 20,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
+            if (widget.labeled) ...[
+              if (downloaded != null && !downloaded)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      Icon(
                         downloaded
-                            ? 'Available offline'
-                            : 'Available to download',
-                        style: textTheme.bodySmall,
+                            ? Symbols.offline_pin_rounded
+                            : Symbols.download_rounded,
+                        size: 16,
+                        opticalSize: 20,
+                        color: colorScheme.primary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          downloaded
+                              ? 'Available offline'
+                              : 'Available to download',
+                          style: textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isSyncedWithCloud
+                            ? Symbols.cloud_done_rounded
+                            : Symbols.cloud_off_rounded,
+                        size: 16,
+                        opticalSize: 20,
+                        color: isSyncedWithCloud
+                            ? colorScheme.primary
+                            : colorScheme.onBackground,
+                        weight: isSyncedWithCloud ? 500 : 400,
+                        fill: isSyncedWithCloud ? 1 : 0,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          isSyncedWithCloud
+                              ? 'Synced with cloud'
+                              : 'Not synced with cloud',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: isSyncedWithCloud
+                                ? colorScheme.primary
+                                : colorScheme.onBackground,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 6),
             ],
             Padding(
@@ -193,6 +228,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                     color: hasEvaluated
                         ? colorScheme.primary
                         : colorScheme.outline,
+                    fill: hasEvaluated ? 1 : 0,
                   ),
                   const SizedBox(width: 6),
                   Expanded(

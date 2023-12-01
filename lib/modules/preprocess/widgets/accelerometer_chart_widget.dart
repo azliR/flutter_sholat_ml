@@ -46,6 +46,7 @@ class AccelerometerChart extends StatelessWidget {
           dashArray: [5, 5],
           color: Colors.grey,
         ),
+        decimalPlaces: 0,
       ),
       zoomPanBehavior: zoomPanBehavior,
       trackballBehavior: trackballBehavior,

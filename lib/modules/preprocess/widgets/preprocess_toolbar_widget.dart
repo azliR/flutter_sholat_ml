@@ -449,11 +449,36 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           if (!isJumpSelectMode && selectedDataItemIndexes.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                '${selectedDataItemIndexes.length} selected',
-                style: Theme.of(context).textTheme.labelSmall,
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Row(
+                    children: [
+                      const SizedBox(width: 4),
+                      if (constraints.maxWidth > 120)
+                        IconButton(
+                          tooltip: 'Clear selection',
+                          visualDensity: VisualDensity.compact,
+                          style: IconButton.styleFrom(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: () => _notifier.clearSelectedDataItems(),
+                          icon: const Icon(
+                            Symbols.arrow_back_rounded,
+                            weight: 300,
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 4),
+                      Text(
+                        '${selectedDataItemIndexes.length} selected',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall,
+                      ),
+                      const SizedBox(width: 4),
+                    ],
+                  );
+                },
               ),
             ),
           if (isJumpSelectMode)
@@ -464,7 +489,6 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),
-          const Spacer(),
           if (selectedDataItemIndexes.isNotEmpty && !isJumpSelectMode) ...[
             IconButton(
               tooltip: 'Enable jump select mode (shift)',

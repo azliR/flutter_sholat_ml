@@ -251,8 +251,6 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       return;
     }
 
-    _preprocessRepository.saveDatasetToLocal(updatedDatasetProp!);
-
     state = state.copyWith(
       datasetProp: updatedDatasetProp,
       presentationState: const CompressVideoSuccessState(),
@@ -288,7 +286,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       path: newPath,
       datasetProp: datasetProp,
       isEdited: false,
-      presentationState: const SaveDatasetSuccessState(),
+      presentationState: SaveDatasetSuccessState(isAutosave: isAutoSaving),
     );
   }
 }

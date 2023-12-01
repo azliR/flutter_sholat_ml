@@ -110,24 +110,38 @@ class HomeRepository {
           ? Directories.reviewedDirPath
           : Directories.needReviewDirPath;
 
-      final updatedDatasets = datasets.map((dataset) {
-        final fullDir =
-            dir.directory(datasetDirPath).directory(dataset.property.id);
+      final updatedDatasets = await Future.wait(
+        datasets.map((dataset) async {
+          final fullDir =
+              dir.directory(datasetDirPath).directory(dataset.property.id);
 
-        if (createDirIfNotExist || !fullDir.existsSync()) {
-          fullDir.createSync(recursive: true);
-        }
+          if (createDirIfNotExist || !fullDir.existsSync()) {
+            fullDir.createSync(recursive: true);
+          }
 
-        final datasetCsvFile = fullDir.file(Paths.datasetCsv);
-        final datasetVideoFile = fullDir.file(Paths.datasetVideo);
+          final datasetCsvFile = fullDir.file(Paths.datasetCsv);
+          final datasetVideoFile = fullDir.file(Paths.datasetVideo);
+          final datasetPropFile = fullDir.file(Paths.datasetProp);
 
-        final updatedDataset = dataset.copyWith(
-          path: fullDir.path,
-          downloaded:
-              datasetCsvFile.existsSync() && datasetVideoFile.existsSync(),
-        );
-        return updatedDataset;
-      }).toList();
+          final downloaded =
+              datasetCsvFile.existsSync() && datasetVideoFile.existsSync();
+
+          DatasetProp? datasetProp;
+          if (datasetPropFile.existsSync()) {
+            final datasetPropStr = datasetPropFile.readAsStringSync();
+            final datasetPropMap =
+                jsonDecode(datasetPropStr) as Map<String, dynamic>;
+            datasetProp = DatasetProp.fromJson(datasetPropMap);
+          }
+
+          final updatedDataset = dataset.copyWith(
+            path: fullDir.path,
+            downloaded: downloaded,
+            property: datasetProp,
+          );
+          return updatedDataset;
+        }).toList(),
+      );
 
       return (null, updatedDatasets);
     } catch (e, stackTrace) {

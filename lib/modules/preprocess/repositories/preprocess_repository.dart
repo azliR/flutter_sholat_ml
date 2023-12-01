@@ -183,8 +183,6 @@ class PreprocessRepository {
           return (writeDatasetPropFailure, null, null);
         }
 
-        saveDatasetToLocal(updatedDatasetProp);
-
         return (null, path, updatedDatasetProp);
       }
 
@@ -243,18 +241,16 @@ class PreprocessRepository {
       await datasetPropFile
           .writeAsString(jsonEncode(updatedDatasetProp.toJson()));
 
+      if (!datasetProp.isUploaded) {
+        LocalDatasetStorageService.putDataset(updatedDatasetProp);
+      }
+
       return (null, updatedDatasetProp);
     } catch (e, stackTrace) {
       const message = 'Failed writing dataset prop to disk';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }
-  }
-
-  void saveDatasetToLocal(
-    DatasetProp datasetProp,
-  ) {
-    LocalDatasetStorageService.putDataset(datasetProp);
   }
 
   Future<(Failure?, DatasetProp?)> _saveDatasetToDatabase({

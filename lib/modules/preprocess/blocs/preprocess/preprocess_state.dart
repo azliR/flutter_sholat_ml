@@ -146,7 +146,9 @@ final class SaveDatasetAutoSavingState extends PreprocessPresentationState {
 }
 
 final class SaveDatasetSuccessState extends PreprocessPresentationState {
-  const SaveDatasetSuccessState();
+  const SaveDatasetSuccessState({required this.isAutosave});
+
+  final bool isAutosave;
 }
 
 final class SaveDatasetFailureState extends PreprocessPresentationState {
