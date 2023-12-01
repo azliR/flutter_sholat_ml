@@ -14,10 +14,10 @@ class DatasetProp extends Equatable {
     required this.deviceLocation,
     required this.datasetVersion,
     required this.createdAt,
+    required this.isSyncedWithCloud,
     this.csvUrl,
     this.videoUrl,
     this.thumbnailUrl,
-    this.isSyncedWithCloud,
   }) : datasetPropVersion = DatasetPropVersion.values.last;
 
   factory DatasetProp.fromJson(Map<String, dynamic> json) {
@@ -36,6 +36,8 @@ class DatasetProp extends Equatable {
               ? DatasetVersion.v1
               : DatasetVersion.fromValue(json['dataset_version'] as int),
           // new
+          isSyncedWithCloud:
+              json['csv_url'] != null && json['video_url'] != null,
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -55,9 +57,8 @@ class DatasetProp extends Equatable {
               : DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
           // new
-          isSyncedWithCloud: json['csv_url'] != null &&
-              json['video_url'] != null &&
-              json['thumbnail_url'] != null,
+          isSyncedWithCloud:
+              json['csv_url'] != null && json['video_url'] != null,
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -78,9 +79,8 @@ class DatasetProp extends Equatable {
           createdAt:
               DateTime.tryParse(json['created_at'] as String) ?? DateTime.now(),
           // new
-          isSyncedWithCloud: json['csv_url'] != null &&
-              json['video_url'] != null &&
-              json['thumbnail_url'] != null,
+          isSyncedWithCloud:
+              json['csv_url'] != null && json['video_url'] != null,
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -125,6 +125,7 @@ class DatasetProp extends Equatable {
           datasetVersion:
               DatasetVersion.fromValue(json['dataset_version'] as int),
           // new
+          isSyncedWithCloud: true, // default true when fetching from firestore
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -143,9 +144,7 @@ class DatasetProp extends Equatable {
               DatasetVersion.fromValue(json['dataset_version'] as int),
           datasetPropVersion: propVersion,
           // new
-          isSyncedWithCloud: json['csv_url'] != null &&
-              json['video_url'] != null &&
-              json['thumbnail_url'] != null,
+          isSyncedWithCloud: true, // default true when fetching from firestore
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -164,9 +163,7 @@ class DatasetProp extends Equatable {
           datasetPropVersion: propVersion,
           createdAt: (json['created_at'] as Timestamp).toDate(),
           // new
-          isSyncedWithCloud: json['csv_url'] != null &&
-              json['video_url'] != null &&
-              json['thumbnail_url'] != null,
+          isSyncedWithCloud: true, // default true when fetching from firestore
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -198,17 +195,17 @@ class DatasetProp extends Equatable {
     required this.datasetVersion,
     required this.datasetPropVersion,
     required this.createdAt,
+    required this.isSyncedWithCloud,
     this.csvUrl,
     this.videoUrl,
     this.thumbnailUrl,
-    this.isSyncedWithCloud,
   });
 
   final String id;
   final String? csvUrl;
   final String? videoUrl;
   final String? thumbnailUrl;
-  final bool? isSyncedWithCloud;
+  final bool isSyncedWithCloud;
   final bool isCompressed;
   final bool hasEvaluated;
   final DeviceLocation deviceLocation;

@@ -411,6 +411,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
             showErrorSnackbar(context, 'Failed compressing video');
           case SaveDatasetLoadingState():
             context.loaderOverlay.show();
+          case SaveDatasetAutoSavingState():
+            break;
           case SaveDatasetSuccessState():
             context.loaderOverlay.hide();
             showSnackbar(context, 'Dataset saved successfully!');
@@ -426,8 +428,13 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         },
       )
       ..listen(
-          preprocessProvider.select((value) => value.selectedDataItemIndexes),
-          (previous, next) {});
+        preprocessProvider.select((value) => value.isEdited),
+        (previous, next) {
+          if (next) {
+            _notifier.saveDataset(diskOnly: true, isAutoSaving: true);
+          }
+        },
+      );
 
     final datasetProp =
         ref.watch(preprocessProvider.select((state) => state.datasetProp));
@@ -460,11 +467,43 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Preprocess',
-                style: textTheme.titleLarge?.copyWith(
-                  fontSize: 20,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Preprocess',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontSize: 20,
+                    ),
+                  ),
+                  if (datasetProp != null) ...[
+                    const SizedBox(width: 16),
+                    Row(
+                      children: [
+                        if (datasetProp.isSyncedWithCloud) ...[
+                          const Icon(
+                            Symbols.cloud_done_rounded,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Saved in cloud',
+                            style: textTheme.bodySmall,
+                          ),
+                        ] else ...[
+                          const Icon(
+                            Symbols.cloud_off_rounded,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Saved in local',
+                            style: textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ],
               ),
               if (datasetProp != null) ...[
                 Container(
@@ -499,36 +538,69 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           scrolledUnderElevation: 0,
           actions: [
             if (datasetProp != null) ...[
-              if (width >= 800)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FilledButton.tonalIcon(
-                    onPressed:
-                        datasetProp.isCompressed ? null : _showCompressDialog,
-                    icon: const Icon(Symbols.movie_rounded),
-                    label: Text(
-                      datasetProp.isCompressed
-                          ? 'Video compressed'
-                          : 'Compress video',
-                    ),
-                  ),
-                ),
               if (width >= 600)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: FilledButton.tonalIcon(
-                    onPressed: () => _notifier.setEvaluated(
-                      hasEvaluated: !datasetProp.hasEvaluated,
-                    ),
-                    icon: datasetProp.hasEvaluated
-                        ? const Icon(Symbols.cancel_rounded)
-                        : const Icon(Symbols.check_circle_rounded),
-                    label: Text(
-                      datasetProp.hasEvaluated
-                          ? 'Mark as not evaluated'
-                          : 'Mark as evaluated',
-                    ),
-                  ),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final isAutosave = ref.watch(
+                      preprocessProvider.select((value) => value.isAutosave),
+                    );
+                    final isAutosaving = ref.watch(
+                      preprocessProvider.select(
+                        (value) =>
+                            value.presentationState ==
+                            const SaveDatasetAutoSavingState(),
+                      ),
+                    );
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isAutosaving)
+                          const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: colorScheme.secondaryContainer,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(width: 4),
+                              Text(
+                                'AutoSave',
+                                style: textTheme.titleSmall,
+                              ),
+                              const SizedBox(width: 4),
+                              SizedBox(
+                                height: 40,
+                                child: FittedBox(
+                                  fit: BoxFit.fill,
+                                  child: Switch(
+                                    value: isAutosave,
+                                    onChanged: (value) {
+                                      _notifier.setIsAutosave(
+                                          isAutosave: value);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -549,7 +621,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                   ),
                 ),
               ),
-              if (width < 800) _buildMenu(datasetProp),
+              _buildMenu(datasetProp),
               const SizedBox(width: 12),
             ],
           ],
@@ -817,9 +889,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   }
 
   Widget _buildMenu(DatasetProp datasetProp) {
-    final data = MediaQuery.of(context);
-    final width = data.size.width;
-
     return MenuAnchor(
       builder: (context, controller, child) {
         return IconButton(
@@ -838,27 +907,25 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         );
       },
       menuChildren: [
-        if (width < 600)
-          MenuItemButton(
-            leadingIcon: datasetProp.hasEvaluated
-                ? const Icon(Symbols.cancel_rounded)
-                : const Icon(Symbols.check_circle_rounded),
-            onPressed: () =>
-                _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
-            child: Text(
-              datasetProp.hasEvaluated
-                  ? 'Mark as not evaluated'
-                  : 'Mark as evaluated',
-            ),
+        MenuItemButton(
+          leadingIcon: datasetProp.hasEvaluated
+              ? const Icon(Symbols.cancel_rounded)
+              : const Icon(Symbols.check_circle_rounded),
+          onPressed: () =>
+              _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
+          child: Text(
+            datasetProp.hasEvaluated
+                ? 'Mark as not evaluated'
+                : 'Mark as evaluated',
           ),
-        if (width < 800)
-          MenuItemButton(
-            leadingIcon: const Icon(Symbols.movie_rounded),
-            onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
-            child: Text(
-              datasetProp.isCompressed ? 'Video compressed' : 'Compress video',
-            ),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Symbols.movie_rounded),
+          onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
+          child: Text(
+            datasetProp.isCompressed ? 'Video compressed' : 'Compress video',
           ),
+        ),
       ],
       child: const Icon(Symbols.more_vert_rounded),
     );

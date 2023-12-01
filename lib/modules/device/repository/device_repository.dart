@@ -386,7 +386,7 @@ class DeviceRepository {
 
   Future<(Failure?, void)> saveDevice(Device device) async {
     try {
-      await LocalStorageService.setSavedDevice(device);
+      LocalStorageService.setSavedDevice(device);
       return (null, null);
     } catch (e, stackTrace) {
       final message = 'Failed saving device: $device';
@@ -397,7 +397,7 @@ class DeviceRepository {
 
   Future<(Failure?, void)> removeDevice(Device device) async {
     try {
-      await LocalStorageService.deleteSavedDevice(device);
+      LocalStorageService.deleteSavedDevice(device);
       return (null, null);
     } catch (e, stackTrace) {
       final message = 'Failed removing device: $device';

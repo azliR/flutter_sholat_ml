@@ -167,6 +167,7 @@ class RecordRepository {
     try {
       final datasetProp = DatasetProp(
         id: dirName,
+        isSyncedWithCloud: false,
         isCompressed: false,
         hasEvaluated: false,
         deviceLocation: deviceLocation,

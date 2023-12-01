@@ -32,7 +32,8 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   Future<void> initialise(String path) async {
-    state = state.copyWith(path: path);
+    final isAutoSave = _preprocessRepository.getAutoSave();
+    state = state.copyWith(path: path, isAutosave: isAutoSave);
     await readDataItems();
   }
 
@@ -60,6 +61,11 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       datasetProp: datasetProp,
     );
     return true;
+  }
+
+  void setIsAutosave({required bool isAutosave}) {
+    _preprocessRepository.setAutoSave(isAutoSave: isAutosave);
+    state = state.copyWith(isAutosave: isAutosave);
   }
 
   void setIsPlaying({required bool isPlaying}) {
@@ -231,7 +237,6 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
     final datasetProp = state.datasetProp!.copyWith(
       isCompressed: true,
-      isSyncedWithCloud: false,
     );
 
     final (writePropFailure, updatedDatasetProp) =
@@ -254,8 +259,15 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     );
   }
 
-  Future<void> saveDataset({bool diskOnly = false}) async {
-    state = state.copyWith(presentationState: const SaveDatasetLoadingState());
+  Future<void> saveDataset({
+    bool diskOnly = false,
+    bool isAutoSaving = false,
+  }) async {
+    state = state.copyWith(
+      presentationState: isAutoSaving
+          ? const SaveDatasetAutoSavingState()
+          : const SaveDatasetLoadingState(),
+    );
 
     final (failure, newPath, datasetProp) =
         await _preprocessRepository.saveDataset(

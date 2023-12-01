@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/data_item_tile_widget.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:video_player/video_player.dart';
 
@@ -93,8 +94,10 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
             _notifier.setVideoPlaybackSpeed(updatedPlaybackSpeed);
             widget.videoPlayerController.setPlaybackSpeed(updatedPlaybackSpeed);
           }
-        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          if (event.isKeyPressed(LogicalKeyboardKey.arrowUp)) {
+        } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+            event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+          if (event.isKeyPressed(LogicalKeyboardKey.arrowUp) ||
+              event.isKeyPressed(LogicalKeyboardKey.arrowLeft)) {
             final selectedDataItemIndexes =
                 ref.read(preprocessProvider).selectedDataItemIndexes;
             final currentHighlightedIndex =
@@ -120,8 +123,10 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
               widget.scrollController.jumpTo(currentOffset);
             }
           }
-        } else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          if (event.isKeyPressed(LogicalKeyboardKey.arrowDown)) {
+        } else if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+            event.logicalKey == LogicalKeyboardKey.arrowRight) {
+          if (event.isKeyPressed(LogicalKeyboardKey.arrowDown) ||
+              event.isKeyPressed(LogicalKeyboardKey.arrowRight)) {
             final dataItemsLength = dataItems.length;
             final selectedDataItemIndexes =
                 ref.read(preprocessProvider).selectedDataItemIndexes;
@@ -156,44 +161,64 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
         _notifier.setJumpSelectMode(enable: event.isShiftPressed);
         return KeyEventResult.handled;
       },
-      child: Scrollbar(
-        child: ListView.builder(
-          controller: widget.scrollController,
-          cacheExtent: 32,
-          itemExtent: 32,
-          itemCount: dataItems.length,
-          itemBuilder: (context, index) {
-            return Consumer(
-              builder: (context, ref, child) {
-                final currentHighlightedIndex = ref.watch(
-                  preprocessProvider
-                      .select((value) => value.currentHighlightedIndex),
-                );
-                final selectedDataItemIndexes = ref.watch(
-                  preprocessProvider
-                      .select((state) => state.selectedDataItemIndexes),
-                );
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Scrollbar(
+            child: ListView.builder(
+              controller: widget.scrollController,
+              cacheExtent: 32,
+              itemExtent: 32,
+              itemCount: dataItems.length,
+              itemBuilder: (context, index) {
+                return Consumer(
+                  builder: (context, ref, child) {
+                    final currentHighlightedIndex = ref.watch(
+                      preprocessProvider
+                          .select((value) => value.currentHighlightedIndex),
+                    );
+                    final selectedDataItemIndexes = ref.watch(
+                      preprocessProvider
+                          .select((state) => state.selectedDataItemIndexes),
+                    );
 
-                final dataItem = dataItems[index];
-                final selected = selectedDataItemIndexes.contains(index);
+                    final dataItem = dataItems[index];
+                    final selected = selectedDataItemIndexes.contains(index);
 
-                return DataItemTile(
-                  index: index,
-                  dataItem: dataItem,
-                  highlighted: index == currentHighlightedIndex,
-                  selected: selected,
-                  onTap: () => widget.onDataItemPressed(index),
-                  onLongPress: () async {
-                    _notifier
-                      ..setSelectedDataset(index)
-                      ..setCurrentHighlightedIndex(index);
-                    widget.trackballBehavior.showByIndex(index);
+                    return DataItemTile(
+                      index: index,
+                      dataItem: dataItem,
+                      highlighted: index == currentHighlightedIndex,
+                      selected: selected,
+                      onTap: () => widget.onDataItemPressed(index),
+                      onLongPress: () async {
+                        _notifier
+                          ..setSelectedDataset(index)
+                          ..setCurrentHighlightedIndex(index);
+                        widget.trackballBehavior.showByIndex(index);
+                      },
+                    );
                   },
                 );
               },
-            );
-          },
-        ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FloatingActionButton.small(
+                onPressed: () {
+                  final lastLabeledIndex = dataItems
+                      .lastIndexWhere((dataItem) => dataItem.isLabeled);
+                  widget.scrollController.jumpTo(lastLabeledIndex * 32);
+                  _notifier.setCurrentHighlightedIndex(lastLabeledIndex);
+                },
+                child: const Icon(Symbols.arrow_downward_rounded),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

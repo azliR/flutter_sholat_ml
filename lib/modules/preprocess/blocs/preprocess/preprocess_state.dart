@@ -12,6 +12,7 @@ class PreprocessState extends Equatable {
     required this.isFollowHighlightedMode,
     required this.isPlaying,
     required this.isEdited,
+    required this.isAutosave,
     required this.dataItems,
     required this.selectedDataItemIndexes,
     required this.presentationState,
@@ -27,6 +28,7 @@ class PreprocessState extends Equatable {
         isFollowHighlightedMode: false,
         isPlaying: false,
         isEdited: false,
+        isAutosave: false,
         dataItems: [],
         selectedDataItemIndexes: {},
         presentationState: PreprocessInitial(),
@@ -41,6 +43,7 @@ class PreprocessState extends Equatable {
   final bool isFollowHighlightedMode;
   final bool isPlaying;
   final bool isEdited;
+  final bool isAutosave;
   final List<DataItem> dataItems;
   final Set<int> selectedDataItemIndexes;
   final PreprocessPresentationState presentationState;
@@ -55,6 +58,7 @@ class PreprocessState extends Equatable {
     bool? isFollowHighlightedMode,
     bool? isPlaying,
     bool? isEdited,
+    bool? isAutosave,
     List<DataItem>? dataItems,
     Set<int>? selectedDataItemIndexes,
     PreprocessPresentationState? presentationState,
@@ -73,6 +77,7 @@ class PreprocessState extends Equatable {
           isFollowHighlightedMode ?? this.isFollowHighlightedMode,
       isPlaying: isPlaying ?? this.isPlaying,
       isEdited: isEdited ?? this.isEdited,
+      isAutosave: isAutosave ?? this.isAutosave,
       dataItems: dataItems ?? this.dataItems,
       selectedDataItemIndexes:
           selectedDataItemIndexes ?? this.selectedDataItemIndexes,
@@ -90,6 +95,8 @@ class PreprocessState extends Equatable {
         isJumpSelectMode,
         isFollowHighlightedMode,
         isPlaying,
+        isEdited,
+        isAutosave,
         dataItems,
         selectedDataItemIndexes,
         presentationState,
@@ -132,6 +139,10 @@ final class CompressVideoFailureState extends PreprocessPresentationState {
 
 final class SaveDatasetLoadingState extends PreprocessPresentationState {
   const SaveDatasetLoadingState();
+}
+
+final class SaveDatasetAutoSavingState extends PreprocessPresentationState {
+  const SaveDatasetAutoSavingState();
 }
 
 final class SaveDatasetSuccessState extends PreprocessPresentationState {

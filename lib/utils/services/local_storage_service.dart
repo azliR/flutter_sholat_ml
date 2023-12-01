@@ -6,16 +6,17 @@ class LocalStorageService {
 
   static const String kBox = 'local_storage_box';
   static const String kSavedDevices = 'saved_devices';
+  static const String kAutoSave = 'auto_save';
 
-  static final _box = Hive.box<List<dynamic>>(name: kBox);
+  static final _box = Hive.box<dynamic>(name: kBox);
 
   static Stream<List<Device>> get savedDevicesStream =>
       _box.watchKey(kSavedDevices).map((event) {
-        if (event == null) return [];
+        if (event == null || event is! List) return [];
         return event.cast<Map<String, dynamic>>().map(Device.fromJson).toList();
       });
 
-  static Future<void> setSavedDevice(Device device) async {
+  static void setSavedDevice(Device device) {
     final updatedDevices = getSavedDevices()
       ..removeWhere((savedDevice) => savedDevice.deviceId == device.deviceId)
       ..insert(0, device);
@@ -25,16 +26,24 @@ class LocalStorageService {
   }
 
   static List<Device> getSavedDevices() {
-    final devicesJson = _box.get(kSavedDevices) ?? [];
+    final devicesJson = _box.get(kSavedDevices) as List? ?? [];
     final devices =
         devicesJson.cast<Map<String, dynamic>>().map(Device.fromJson).toList();
     return devices;
   }
 
-  static Future<void> deleteSavedDevice(Device device) async {
+  static void deleteSavedDevice(Device device) {
     final devices = getSavedDevices()
       ..removeWhere((savedDevice) => savedDevice.deviceId == device.deviceId);
     final devicesJson = devices.map((device) => device.toJson()).toList();
     _box.put(kSavedDevices, devicesJson);
+  }
+
+  static void setAutoSave({required bool isAutoSave}) {
+    _box.put(kAutoSave, isAutoSave);
+  }
+
+  static bool getAutoSave() {
+    return _box.get(kAutoSave) as bool? ?? false;
   }
 }

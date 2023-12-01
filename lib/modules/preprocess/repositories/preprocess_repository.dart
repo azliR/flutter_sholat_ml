@@ -15,6 +15,7 @@ import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
+import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_compress/video_compress.dart';
@@ -38,6 +39,7 @@ class PreprocessRepository {
       if (!datasetPropFile.existsSync()) {
         datasetProp = DatasetProp(
           id: dirName,
+          isSyncedWithCloud: false,
           isCompressed: false,
           hasEvaluated: false,
           deviceLocation: DeviceLocation.leftWrist,
@@ -395,5 +397,13 @@ class PreprocessRepository {
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }
+  }
+
+  void setAutoSave({required bool isAutoSave}) {
+    LocalStorageService.setAutoSave(isAutoSave: isAutoSave);
+  }
+
+  bool getAutoSave() {
+    return LocalStorageService.getAutoSave();
   }
 }

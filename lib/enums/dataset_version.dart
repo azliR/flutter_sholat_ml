@@ -1,25 +1,29 @@
 enum DatasetVersion {
   /// Format dataset csv in v1:
   /// ```
-  /// {timestamp},{x},{y},{z},{heartRate},{deviceLocation},{labelCategory},{label}'
+  /// {timestamp},{x},{y},{z},{heartRate},{deviceLocation},{labelCategory},
+  /// {label},
   /// ```
   v1,
 
   /// Format dataset csv in v2:
   /// ```
-  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},{note},{labelCategory},{label}'
+  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},
+  /// {note},{labelCategory},{label},
   /// ```
   v2,
 
   /// Format dataset csv in v3:
   /// ```
-  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},{note},{labelCategory},{label},{noise}'
+  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},
+  /// {note},{labelCategory},{label},{noise},
   /// ```
   v3,
 
   /// Format dataset csv in v4:
   /// ```
-  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{note},{labelCategory},{label},{noise}'
+  /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{note},
+  /// {labelCategory},{label},{noise},
   /// ```
   v4;
 
