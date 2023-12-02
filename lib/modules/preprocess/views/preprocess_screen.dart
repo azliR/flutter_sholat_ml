@@ -113,8 +113,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
     if (index >= maxIndex) {
       _isTrackballControlled = true;
-      _lastZoomPosition =
-          ((index + 1) / dataItemsLength) - (maxVisible / dataItemsLength);
+      final multiplier = ((index - minIndex) / maxVisible).floor();
+      _lastZoomPosition = _lastZoomPosition! + (_lastZoomFactor! * multiplier);
+
+      // _lastZoomPosition =
+      //     ((index + 1) / dataItemsLength) - (maxVisible / dataItemsLength);
 
       _zoomPanBehavior.zoomToSingleAxis(
         _primaryXAxis,
@@ -123,7 +126,10 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       );
     } else if (index <= minIndex) {
       _isTrackballControlled = true;
-      _lastZoomPosition = (index - 1) / dataItemsLength;
+      final multiplier = ((maxIndex - index) / maxVisible).floor();
+      _lastZoomPosition = _lastZoomPosition! - (_lastZoomFactor! * multiplier);
+
+      // _lastZoomPosition = (index - 1) / dataItemsLength;
 
       _zoomPanBehavior.zoomToSingleAxis(
         _primaryXAxis,
@@ -776,9 +782,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           builder: (context, ref, child) {
             final isEdited = ref.watch(
               preprocessProvider.select((value) => value.isEdited),
-            );
-            final isAutosave = ref.watch(
-              preprocessProvider.select((value) => value.isAutosave),
             );
             final isAutosaving = ref.watch(
               preprocessProvider.select(
