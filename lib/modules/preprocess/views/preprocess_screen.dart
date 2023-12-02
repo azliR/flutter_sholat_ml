@@ -262,7 +262,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
               ),
               subtitle: Text(
                 isUploaded
-                    ? 'Dataset will be updated'
+                    ? 'Dataset will be updated with the cloud'
                     : 'Dataset will be uploaded',
               ),
               leading: isUploaded
@@ -693,67 +693,49 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     return [
       if (datasetProp != null) ...[
         if (width >= 600)
-          Consumer(
-            builder: (context, ref, child) {
-              final isAutosave = ref.watch(
-                preprocessProvider.select((value) => value.isAutosave),
-              );
-              final isAutosaving = ref.watch(
-                preprocessProvider.select(
-                  (value) =>
-                      value.presentationState ==
-                      const SaveDatasetAutoSavingState(),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: colorScheme.secondaryContainer,
                 ),
-              );
-
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isAutosaving)
-                    const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 4),
+                    Text(
+                      'AutoSave',
+                      style: textTheme.titleSmall,
                     ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: colorScheme.secondaryContainer,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const SizedBox(width: 4),
-                        Text(
-                          'AutoSave',
-                          style: textTheme.titleSmall,
-                        ),
-                        const SizedBox(width: 4),
-                        SizedBox(
-                          height: 40,
-                          child: FittedBox(
-                            fit: BoxFit.fill,
-                            child: Switch(
+                    const SizedBox(width: 4),
+                    SizedBox(
+                      height: 40,
+                      child: FittedBox(
+                        fit: BoxFit.fill,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final isAutosave = ref.watch(
+                              preprocessProvider
+                                  .select((value) => value.isAutosave),
+                            );
+                            return Switch(
                               value: isAutosave,
                               onChanged: (value) {
                                 _notifier.setIsAutosave(isAutosave: value);
                               },
-                            ),
-                          ),
+                            );
+                          },
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                ),
+              ),
+            ],
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -790,55 +772,93 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            Flexible(
-              child: Consumer(
-                builder: (context, ref, child) {
-                  final isEdited = ref.watch(
-                    preprocessProvider.select((value) => value.isEdited),
-                  );
-                  return Text(
+        Consumer(
+          builder: (context, ref, child) {
+            final isEdited = ref.watch(
+              preprocessProvider.select((value) => value.isEdited),
+            );
+            final isAutosave = ref.watch(
+              preprocessProvider.select((value) => value.isAutosave),
+            );
+            final isAutosaving = ref.watch(
+              preprocessProvider.select(
+                (value) =>
+                    value.presentationState ==
+                    const SaveDatasetAutoSavingState(),
+              ),
+            );
+            return Row(
+              children: [
+                Flexible(
+                  child: Text(
                     'Preprocess${isEdited ? '*' : ''}',
                     style: textTheme.titleLarge?.copyWith(
                       fontSize: 18,
                     ),
-                  );
-                },
-              ),
-            ),
-            if (datasetProp != null) ...[
-              if (width >= 480)
-                const SizedBox(width: 16)
-              else
-                const SizedBox(width: 8),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (datasetProp.isSyncedWithCloud) ...[
-                    const Icon(
-                      Symbols.cloud_done_rounded,
-                      size: 20,
-                    ),
-                  ] else ...[
-                    const Icon(
-                      Symbols.cloud_off_rounded,
-                      size: 20,
-                    ),
-                  ],
-                  if (width >= 480) ...[
+                  ),
+                ),
+                if (datasetProp != null) ...[
+                  if (width >= 480)
+                    const SizedBox(width: 16)
+                  else
                     const SizedBox(width: 8),
-                    Text(
-                      datasetProp.isSyncedWithCloud
-                          ? 'Saved in cloud'
-                          : 'Saved in local',
-                      style: textTheme.bodySmall,
-                    ),
-                  ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        () {
+                          if (isAutosaving) {
+                            return Symbols.sync_rounded;
+                          }
+                          return datasetProp.isSyncedWithCloud
+                              ? Symbols.cloud_done_rounded
+                              : Symbols.sync_saved_locally;
+                        }(),
+                        size: 20,
+                        fill: () {
+                          if (isAutosaving) {
+                            return 0.0;
+                          }
+                          return datasetProp.isSyncedWithCloud ? 1.0 : 0.0;
+                        }(),
+                        color: () {
+                          if (isAutosaving) {
+                            return colorScheme.onBackground;
+                          }
+                          return datasetProp.isSyncedWithCloud
+                              ? colorScheme.primary
+                              : colorScheme.onBackground;
+                        }(),
+                      ),
+                      if (width >= 480) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          () {
+                            if (isAutosaving) {
+                              return 'Saving...';
+                            }
+                            return datasetProp.isSyncedWithCloud
+                                ? 'Saved in cloud'
+                                : 'Saved in local';
+                          }(),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: () {
+                              if (isAutosaving) {
+                                return colorScheme.onBackground;
+                              }
+                              return datasetProp.isSyncedWithCloud
+                                  ? colorScheme.primary
+                                  : colorScheme.onBackground;
+                            }(),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
-              ),
-            ],
-          ],
+              ],
+            );
+          },
         ),
         if (datasetProp != null) ...[
           Container(

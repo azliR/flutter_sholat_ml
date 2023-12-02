@@ -117,7 +117,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                       ),
                     if (widget.selected)
                       Container(
-                        padding: const EdgeInsets.all(1),
+                        padding: const EdgeInsets.all(2),
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: colorScheme.primary,
@@ -126,7 +126,24 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                         child: Icon(
                           Symbols.check_rounded,
                           color: colorScheme.onPrimary,
-                          size: 20,
+                          size: 18,
+                          weight: 600,
+                        ),
+                      )
+                    else if (widget.labeled &&
+                        downloaded != null &&
+                        !downloaded)
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        margin: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Symbols.download,
+                          color: colorScheme.onSecondary,
+                          size: 18,
                           weight: 600,
                         ),
                       ),
@@ -154,32 +171,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
             ),
             const SizedBox(height: 8),
             if (widget.labeled) ...[
-              if (downloaded != null && !downloaded)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        downloaded
-                            ? Symbols.offline_pin_rounded
-                            : Symbols.download_rounded,
-                        size: 16,
-                        opticalSize: 20,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          downloaded
-                              ? 'Available offline'
-                              : 'Available to download',
-                          style: textTheme.bodySmall,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
+              if (downloaded != null && downloaded) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
@@ -187,7 +179,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                       Icon(
                         isSyncedWithCloud
                             ? Symbols.cloud_done_rounded
-                            : Symbols.cloud_off_rounded,
+                            : Symbols.sync_saved_locally,
                         size: 16,
                         opticalSize: 20,
                         color: isSyncedWithCloud
@@ -201,7 +193,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                         child: Text(
                           isSyncedWithCloud
                               ? 'Synced with cloud'
-                              : 'Not synced with cloud',
+                              : 'Saved locally',
                           style: textTheme.bodySmall?.copyWith(
                             color: isSyncedWithCloud
                                 ? colorScheme.primary
@@ -212,7 +204,8 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                     ],
                   ),
                 ),
-              const SizedBox(height: 6),
+                const SizedBox(height: 6),
+              ],
             ],
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
