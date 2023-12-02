@@ -358,16 +358,13 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
       }
     });
 
-    final selectedDatasetIndexes = ref.watch(
-      datasetsProvider.select((value) => value.selectedDatasetIndexes),
-    );
-    final isSelectMode = selectedDatasetIndexes.isNotEmpty;
-
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
         if (didPop) return;
 
+        final isSelectMode =
+            ref.read(datasetsProvider).selectedDatasetIndexes.isNotEmpty;
         if (isSelectMode) {
           _notifier.clearSelections();
           return;
@@ -379,70 +376,80 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
         child: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
-              SliverAppBar.medium(
-                title: const Text('Datasets'),
-                actions: [
-                  IconButton(
-                    tooltip: 'Refresh',
-                    onPressed: () {
-                      switch (_tabController.index) {
-                        case 0:
-                          _needReviewRefreshKey.currentState?.show();
-                        case 1:
-                          _reviewedRefreshKey.currentState?.show();
-                      }
-                    },
-                    icon: const Icon(Symbols.refresh_rounded),
-                  ),
-                  if (isSelectMode && _tabController.index == 0) ...[
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final needReviewDatasets = ref.watch(
-                          datasetsProvider
-                              .select((value) => value.needReviewDatasets),
-                        );
-                        if (selectedDatasetIndexes.length ==
-                            needReviewDatasets.length) {
-                          return const SizedBox();
-                        }
-                        return IconButton(
-                          tooltip: 'Select all',
-                          onPressed: () => _notifier.onSelectAllDatasets(),
-                          icon: const Icon(Symbols.select_all_rounded),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      onPressed: _showDeleteDatasetsDialog,
-                      icon: const Icon(Symbols.delete_rounded),
-                    ),
-                    IconButton(
-                      tooltip: 'Share & Export',
-                      onPressed: () {
-                        final datasets =
-                            ref.read(datasetsProvider).needReviewDatasets;
+              Consumer(
+                builder: (context, ref, child) {
+                  final selectedDatasetIndexes = ref.watch(
+                    datasetsProvider
+                        .select((value) => value.selectedDatasetIndexes),
+                  );
+                  final isSelectMode = selectedDatasetIndexes.isNotEmpty;
 
-                        _notifier.exportAndShareDatasets(
-                          selectedDatasetIndexes
-                              .map((index) => datasets[index].path!)
-                              .toList(),
-                        );
-                      },
-                      icon: const Icon(Symbols.share_rounded),
+                  return SliverAppBar.medium(
+                    title: const Text('Datasets'),
+                    actions: [
+                      IconButton(
+                        tooltip: 'Refresh',
+                        onPressed: () {
+                          switch (_tabController.index) {
+                            case 0:
+                              _needReviewRefreshKey.currentState?.show();
+                            case 1:
+                              _reviewedRefreshKey.currentState?.show();
+                          }
+                        },
+                        icon: const Icon(Symbols.refresh_rounded),
+                      ),
+                      if (isSelectMode && _tabController.index == 0) ...[
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final needReviewDatasets = ref.watch(
+                              datasetsProvider
+                                  .select((value) => value.needReviewDatasets),
+                            );
+                            if (selectedDatasetIndexes.length ==
+                                needReviewDatasets.length) {
+                              return const SizedBox();
+                            }
+                            return IconButton(
+                              tooltip: 'Select all',
+                              onPressed: () => _notifier.onSelectAllDatasets(),
+                              icon: const Icon(Symbols.select_all_rounded),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          tooltip: 'Delete',
+                          onPressed: _showDeleteDatasetsDialog,
+                          icon: const Icon(Symbols.delete_rounded),
+                        ),
+                        IconButton(
+                          tooltip: 'Share & Export',
+                          onPressed: () {
+                            final datasets =
+                                ref.read(datasetsProvider).needReviewDatasets;
+
+                            _notifier.exportAndShareDatasets(
+                              selectedDatasetIndexes
+                                  .map((index) => datasets[index].path!)
+                                  .toList(),
+                            );
+                          },
+                          icon: const Icon(Symbols.share_rounded),
+                        ),
+                      ],
+                      _buildMenu(),
+                      const SizedBox(width: 12),
+                    ],
+                    bottom: TabBar(
+                      controller: _tabController,
+                      isScrollable: data.size.width > 480,
+                      tabs: const [
+                        Tab(text: 'Local'),
+                        Tab(text: 'Cloud'),
+                      ],
                     ),
-                  ],
-                  _buildMenu(),
-                  const SizedBox(width: 12),
-                ],
-                bottom: TabBar(
-                  controller: _tabController,
-                  isScrollable: data.size.width > 480,
-                  tabs: const [
-                    Tab(text: 'Local'),
-                    Tab(text: 'Cloud'),
-                  ],
-                ),
+                  );
+                },
               ),
               Consumer(
                 builder: (context, ref, child) {

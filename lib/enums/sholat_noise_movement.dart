@@ -1,6 +1,7 @@
 enum SholatNoiseMovement {
   menggaruk,
   menahanRambut,
+  menggantiPosisi,
   menahanPakaian,
   menyelangJari,
   berdiriTidakStabil;
@@ -12,6 +13,7 @@ enum SholatNoiseMovement {
   String get name => switch (this) {
         SholatNoiseMovement.menggaruk => 'Menggaruk',
         SholatNoiseMovement.menahanRambut => 'Menahan Rambut',
+        SholatNoiseMovement.menggantiPosisi => 'Mengganti Posisi',
         SholatNoiseMovement.menahanPakaian => 'Menahan Pakaian',
         SholatNoiseMovement.menyelangJari => 'Menyelang Jari',
         SholatNoiseMovement.berdiriTidakStabil => 'Berdiri Tidak Stabil',
@@ -20,6 +22,7 @@ enum SholatNoiseMovement {
   String? get value => switch (this) {
         SholatNoiseMovement.menggaruk => 'menggaruk',
         SholatNoiseMovement.menahanRambut => 'menahan_rambut',
+        SholatNoiseMovement.menggantiPosisi => 'mengganti_posisi',
         SholatNoiseMovement.menahanPakaian => 'menahan_pakaian',
         SholatNoiseMovement.menyelangJari => 'menyelang_jari',
         SholatNoiseMovement.berdiriTidakStabil => 'berdiri_tidak_stabil',

@@ -85,7 +85,6 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                       _notifier
                         ..setSelectedDataset(index)
                         ..setCurrentHighlightedIndex(index);
-                      widget.trackballBehavior.showByIndex(index);
                     },
                   );
                 },

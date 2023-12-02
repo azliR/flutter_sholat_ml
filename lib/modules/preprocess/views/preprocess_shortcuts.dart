@@ -10,14 +10,12 @@ class PreprocessShortcuts extends ConsumerStatefulWidget {
   const PreprocessShortcuts({
     required this.scrollController,
     required this.videoPlayerController,
-    required this.onHighlightChanged,
     required this.child,
     super.key,
   });
 
   final ScrollController scrollController;
   final VideoPlayerController videoPlayerController;
-  final void Function(bool value) onHighlightChanged;
   final Widget child;
 
   @override
@@ -205,12 +203,6 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
       child: Focus(
         autofocus: true,
         onKey: (node, event) {
-          final bindings =
-              _bindings.entries.map((e) => e.key.triggers!.single).toList();
-
-          widget.onHighlightChanged(
-            bindings.any((e) => e == event.logicalKey && event.isKeyPressed(e)),
-          );
           _notifier.setJumpSelectMode(enable: event.isShiftPressed);
           return KeyEventResult.ignored;
         },

@@ -53,30 +53,30 @@ class AccelerometerChart extends StatelessWidget {
       onTrackballPositionChanging: onTrackballChanged,
       onActualRangeChanged: onActualRangeChanged,
       series: [
-        SplineSeries(
+        FastLineSeries(
+          animationDelay: 0,
           width: 1.4,
           dataSource: x,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
-          cardinalSplineTension: 1,
           color: Colors.red,
           legendItemText: 'x',
         ),
-        SplineSeries(
+        FastLineSeries(
+          animationDelay: 0,
           width: 1.4,
           dataSource: y,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
-          cardinalSplineTension: 1,
           color: Colors.green,
           legendItemText: 'y',
         ),
-        SplineSeries(
+        FastLineSeries(
+          animationDelay: 0,
           width: 1.4,
           dataSource: z,
           xValueMapper: (data, index) => index,
           yValueMapper: (data, index) => data,
-          cardinalSplineTension: 1,
           color: Colors.blue,
           legendItemText: 'z',
         ),

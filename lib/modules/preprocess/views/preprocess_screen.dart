@@ -37,7 +37,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   late final VideoPlayerController _videoPlayerController;
 
-  var _isPressingShortcut = false;
+  var _isTrackballControlled = false;
 
   final _scrollController = ScrollController();
   final _trackballBehavior = TrackballBehavior(
@@ -63,11 +63,15 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     decimalPlaces: 0,
     borderWidth: 0,
   );
+
   final _xDataItems = <num>[];
   final _yDataItems = <num>[];
   final _zDataItems = <num>[];
 
-  Timer? _timer;
+  Timer? _playVideoDebouncer;
+  Timer? _showTrackballDebouncer;
+  Timer? _trackballControlDebouncer;
+  Timer? _moveHighlightDebouncer;
   double? _lastZoomFactor;
   double? _lastZoomPosition;
 
@@ -108,8 +112,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     final maxIndex = minIndex + maxVisible;
 
     if (index >= maxIndex) {
+      _isTrackballControlled = true;
       _lastZoomPosition =
-          (index / dataItemsLength) - (maxVisible / dataItemsLength);
+          ((index + 1) / dataItemsLength) - (maxVisible / dataItemsLength);
 
       _zoomPanBehavior.zoomToSingleAxis(
         _primaryXAxis,
@@ -117,16 +122,39 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         _lastZoomFactor!,
       );
     } else if (index <= minIndex) {
-      _lastZoomPosition = index / dataItemsLength;
+      _isTrackballControlled = true;
+      _lastZoomPosition = (index - 1) / dataItemsLength;
 
       _zoomPanBehavior.zoomToSingleAxis(
         _primaryXAxis,
         _lastZoomPosition!,
         _lastZoomFactor!,
       );
-    } else {
-      _trackballBehavior.showByIndex(index);
     }
+    _isTrackballControlled = true;
+
+    if (index < maxIndex && index > minIndex) {
+      _showTrackballAt(index);
+      return;
+    }
+
+    _showTrackballDebouncer?.cancel();
+    _showTrackballDebouncer =
+        Timer(const Duration(milliseconds: 300), () async {
+      _showTrackballAt(index);
+      _showTrackballDebouncer?.cancel();
+    });
+  }
+
+  void _showTrackballAt(int index) {
+    _trackballBehavior.showByIndex(index);
+
+    _trackballControlDebouncer?.cancel();
+    _trackballControlDebouncer =
+        Timer(const Duration(milliseconds: 300), () async {
+      _isTrackballControlled = false;
+      _trackballControlDebouncer?.cancel();
+    });
   }
 
   void _scrollToDataItemTile(int index) {
@@ -374,6 +402,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
   @override
   void dispose() {
+    _playVideoDebouncer?.cancel();
+    _showTrackballDebouncer?.cancel();
+    _trackballControlDebouncer?.cancel();
+    _moveHighlightDebouncer?.cancel();
+
     _videoPlayerController
       ..removeListener(_videoListener)
       ..dispose();
@@ -424,8 +457,19 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       })
       ..listen(
         preprocessProvider.select((value) => value.currentHighlightedIndex),
-        (previous, next) {
-          _scrollChart(next, dataItemsLength);
+        (previous, index) {
+          _scrollChart(index, dataItemsLength);
+
+          _playVideoDebouncer?.cancel();
+          _playVideoDebouncer = Timer(
+              Duration(milliseconds: _isTrackballControlled ? 300 : 0), () {
+            final dataItems = ref.read(preprocessProvider).dataItems;
+            _videoPlayerController.seekTo(dataItems[index].timestamp!);
+            if (ref.read(preprocessProvider).isFollowHighlightedMode) {
+              _scrollToDataItemTile(index);
+            }
+            _playVideoDebouncer?.cancel();
+          });
         },
       )
       ..listen(
@@ -440,15 +484,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         },
       );
 
-    final datasetProp =
-        ref.watch(preprocessProvider.select((state) => state.datasetProp));
-
     return PreprocessShortcuts(
       scrollController: _scrollController,
       videoPlayerController: _videoPlayerController,
-      onHighlightChanged: (value) {
-        _isPressingShortcut = value;
-      },
       child: PopScope(
         canPop: false,
         onPopInvoked: (didPop) async {
@@ -472,10 +510,20 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         },
         child: Scaffold(
           resizeToAvoidBottomInset: false,
-          appBar: AppBar(
-            title: _buildAppBarTitle(datasetProp),
-            scrolledUnderElevation: 0,
-            actions: _buildAppBarActions(datasetProp),
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(kToolbarHeight),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final datasetProp = ref.watch(
+                  preprocessProvider.select((state) => state.datasetProp),
+                );
+                return AppBar(
+                  title: _buildAppBarTitle(datasetProp),
+                  scrolledUnderElevation: 0,
+                  actions: _buildAppBarActions(datasetProp),
+                );
+              },
+            ),
           ),
           body: Flex(
             direction: shouldVertical ? Axis.vertical : Axis.horizontal,
@@ -490,7 +538,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                       child: Row(
                         children: [
                           _buildVideoPlayer(),
-                          _buildDatasetInfo(datasetProp),
+                          _buildDatasetInfo(),
                         ],
                       ),
                     ),
@@ -510,23 +558,15 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                         onTrackballChanged: (trackballArgs) {
                           if (_videoPlayerController.value.isPlaying) return;
 
-                          if (_isPressingShortcut) return;
+                          if (_isTrackballControlled) return;
 
-                          final index =
-                              trackballArgs.chartPointInfo.dataPointIndex ?? 0;
-                          final dataItems =
-                              ref.read(preprocessProvider).dataItems;
-
-                          _timer?.cancel();
-                          _timer = Timer(const Duration(milliseconds: 300), () {
-                            _videoPlayerController
-                                .seekTo(dataItems[index].timestamp!);
+                          _moveHighlightDebouncer?.cancel();
+                          _moveHighlightDebouncer =
+                              Timer(const Duration(milliseconds: 300), () {
+                            final index =
+                                trackballArgs.chartPointInfo.dataPointIndex ??
+                                    0;
                             _notifier.setCurrentHighlightedIndex(index);
-                            if (ref
-                                .read(preprocessProvider)
-                                .isFollowHighlightedMode) {
-                              _scrollToDataItemTile(index);
-                            }
                           });
                         },
                         onActualRangeChanged: (args) {
@@ -831,103 +871,117 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
-  Widget _buildDatasetInfo(DatasetProp? datasetProp) {
+  Widget _buildDatasetInfo() {
     final textTheme = Theme.of(context).textTheme;
 
-    return Expanded(
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              children: [
-                if (datasetProp != null) ...[
-                  DatasetPropTile(
-                    label: 'Dataset ID',
-                    content: datasetProp.id,
-                    icon: Symbols.key_rounded,
-                  ),
-                  DatasetPropTile(
-                    label: 'Device Location',
-                    content: datasetProp.deviceLocation.name,
-                    icon: Symbols.watch_rounded,
-                  ),
-                  DatasetPropTile(
-                    label: 'Dataset prop version',
-                    content: datasetProp.datasetPropVersion.nameWithIsLatest(
-                      latestText: ' (latest)',
-                    ),
-                    icon: Symbols.manufacturing_rounded,
-                  ),
-                  DatasetPropTile(
-                    label: 'Dataset version',
-                    content: datasetProp.datasetVersion.nameWithIsLatest(
-                      latestText: ' (latest)',
-                    ),
-                    icon: Symbols.dataset_rounded,
-                  ),
-                  const Divider(),
-                  DatasetPropTile(
-                    label: 'Duration',
-                    content: _videoPlayerController.value.duration.toString(),
-                    icon: Symbols.timer_rounded,
+    return Consumer(
+      builder: (context, ref, child) {
+        final datasetProp =
+            ref.watch(preprocessProvider.select((state) => state.datasetProp));
+
+        return Expanded(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  children: [
+                    if (datasetProp != null) ...[
+                      DatasetPropTile(
+                        label: 'Dataset ID',
+                        content: datasetProp.id,
+                        icon: Symbols.key_rounded,
+                      ),
+                      DatasetPropTile(
+                        label: 'Device Location',
+                        content: datasetProp.deviceLocation.name,
+                        icon: Symbols.watch_rounded,
+                      ),
+                      DatasetPropTile(
+                        label: 'Dataset prop version',
+                        content:
+                            datasetProp.datasetPropVersion.nameWithIsLatest(
+                          latestText: ' (latest)',
+                        ),
+                        icon: Symbols.manufacturing_rounded,
+                      ),
+                      DatasetPropTile(
+                        label: 'Dataset version',
+                        content: datasetProp.datasetVersion.nameWithIsLatest(
+                          latestText: ' (latest)',
+                        ),
+                        icon: Symbols.dataset_rounded,
+                      ),
+                      const Divider(),
+                      DatasetPropTile(
+                        label: 'Duration',
+                        content:
+                            _videoPlayerController.value.duration.toString(),
+                        icon: Symbols.timer_rounded,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const Divider(height: 0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Builder(
+                    builder: (context) {
+                      return IconButton(
+                        tooltip: 'Speed\n'
+                            'z (decrease)\n'
+                            'x (increase)',
+                        visualDensity: VisualDensity.compact,
+                        style: IconButton.styleFrom(
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: Row(
+                          children: [
+                            const Icon(
+                              Symbols.speed_rounded,
+                              weight: 300,
+                            ),
+                            const SizedBox(width: 2),
+                            Consumer(
+                              builder: (context, ref, child) {
+                                final playbackSpeed = ref.watch(
+                                  preprocessProvider.select(
+                                    (value) => value.videoPlaybackSpeed,
+                                  ),
+                                );
+                                return Text(
+                                  playbackSpeed
+                                      .toStringAsFixed(2)
+                                      .removeSuffix('0'),
+                                  style: textTheme.bodyMedium,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        onPressed: () => _showSpeedMenu(context),
+                      );
+                    },
                   ),
                 ],
-              ],
-            ),
-          ),
-          const Divider(height: 0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Builder(
-                builder: (context) {
-                  return IconButton(
-                    tooltip: 'Speed\n'
-                        'z (decrease)\n'
-                        'x (increase)',
-                    visualDensity: VisualDensity.compact,
-                    style: IconButton.styleFrom(
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    icon: Row(
-                      children: [
-                        const Icon(
-                          Symbols.speed_rounded,
-                          weight: 300,
-                        ),
-                        const SizedBox(width: 2),
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final playbackSpeed = ref.watch(
-                              preprocessProvider.select(
-                                (value) => value.videoPlaybackSpeed,
-                              ),
-                            );
-                            return Text(
-                              playbackSpeed
-                                  .toStringAsFixed(2)
-                                  .removeSuffix('0'),
-                              style: textTheme.bodyMedium,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    onPressed: () => _showSpeedMenu(context),
-                  );
-                },
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildVideoPlayer() {
+    final isInitialised = _videoPlayerController.value.isInitialized;
+
     return AspectRatio(
-      aspectRatio: _videoPlayerController.value.aspectRatio,
-      child: VideoPlayer(_videoPlayerController),
+      aspectRatio:
+          isInitialised ? _videoPlayerController.value.aspectRatio : 2 / 3,
+      child: isInitialised
+          ? VideoPlayer(_videoPlayerController)
+          : const Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -951,11 +1005,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       },
       menuChildren: [
         MenuItemButton(
-          leadingIcon: const SizedBox(width: 24),
-          trailingIcon: Checkbox(
-            value: datasetProp.hasEvaluated,
-            onChanged: (value) => _notifier.setEvaluated(hasEvaluated: value!),
-          ),
+          leadingIcon: datasetProp.hasEvaluated
+              ? const Icon(Symbols.check_box_rounded, fill: 1)
+              : const Icon(Symbols.check_box_outline_blank_rounded),
           onPressed: () =>
               _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
           child: const Text('Has evaluated'),
