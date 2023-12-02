@@ -91,8 +91,6 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
     if (isSelectMode) {
       _notifier.clearSelectedDataItems();
-    } else {
-      Navigator.pop(context);
     }
   }
 
@@ -126,11 +124,23 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
     );
 
     if (isShiftPressed) {
-      if (selectedDataItemIndexes.isEmpty) {
+      if (!selectedDataItemIndexes.contains(currentHighlightedIndex)) {
         _notifier.setSelectedDataset(currentHighlightedIndex);
       }
       if (isControlPressed) {
-        _notifier.jumpSelect(updatedHighlightedIndex);
+        final updatedDataItemIndexes = List.generate(
+          1 +
+              max<int>(currentHighlightedIndex - 1, updatedHighlightedIndex) -
+              min<int>(currentHighlightedIndex - 1, updatedHighlightedIndex),
+          (index) =>
+              min(currentHighlightedIndex - 1, updatedHighlightedIndex) + index,
+        );
+
+        if (selectedDataItemIndexes.containsAll(updatedDataItemIndexes)) {
+          _notifier.jumpRemove(updatedHighlightedIndex);
+        } else {
+          _notifier.jumpSelect(updatedHighlightedIndex);
+        }
       } else {
         if (selectedDataItemIndexes.contains(updatedHighlightedIndex)) {
           _notifier.setSelectedDataset(currentHighlightedIndex);
@@ -164,11 +174,23 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
     );
 
     if (isShiftPressed) {
-      if (selectedDataItemIndexes.isEmpty) {
+      if (!selectedDataItemIndexes.contains(currentHighlightedIndex)) {
         _notifier.setSelectedDataset(currentHighlightedIndex);
       }
       if (isControlPressed) {
-        _notifier.jumpSelect(updatedHighlightedIndex);
+        final updatedDataItemIndexes = List.generate(
+          1 +
+              max<int>(currentHighlightedIndex + 1, updatedHighlightedIndex) -
+              min<int>(currentHighlightedIndex + 1, updatedHighlightedIndex),
+          (index) =>
+              min(currentHighlightedIndex + 1, updatedHighlightedIndex) + index,
+        );
+
+        if (selectedDataItemIndexes.containsAll(updatedDataItemIndexes)) {
+          _notifier.jumpRemove(updatedHighlightedIndex);
+        } else {
+          _notifier.jumpSelect(updatedHighlightedIndex);
+        }
       } else {
         if (selectedDataItemIndexes.contains(updatedHighlightedIndex)) {
           _notifier.setSelectedDataset(currentHighlightedIndex);

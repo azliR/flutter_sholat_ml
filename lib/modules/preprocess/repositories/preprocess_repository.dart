@@ -73,11 +73,11 @@ class PreprocessRepository {
     required DatasetProp datasetProp,
   }) async {
     try {
-      final message = [datasetStrList, datasetProp];
+      final message = (datasetStrList, datasetProp);
       final datasets = await compute(
         (message) {
-          final datasetStrList = message[0] as List<String>;
-          final datasetProp = message[1] as DatasetProp;
+          final datasetStrList = message.$1;
+          final datasetProp = message.$2;
 
           final datasets = datasetStrList
               .map(

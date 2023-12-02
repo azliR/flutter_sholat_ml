@@ -12,8 +12,8 @@ class DataItemTile extends StatelessWidget {
     required this.dataItem,
     required this.onTap,
     required this.onLongPress,
-    required this.highlighted,
-    required this.selected,
+    required this.isHighlighted,
+    required this.isSelected,
     super.key,
   });
 
@@ -21,8 +21,8 @@ class DataItemTile extends StatelessWidget {
   final DataItem dataItem;
   final void Function() onTap;
   final void Function() onLongPress;
-  final bool highlighted;
-  final bool selected;
+  final bool isHighlighted;
+  final bool isSelected;
 
   bool _isColorDark(Color color) {
     return color.computeLuminance() < 0.5;
@@ -34,7 +34,7 @@ class DataItemTile extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     var backgroundColor = colorScheme.background;
-    if (selected) {
+    if (isSelected) {
       backgroundColor = colorScheme.primaryContainer;
     } else if (dataItem.isLabeled) {
       final splittedId = dataItem.movementSetId!.substring(0, 6);
@@ -44,7 +44,7 @@ class DataItemTile extends StatelessWidget {
     }
 
     Widget? icon;
-    if (dataItem.isLabeled && selected) {
+    if (dataItem.isLabeled && isSelected) {
       icon = Icon(
         Symbols.warning_rounded,
         color: colorScheme.secondary,
@@ -84,9 +84,9 @@ class DataItemTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: backgroundColor,
             border: Border.all(
-              color: highlighted ? colorScheme.outline : Colors.transparent,
+              color: isHighlighted ? colorScheme.outline : Colors.transparent,
             ),
-            borderRadius: highlighted
+            borderRadius: isHighlighted
                 ? const BorderRadius.all(Radius.circular(12))
                 : BorderRadius.zero,
           ),

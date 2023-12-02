@@ -215,18 +215,18 @@ class RecordRepository {
     required List<DataItem> dataItems,
   }) async {
     try {
-      final message = [
+      final message = (
         csvPath,
         propPath,
         datasetProp,
         dataItems,
-      ];
+      );
       await compute(
         (message) async {
-          final csvPath = message[0] as String;
-          final propPath = message[1] as String;
-          final datasetProp = message[2] as DatasetProp;
-          final dataItems = message[3] as List<DataItem>;
+          final csvPath = message.$1;
+          final propPath = message.$2;
+          final datasetProp = message.$3;
+          final dataItems = message.$4;
 
           final datasetStr = dataItems.fold('', (previousValue, dataset) {
             return previousValue + dataset.toCsv();

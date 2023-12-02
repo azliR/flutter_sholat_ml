@@ -72,12 +72,12 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     state = state.copyWith(isPlaying: isPlaying);
   }
 
-  void setCurrentHighlightedIndex(int index) {
-    state = state.copyWith(currentHighlightedIndex: index);
-  }
-
   void setVideoPlaybackSpeed(double playbackSpeed) {
     state = state.copyWith(videoPlaybackSpeed: playbackSpeed);
+  }
+
+  void setCurrentHighlightedIndex(int index) {
+    state = state.copyWith(currentHighlightedIndex: index);
   }
 
   void setSelectedDataset(int index) {
@@ -126,6 +126,27 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
         ...state.selectedDataItemIndexes,
         ...selectedDataItemIndexes,
       },
+      lastSelectedIndex: () => endIndex,
+      isJumpSelectMode: false,
+    );
+  }
+
+  Future<void> jumpRemove(int endIndex) async {
+    final startJumpIndex = state.selectedDataItemIndexes.isEmpty
+        ? state.currentHighlightedIndex
+        : state.lastSelectedIndex;
+    if (startJumpIndex == null) return;
+
+    final selectedDataItemIndexes = List.generate(
+      1 +
+          max<int>(startJumpIndex, endIndex) -
+          min<int>(startJumpIndex, endIndex),
+      (index) => min(startJumpIndex, endIndex) + index,
+    );
+
+    state = state.copyWith(
+      selectedDataItemIndexes: state.selectedDataItemIndexes
+        ..removeAll(selectedDataItemIndexes),
       lastSelectedIndex: () => endIndex,
       isJumpSelectMode: false,
     );

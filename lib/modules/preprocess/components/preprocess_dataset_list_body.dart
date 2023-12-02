@@ -78,8 +78,8 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                   return DataItemTile(
                     index: index,
                     dataItem: dataItem,
-                    highlighted: index == currentHighlightedIndex,
-                    selected: selected,
+                    isHighlighted: index == currentHighlightedIndex,
+                    isSelected: selected,
                     onTap: () => widget.onDataItemPressed(index),
                     onLongPress: () async {
                       _notifier

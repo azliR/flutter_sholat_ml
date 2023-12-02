@@ -390,18 +390,15 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       await _videoPlayerController.initialize();
       _videoPlayerController.addListener(_videoListener);
 
-      await _generateDataSources(ref.read(preprocessProvider).dataItems);
+      final state = ref.read(preprocessProvider);
 
-      final isCompressed = ref.read(
-        preprocessProvider
-            .select((value) => value.datasetProp?.isCompressed ?? false),
-      );
+      await _generateDataSources(state.dataItems);
+
+      final isCompressed = state.datasetProp?.isCompressed ?? false;
 
       if (!isCompressed) {
         await _showCompressDialog();
       }
-
-      if (!mounted) return;
     });
     super.initState();
   }
@@ -413,9 +410,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     _trackballControlDebouncer?.cancel();
     _moveHighlightDebouncer?.cancel();
 
-    _videoPlayerController
-      ..removeListener(_videoListener)
-      ..dispose();
+    _videoPlayerController.dispose();
     super.dispose();
   }
 
@@ -465,6 +460,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         preprocessProvider.select((value) => value.currentHighlightedIndex),
         (previous, index) {
           _scrollChart(index, dataItemsLength);
+
+          if (_videoPlayerController.value.isPlaying) return;
 
           _playVideoDebouncer?.cancel();
           _playVideoDebouncer = Timer(
@@ -690,84 +687,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
-  List<Widget> _buildAppBarActions(DatasetProp? datasetProp) {
-    final data = MediaQuery.of(context);
-    final width = data.size.width;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return [
-      if (datasetProp != null) ...[
-        if (width >= 600)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: colorScheme.secondaryContainer,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(width: 4),
-                    Text(
-                      'AutoSave',
-                      style: textTheme.titleSmall,
-                    ),
-                    const SizedBox(width: 4),
-                    SizedBox(
-                      height: 40,
-                      child: FittedBox(
-                        fit: BoxFit.fill,
-                        child: Consumer(
-                          builder: (context, ref, child) {
-                            final isAutosave = ref.watch(
-                              preprocessProvider
-                                  .select((value) => value.isAutosave),
-                            );
-                            return Switch(
-                              value: isAutosave,
-                              onChanged: (value) {
-                                _notifier.setIsAutosave(isAutosave: value);
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
-            ),
-            onPressed: _showSaveDialog,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  datasetProp.isUploaded ? 'Update' : 'Save',
-                ),
-                const SizedBox(width: 8),
-                const Icon(Symbols.arrow_drop_down_rounded),
-              ],
-            ),
-          ),
-        ),
-        _buildMenu(datasetProp),
-        const SizedBox(width: 12),
-      ],
-    ];
-  }
-
   Widget _buildAppBarTitle(DatasetProp? datasetProp) {
     final data = MediaQuery.of(context);
     final width = data.size.width;
@@ -892,6 +811,84 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         ],
       ],
     );
+  }
+
+  List<Widget> _buildAppBarActions(DatasetProp? datasetProp) {
+    final data = MediaQuery.of(context);
+    final width = data.size.width;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return [
+      if (datasetProp != null) ...[
+        if (width >= 600)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: colorScheme.secondaryContainer,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(width: 4),
+                    Text(
+                      'AutoSave',
+                      style: textTheme.titleSmall,
+                    ),
+                    const SizedBox(width: 4),
+                    SizedBox(
+                      height: 40,
+                      child: FittedBox(
+                        fit: BoxFit.fill,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final isAutosave = ref.watch(
+                              preprocessProvider
+                                  .select((value) => value.isAutosave),
+                            );
+                            return Switch(
+                              value: isAutosave,
+                              onChanged: (value) {
+                                _notifier.setIsAutosave(isAutosave: value);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
+            ),
+            onPressed: _showSaveDialog,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  datasetProp.isUploaded ? 'Update' : 'Save',
+                ),
+                const SizedBox(width: 8),
+                const Icon(Symbols.arrow_drop_down_rounded),
+              ],
+            ),
+          ),
+        ),
+        _buildMenu(datasetProp),
+        const SizedBox(width: 12),
+      ],
+    ];
   }
 
   Widget _buildDatasetInfo() {
