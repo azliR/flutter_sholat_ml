@@ -5,20 +5,26 @@ import 'package:auto_route/auto_route.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/components/preprocess_dataset_list_body.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/views/preprocess_shortcuts.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/accelerometer_chart_widget.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/widgets/bottom_panel_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/dataset_prop_tile_widget.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/preprocess_toolbar_widget.dart';
+import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/menus.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:multi_split_view/multi_split_view.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:video_player/video_player.dart';
 
@@ -32,10 +38,16 @@ class PreprocessScreen extends ConsumerStatefulWidget {
   ConsumerState<PreprocessScreen> createState() => _PreprocessScreenState();
 }
 
-class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
+class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
+    with SingleTickerProviderStateMixin {
   late final PreprocessNotifier _notifier;
 
   late final VideoPlayerController _videoPlayerController;
+  late final AnimationController _animationController;
+
+  late final MultiSplitViewController _mainSplitController;
+  late final MultiSplitViewController _videoChartSplitController;
+  late final MultiSplitViewController _dataItemSplitController;
 
   var _isTrackballControlled = false;
 
@@ -43,21 +55,20 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
   final _trackballBehavior = TrackballBehavior(
     enable: true,
     shouldAlwaysShow: true,
-    tooltipAlignment: ChartAlignment.far,
-    tooltipDisplayMode: TrackballDisplayMode.groupAllPoints,
+    tooltipDisplayMode: TrackballDisplayMode.none,
     markerSettings: const TrackballMarkerSettings(
       markerVisibility: TrackballVisibilityMode.visible,
     ),
+    activationMode: ActivationMode.doubleTap,
   );
   final _zoomPanBehavior = ZoomPanBehavior(
     enablePanning: true,
     enablePinching: true,
-    enableDoubleTapZooming: true,
     enableMouseWheelZooming: true,
-    zoomMode: ZoomMode.x,
+    enableSelectionZooming: true,
   );
   final _primaryXAxis = NumericAxis(
-    visibleMaximum: 100,
+    visibleMaximum: 200,
     majorGridLines: const MajorGridLines(width: 0),
     axisLine: const AxisLine(width: 0.4),
     decimalPlaces: 0,
@@ -104,42 +115,46 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     }
   }
 
-  Future<void> _scrollChart(int index, int dataItemsLength) async {
+  void _scrollChart(double position) {
+    if (_lastZoomFactor == null || _lastZoomPosition == null) return;
+
+    _lastZoomPosition = position;
+
+    _zoomPanBehavior.zoomToSingleAxis(
+      _primaryXAxis,
+      _lastZoomPosition!,
+      _lastZoomFactor!,
+    );
+  }
+
+  void _scrollChartAndShowTrackball(int index, int dataItemsLength) {
     if (_lastZoomFactor == null || _lastZoomPosition == null) return;
 
     final maxVisible = dataItemsLength * _lastZoomFactor!;
     final minIndex = dataItemsLength * _lastZoomPosition!;
     final maxIndex = minIndex + maxVisible;
 
-    if (index >= maxIndex) {
-      _isTrackballControlled = true;
-      final multiplier = ((index - minIndex) / maxVisible).floor();
-      _lastZoomPosition = _lastZoomPosition! + (_lastZoomFactor! * multiplier);
+    // final multiplier = ((index - minIndex) / maxVisible).floor();
+    // _lastZoomPosition = _lastZoomPosition! + (_lastZoomFactor! * multiplier);
 
-      // _lastZoomPosition =
-      //     ((index + 1) / dataItemsLength) - (maxVisible / dataItemsLength);
+    // _lastZoomPosition =
+    //     ((index + 1) / dataItemsLength) - (maxVisible / dataItemsLength);
 
-      _zoomPanBehavior.zoomToSingleAxis(
-        _primaryXAxis,
-        _lastZoomPosition!,
-        _lastZoomFactor!,
-      );
-    } else if (index <= minIndex) {
-      _isTrackballControlled = true;
-      final multiplier = ((maxIndex - index) / maxVisible).floor();
-      _lastZoomPosition = _lastZoomPosition! - (_lastZoomFactor! * multiplier);
+    // final multiplier = ((maxIndex - index) / maxVisible).floor();
+    // _lastZoomPosition = _lastZoomPosition! - (_lastZoomFactor! * multiplier);
 
-      // _lastZoomPosition = (index - 1) / dataItemsLength;
+    // _lastZoomPosition = (index - 1) / dataItemsLength;
 
-      _zoomPanBehavior.zoomToSingleAxis(
-        _primaryXAxis,
-        _lastZoomPosition!,
-        _lastZoomFactor!,
-      );
-    }
     _isTrackballControlled = true;
+    if (index >= maxIndex || index <= minIndex) {
+      _lastZoomPosition = (index / dataItemsLength) - (_lastZoomFactor! / 3);
 
-    if (index < maxIndex && index > minIndex) {
+      _zoomPanBehavior.zoomToSingleAxis(
+        _primaryXAxis,
+        _lastZoomPosition!,
+        _lastZoomFactor!,
+      );
+    } else {
       _showTrackballAt(index);
       return;
     }
@@ -156,19 +171,25 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     _trackballBehavior.showByIndex(index);
 
     _trackballControlDebouncer?.cancel();
-    _trackballControlDebouncer =
-        Timer(const Duration(milliseconds: 300), () async {
+    _trackballControlDebouncer = Timer(const Duration(seconds: 1), () async {
       _isTrackballControlled = false;
       _trackballControlDebouncer?.cancel();
     });
   }
 
   void _scrollToDataItemTile(int index) {
-    _scrollController.animateTo(
-      index * 32,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-    );
+    final currentPosition = _scrollController.position;
+    final maxTopOffset = currentPosition.extentBefore;
+    final maxBottomOffset = maxTopOffset + currentPosition.extentInside;
+    final currentOffset = index * 32.0;
+
+    if (currentOffset >= maxBottomOffset || currentOffset <= maxTopOffset) {
+      _scrollController.animateTo(
+        index * 32,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   Future<void> _showExitDialog() {
@@ -373,6 +394,18 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     });
   }
 
+  List<Area> _resetViews(List<Area> areas) {
+    return areas
+        .map(
+          (area) => Area(
+            minimalSize: area.minimalSize,
+            minimalWeight: area.minimalWeight,
+            weight: 0.5,
+          ),
+        )
+        .toList();
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
@@ -383,6 +416,41 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     _videoPlayerController = VideoPlayerController.file(
       File('$path/$datasetVideoName'),
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
+
+    _animationController =
+        AnimationController(vsync: this, duration: 2.seconds);
+
+    final mainWeights = LocalStorageService.getPreprocessSplitView1Weights();
+    _mainSplitController = MultiSplitViewController(
+      areas: [
+        Area(minimalWeight: 0.3, weight: mainWeights.elementAtOrNull(0)),
+        Area(minimalWeight: 0.3, weight: mainWeights.elementAtOrNull(1)),
+      ],
+    );
+
+    final videoChartWeights =
+        LocalStorageService.getPreprocessSplitView2Weights();
+    _videoChartSplitController = MultiSplitViewController(
+      areas: [
+        Area(minimalWeight: 0.3, weight: videoChartWeights.elementAtOrNull(0)),
+        Area(minimalWeight: 0.3, weight: videoChartWeights.elementAtOrNull(1)),
+      ],
+    );
+
+    final dataItemWeights =
+        LocalStorageService.getPreprocessSplitView3Weights();
+    _dataItemSplitController = MultiSplitViewController(
+      areas: [
+        Area(
+          minimalWeight: 0.2,
+          weight: dataItemWeights.elementAtOrDefault(0, 2),
+        ),
+        Area(
+          minimalSize: 100,
+          weight: dataItemWeights.elementAtOrDefault(1, 1),
+        ),
+      ],
     );
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
@@ -411,6 +479,10 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     _moveHighlightDebouncer?.cancel();
 
     _videoPlayerController.dispose();
+    _mainSplitController.dispose();
+    _videoChartSplitController.dispose();
+    _dataItemSplitController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -419,7 +491,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     final data = MediaQuery.of(context);
     final deviceWidth = data.size.width;
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     final shouldVertical = deviceWidth < 720;
 
@@ -427,14 +498,20 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
 
     ref
       ..listen(preprocessProvider.select((value) => value.presentationState),
-          (previous, next) {
-        switch (next) {
+          (previous, state) {
+        switch (state) {
           case PreprocessInitial():
             break;
           case GetDatasetPropFailureState():
             showErrorSnackbar(context, 'Failed getting dataset info');
           case ReadDatasetsFailureState():
             showErrorSnackbar(context, 'Failed reading datasets');
+          case AnalyseDatasetLoadingState():
+            break;
+          case AnalyseDatasetSuccessState():
+            break;
+          case AnalyseDatasetFailureState():
+            showErrorSnackbar(context, 'Failed analysing dataset');
           case CompressVideoLoadingState():
             context.loaderOverlay.show();
           case CompressVideoSuccessState():
@@ -448,7 +525,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           case SaveDatasetAutoSavingState():
             break;
           case SaveDatasetSuccessState():
-            if (next.isAutosave) break;
+            if (state.isAutosave) break;
             context.loaderOverlay.hide();
             showSnackbar(context, 'Dataset saved successfully!');
           case SaveDatasetFailureState():
@@ -459,7 +536,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
       ..listen(
         preprocessProvider.select((value) => value.currentHighlightedIndex),
         (previous, index) {
-          _scrollChart(index, dataItemsLength);
+          if (index < 0 || index >= dataItemsLength) return;
+
+          _scrollChartAndShowTrackball(index, dataItemsLength);
 
           if (_videoPlayerController.value.isPlaying) return;
 
@@ -467,7 +546,17 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           _playVideoDebouncer = Timer(
               Duration(milliseconds: _isTrackballControlled ? 300 : 0), () {
             final dataItems = ref.read(preprocessProvider).dataItems;
-            _videoPlayerController.seekTo(dataItems[index].timestamp!);
+
+            final videoValue = _videoPlayerController.value;
+            final isInitialized = videoValue.isInitialized;
+            final isPlaying = videoValue.isPlaying;
+
+            if (isInitialized && !isPlaying) {
+              _videoPlayerController.seekTo(
+                dataItems[index].timestamp!,
+              );
+            }
+
             if (ref.read(preprocessProvider).isFollowHighlightedMode) {
               _scrollToDataItemTile(index);
             }
@@ -485,26 +574,64 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
             _notifier.saveDataset(diskOnly: true, isAutoSaving: true);
           }
         },
-      );
+      )
+      ..listen(
+        preprocessProvider.select((value) => value.dataItems),
+        (previous, dataItems) {
+          _notifier.analyseDataset();
+        },
+      )
+      ..listen(
+          preprocessProvider.select(
+            (value) =>
+                value.presentationState == const SaveDatasetAutoSavingState() ||
+                value.presentationState == const AnalyseDatasetLoadingState(),
+          ), (previous, rotate) {
+        if (rotate) {
+          _animationController
+            ..repeat()
+            ..forward();
+        } else {
+          _animationController.reset();
+        }
+      });
 
     return PreprocessShortcuts(
       scrollController: _scrollController,
       videoPlayerController: _videoPlayerController,
+      onLeftKeyPressed: (isControlPressed) {
+        final maxVisible = dataItemsLength * _lastZoomFactor!;
+        final minIndex = dataItemsLength * _lastZoomPosition!;
+
+        final percentage = isControlPressed ? 0.5 : 0.2;
+
+        _scrollChart((minIndex - (maxVisible * percentage)) / dataItemsLength);
+      },
+      onRightKeyPressed: (isControlPressed) {
+        final maxVisible = dataItemsLength * _lastZoomFactor!;
+        final minIndex = dataItemsLength * _lastZoomPosition!;
+
+        final percentage = isControlPressed ? 0.5 : 0.2;
+
+        _scrollChart((minIndex + (maxVisible * percentage)) / dataItemsLength);
+      },
       child: PopScope(
         canPop: false,
         onPopInvoked: (didPop) async {
           if (didPop) return;
 
-          final isSelectMode =
-              ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
-
-          if (isSelectMode) {
-            _notifier.clearSelectedDataItems();
+          final isAutosaving = ref.read(preprocessProvider).presentationState ==
+              const SaveDatasetAutoSavingState();
+          if (isAutosaving) {
+            showSnackbar(context, 'Wait until autosaving is finished');
             return;
           }
 
+          final isSelectMode =
+              ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
+
           final isEdited = ref.read(preprocessProvider).isEdited;
-          if (isEdited) {
+          if (isEdited || isSelectMode) {
             await _showExitDialog();
             return;
           }
@@ -528,161 +655,185 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
               },
             ),
           ),
-          body: Flex(
-            direction: shouldVertical ? Axis.vertical : Axis.horizontal,
+          body: MultiSplitView(
+            controller: _mainSplitController,
+            axis: shouldVertical ? Axis.vertical : Axis.horizontal,
+            dividerBuilder: _buildSplitDivider,
+            onWeightChange: () {
+              final weights = _mainSplitController.areas
+                  .map((area) => area.weight ?? 1)
+                  .toList();
+              LocalStorageService.setPreprocessSplitView1Weights(weights);
+            },
             children: [
-              Expanded(
-                flex: 4,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Expanded(
-                      flex: 4,
-                      child: Row(
-                        children: [
-                          _buildVideoPlayer(),
-                          _buildDatasetInfo(),
-                        ],
-                      ),
-                    ),
-                    Divider(
-                      height: 0,
-                      color: colorScheme.outline,
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: AccelerometerChart(
-                        x: _xDataItems,
-                        y: _yDataItems,
-                        z: _zDataItems,
-                        primaryXAxis: _primaryXAxis,
-                        zoomPanBehavior: _zoomPanBehavior,
-                        trackballBehavior: _trackballBehavior,
-                        onTrackballChanged: (trackballArgs) {
-                          if (_videoPlayerController.value.isPlaying) return;
-
-                          if (_isTrackballControlled) return;
-
-                          _moveHighlightDebouncer?.cancel();
-                          _moveHighlightDebouncer =
-                              Timer(const Duration(milliseconds: 300), () {
-                            final index =
-                                trackballArgs.chartPointInfo.dataPointIndex ??
-                                    0;
-                            _notifier.setCurrentHighlightedIndex(index);
-                          });
-                        },
-                        onActualRangeChanged: (args) {
-                          final visibleMax = args.visibleMax as num;
-                          final visibleMin = args.visibleMin as num;
-                          final actualMax = args.actualMax as num;
-                          final actualVisible = visibleMax - visibleMin;
-
-                          _lastZoomFactor = actualVisible / actualMax;
-                          _lastZoomPosition = visibleMin / actualMax;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (shouldVertical)
-                Divider(
-                  height: 0,
-                  color: colorScheme.outline,
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 1),
-                  child: VerticalDivider(
-                    width: 1,
-                    color: colorScheme.outline,
+              MultiSplitView(
+                controller: _videoChartSplitController,
+                axis: Axis.vertical,
+                dividerBuilder: _buildSplitDivider,
+                onWeightChange: () {
+                  final weights = _videoChartSplitController.areas
+                      .map((area) => area.weight ?? 1)
+                      .toList();
+                  LocalStorageService.setPreprocessSplitView2Weights(weights);
+                },
+                children: [
+                  Row(
+                    children: [
+                      _buildVideoPlayer(),
+                      _buildDatasetInfo(),
+                    ],
                   ),
-                ),
-              Expanded(
-                flex: 4,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    PreprocessToolbar(
-                      videoPlayerController: _videoPlayerController,
-                      onFollowHighlighted: () {
-                        _scrollToDataItemTile(
-                          ref.read(preprocessProvider).currentHighlightedIndex,
-                        );
-                      },
-                    ),
-                    Divider(
-                      height: 0,
-                      color: colorScheme.outline,
-                    ),
-                    DefaultTextStyle(
-                      style: textTheme.bodyMedium!.copyWith(
-                        color: colorScheme.onSurface.withOpacity(0.6),
-                      ),
-                      child: const Row(
+                  AccelerometerChart(
+                    x: _xDataItems,
+                    y: _yDataItems,
+                    z: _zDataItems,
+                    primaryXAxis: _primaryXAxis,
+                    zoomPanBehavior: _zoomPanBehavior,
+                    trackballBehavior: _trackballBehavior,
+                    onTrackballChanged: (trackballArgs) {
+                      if (_videoPlayerController.value.isPlaying) return;
+
+                      if (_isTrackballControlled) return;
+
+                      _moveHighlightDebouncer?.cancel();
+                      _moveHighlightDebouncer =
+                          Timer(const Duration(milliseconds: 300), () {
+                        final index =
+                            trackballArgs.chartPointInfo.dataPointIndex ?? 0;
+                        _notifier.setCurrentHighlightedIndex(index);
+                      });
+                    },
+                    onActualRangeChanged: (args) {
+                      final visibleMax = args.visibleMax as num;
+                      final visibleMin = args.visibleMin as num;
+                      final actualMax = args.actualMax as num;
+                      final actualVisible = visibleMax - visibleMin;
+
+                      _lastZoomFactor = actualVisible / actualMax;
+                      _lastZoomPosition = visibleMin / actualMax;
+                    },
+                  ),
+                ],
+              ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final showBottomPanel = ref.watch(
+                    preprocessProvider.select((value) => value.showBottomPanel),
+                  );
+
+                  return MultiSplitView(
+                    controller: _dataItemSplitController,
+                    axis: Axis.vertical,
+                    dividerBuilder: _buildSplitDivider,
+                    onWeightChange: () {
+                      final weights = _dataItemSplitController.areas
+                          .map((area) => area.weight ?? 1)
+                          .toList();
+                      LocalStorageService.setPreprocessSplitView3Weights(
+                        weights,
+                      );
+                    },
+                    children: [
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Expanded(
-                            flex: 2,
-                            child: Center(child: Text('i')),
+                          PreprocessToolbar(
+                            videoPlayerController: _videoPlayerController,
+                            onFollowHighlighted: () {
+                              final state = ref.read(preprocessProvider);
+                              _scrollToDataItemTile(
+                                state.currentHighlightedIndex,
+                              );
+                            },
+                          ),
+                          Divider(
+                            height: 0,
+                            color: colorScheme.outline,
+                          ),
+                          _buildDataItemHeader(),
+                          Divider(
+                            height: 0,
+                            color: colorScheme.outline,
                           ),
                           Expanded(
-                            flex: 3,
-                            child: Center(
-                              child: Text('timestamp'),
+                            child: PreprocessDatasetList(
+                              scrollController: _scrollController,
+                              onDataItemPressed: (index) async {
+                                final state = ref.read(preprocessProvider);
+
+                                if (state.isJumpSelectMode) {
+                                  await _notifier.jumpSelect(index);
+                                } else if (state
+                                    .selectedDataItemIndexes.isNotEmpty) {
+                                  _notifier.setSelectedDataset(index);
+                                }
+                                _notifier.setCurrentHighlightedIndex(index);
+                              },
                             ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Center(child: Text('x')),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Center(child: Text('y')),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Center(child: Text('z')),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Center(
-                              child: Text('noise'),
-                            ),
-                          ),
-                          Expanded(
-                            child: SizedBox(),
                           ),
                         ],
                       ),
-                    ),
-                    Divider(
-                      height: 0,
-                      color: colorScheme.outline,
-                    ),
-                    Expanded(
-                      child: PreprocessDatasetList(
-                        scrollController: _scrollController,
-                        videoPlayerController: _videoPlayerController,
-                        trackballBehavior: _trackballBehavior,
-                        onDataItemPressed: (index) async {
-                          final state = ref.read(preprocessProvider);
-
-                          if (state.isJumpSelectMode) {
-                            await _notifier.jumpSelect(index);
-                          } else if (state.selectedDataItemIndexes.isNotEmpty) {
-                            _notifier.setSelectedDataset(index);
-                          }
-                          _notifier.setCurrentHighlightedIndex(index);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+                      if (showBottomPanel)
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final problems = ref.watch(
+                              preprocessProvider.select(
+                                (value) => value.problems,
+                              ),
+                            );
+                            return BottomPanel(
+                              problems: problems,
+                              onProblemPressed: (problem) {
+                                _notifier.clearSelectedDataItems();
+                                switch (problem) {
+                                  case MissingLabelProblem():
+                                  case DeprecatedLabelProblem():
+                                  case DeprecatedLabelCategoryProblem():
+                                  case WrongMovementSequenceProblem():
+                                    _scrollController
+                                        .jumpTo(problem.startIndex * 32);
+                                    _notifier.setCurrentHighlightedIndex(
+                                      problem.startIndex,
+                                    );
+                                }
+                              },
+                              onClosePressed: () =>
+                                  _notifier.setShowBottomPanel(enable: false),
+                            );
+                          },
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSplitDivider(
+    Axis axis,
+    int index,
+    bool resizable,
+    bool dragging,
+    bool highlighted,
+    MultiSplitViewThemeData themeData,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        margin: EdgeInsets.symmetric(
+          horizontal: axis == Axis.vertical ? 4 : 0,
+          vertical: axis == Axis.horizontal ? 4 : 0,
+        ),
+        color: highlighted ? colorScheme.outline : Colors.transparent,
+        child: axis == Axis.vertical
+            ? VerticalDivider(color: colorScheme.outline)
+            : Divider(color: colorScheme.outline),
       ),
     );
   }
@@ -709,6 +860,13 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     const SaveDatasetAutoSavingState(),
               ),
             );
+            final isAnalysing = ref.watch(
+              preprocessProvider.select(
+                (value) =>
+                    value.presentationState ==
+                    const AnalyseDatasetLoadingState(),
+              ),
+            );
             return Row(
               children: [
                 Flexible(
@@ -729,7 +887,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                     children: [
                       Icon(
                         () {
-                          if (isAutosaving) {
+                          if (isAutosaving || isAnalysing) {
                             return Symbols.sync_rounded;
                           }
                           return datasetProp.isSyncedWithCloud
@@ -738,24 +896,35 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
                         }(),
                         size: 20,
                         fill: () {
-                          if (isAutosaving) {
+                          if (isAutosaving || isAnalysing) {
                             return 0.0;
                           }
                           return datasetProp.isSyncedWithCloud ? 1.0 : 0.0;
                         }(),
                         color: () {
-                          if (isAutosaving) {
+                          if (isAutosaving || isAnalysing) {
                             return colorScheme.onBackground;
                           }
                           return datasetProp.isSyncedWithCloud
                               ? colorScheme.primary
                               : colorScheme.onBackground;
                         }(),
-                      ),
+                      )
+                          .animate(
+                            autoPlay: false,
+                            controller: _animationController,
+                          )
+                          .rotate(
+                            begin: 1,
+                            end: 0,
+                          ),
                       if (width >= 480) ...[
                         const SizedBox(width: 8),
                         Text(
                           () {
+                            if (isAnalysing) {
+                              return 'Analysing...';
+                            }
                             if (isAutosaving) {
                               return 'Saving...';
                             }
@@ -903,43 +1072,45 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
           child: Column(
             children: [
               Expanded(
-                child: ListView(
-                  children: [
-                    if (datasetProp != null) ...[
-                      DatasetPropTile(
-                        label: 'Dataset ID',
-                        content: datasetProp.id,
-                        icon: Symbols.key_rounded,
-                      ),
-                      DatasetPropTile(
-                        label: 'Device Location',
-                        content: datasetProp.deviceLocation.name,
-                        icon: Symbols.watch_rounded,
-                      ),
-                      DatasetPropTile(
-                        label: 'Dataset prop version',
-                        content:
-                            datasetProp.datasetPropVersion.nameWithIsLatest(
-                          latestText: ' (latest)',
+                child: Scrollbar(
+                  child: ListView(
+                    children: [
+                      if (datasetProp != null) ...[
+                        DatasetPropTile(
+                          label: 'Dataset ID',
+                          content: datasetProp.id,
+                          icon: Symbols.key_rounded,
                         ),
-                        icon: Symbols.manufacturing_rounded,
-                      ),
-                      DatasetPropTile(
-                        label: 'Dataset version',
-                        content: datasetProp.datasetVersion.nameWithIsLatest(
-                          latestText: ' (latest)',
+                        DatasetPropTile(
+                          label: 'Device Location',
+                          content: datasetProp.deviceLocation.name,
+                          icon: Symbols.watch_rounded,
                         ),
-                        icon: Symbols.dataset_rounded,
-                      ),
-                      const Divider(),
-                      DatasetPropTile(
-                        label: 'Duration',
-                        content:
-                            _videoPlayerController.value.duration.toString(),
-                        icon: Symbols.timer_rounded,
-                      ),
+                        DatasetPropTile(
+                          label: 'Dataset prop version',
+                          content:
+                              datasetProp.datasetPropVersion.nameWithIsLatest(
+                            latestText: ' (latest)',
+                          ),
+                          icon: Symbols.manufacturing_rounded,
+                        ),
+                        DatasetPropTile(
+                          label: 'Dataset version',
+                          content: datasetProp.datasetVersion.nameWithIsLatest(
+                            latestText: ' (latest)',
+                          ),
+                          icon: Symbols.dataset_rounded,
+                        ),
+                        const Divider(),
+                        DatasetPropTile(
+                          label: 'Duration',
+                          content:
+                              _videoPlayerController.value.duration.toString(),
+                          icon: Symbols.timer_rounded,
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               const Divider(height: 0),
@@ -1005,7 +1176,56 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
     );
   }
 
+  Widget _buildDataItemHeader() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return DefaultTextStyle(
+      style: textTheme.bodyMedium!.copyWith(
+        color: colorScheme.onSurface.withOpacity(0.6),
+      ),
+      child: const Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Center(child: Text('i')),
+          ),
+          Expanded(
+            flex: 3,
+            child: Center(
+              child: Text('timestamp'),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(child: Text('x')),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(child: Text('y')),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(child: Text('z')),
+          ),
+          Expanded(
+            flex: 2,
+            child: Center(
+              child: Text('noise'),
+            ),
+          ),
+          Expanded(
+            child: SizedBox(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMenu(DatasetProp datasetProp) {
+    final data = MediaQuery.of(context);
+    final width = data.size.width;
+
     return MenuAnchor(
       builder: (context, controller, child) {
         return IconButton(
@@ -1013,6 +1233,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
           iconSize: 20,
+          tooltip: 'Menu',
           onPressed: () {
             if (controller.isOpen) {
               controller.close();
@@ -1024,20 +1245,92 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen> {
         );
       },
       menuChildren: [
-        MenuItemButton(
-          leadingIcon: datasetProp.hasEvaluated
-              ? const Icon(Symbols.check_box_rounded, fill: 1)
-              : const Icon(Symbols.check_box_outline_blank_rounded),
-          onPressed: () =>
-              _notifier.setEvaluated(hasEvaluated: !datasetProp.hasEvaluated),
-          child: const Text('Has evaluated'),
+        SubmenuButton(
+          menuChildren: [
+            if (width < 600)
+              Consumer(
+                builder: (context, ref, child) {
+                  final isAutosave = ref.watch(
+                    preprocessProvider.select((value) => value.isAutosave),
+                  );
+
+                  return MenuItemButton(
+                    leadingIcon: isAutosave
+                        ? const Icon(Symbols.check_box_rounded, fill: 1)
+                        : const Icon(Symbols.check_box_outline_blank_rounded),
+                    onPressed: () => _notifier.setIsAutosave(
+                      isAutosave: !isAutosave,
+                    ),
+                    child: const Text('AutoSave'),
+                  );
+                },
+              ),
+            MenuItemButton(
+              leadingIcon: datasetProp.hasEvaluated
+                  ? const Icon(Symbols.check_box_rounded, fill: 1)
+                  : const Icon(Symbols.check_box_outline_blank_rounded),
+              onPressed: () => _notifier.setEvaluated(
+                hasEvaluated: !datasetProp.hasEvaluated,
+              ),
+              child: const Text('Has evaluated'),
+            ),
+          ],
+          child: const Text('File'),
         ),
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.movie_rounded),
-          onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
-          child: Text(
-            datasetProp.isCompressed ? 'Video compressed' : 'Compress video',
-          ),
+        SubmenuButton(
+          menuChildren: [
+            MenuItemButton(
+              leadingIcon: const Icon(Symbols.rule_rounded),
+              onPressed: () => _notifier.analyseDataset(),
+              child: const Text('Analyse dataset'),
+            ),
+            MenuItemButton(
+              leadingIcon: const Icon(Symbols.movie_rounded),
+              onPressed: datasetProp.isCompressed ? null : _showCompressDialog,
+              child: Text(
+                datasetProp.isCompressed
+                    ? 'Video compressed'
+                    : 'Compress video',
+              ),
+            ),
+          ],
+          child: const Text('Dataset'),
+        ),
+        SubmenuButton(
+          menuChildren: [
+            Consumer(
+              builder: (context, ref, child) {
+                final isShowBottomPanel = ref.watch(
+                  preprocessProvider.select((value) => value.showBottomPanel),
+                );
+                return MenuItemButton(
+                  leadingIcon: isShowBottomPanel
+                      ? const Icon(Symbols.check_box_rounded, fill: 1)
+                      : const Icon(Symbols.check_box_outline_blank_rounded),
+                  shortcut: const SingleActivator(
+                    LogicalKeyboardKey.backquote,
+                    control: true,
+                  ),
+                  onPressed: () =>
+                      _notifier.setShowBottomPanel(enable: !isShowBottomPanel),
+                  child: const Text('Problems'),
+                );
+              },
+            ),
+            MenuItemButton(
+              leadingIcon: const Icon(Symbols.reset_wrench_rounded),
+              onPressed: () {
+                _mainSplitController.areas =
+                    _resetViews(_mainSplitController.areas);
+                _videoChartSplitController.areas =
+                    _resetViews(_videoChartSplitController.areas);
+                _dataItemSplitController.areas =
+                    _resetViews(_dataItemSplitController.areas);
+              },
+              child: const Text('Reset view'),
+            ),
+          ],
+          child: const Text('View'),
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),

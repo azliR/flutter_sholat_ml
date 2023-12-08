@@ -19,7 +19,9 @@ enum SholatMovement {
   transisiSujudKeDuduk,
   transisiDudukKeSujud,
   transisiSujudKeBersedekap,
-  transisiDudukKeBersedekap;
+  transisiDudukKeBersedekap,
+  transisiBerdiriKeQunut,
+  transisiQunutKeBerdiri;
 
   factory SholatMovement.fromValue(String value) {
     return SholatMovement.values.firstWhere((e) => e.value == value);
@@ -69,6 +71,8 @@ enum SholatMovement {
           SholatMovement.transisiDudukKeSujud,
           SholatMovement.transisiSujudKeBersedekap,
           SholatMovement.transisiDudukKeBersedekap,
+          SholatMovement.transisiBerdiriKeQunut,
+          SholatMovement.transisiQunutKeBerdiri,
         ];
     }
   }
@@ -96,6 +100,8 @@ enum SholatMovement {
           'Transisi Sujud ke Bersedekap',
         SholatMovement.transisiDudukKeBersedekap =>
           'Transisi Duduk ke Bersedekap',
+        SholatMovement.transisiBerdiriKeQunut => 'Transisi Berdiri ke Qunut',
+        SholatMovement.transisiQunutKeBerdiri => 'Transisi Qunut ke Berdiri',
       };
 
   String get value => switch (this) {
@@ -121,5 +127,12 @@ enum SholatMovement {
           'transisi_sujud_ke_bersedekap',
         SholatMovement.transisiDudukKeBersedekap =>
           'transisi_duduk_ke_bersedekap',
+        SholatMovement.transisiBerdiriKeQunut => 'transisi_berdiri_ke_qunut',
+        SholatMovement.transisiQunutKeBerdiri => 'transisi_qunut_ke_berdiri',
       };
+
+  bool get isDeprecated => [
+        SholatMovement.qunutMembalikkanTangan,
+        SholatMovement.dudukIstirohah,
+      ].contains(this);
 }

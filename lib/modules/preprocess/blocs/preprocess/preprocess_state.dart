@@ -13,8 +13,10 @@ class PreprocessState extends Equatable {
     required this.isPlaying,
     required this.isEdited,
     required this.isAutosave,
+    required this.showBottomPanel,
     required this.dataItems,
     required this.selectedDataItemIndexes,
+    required this.problems,
     required this.presentationState,
   });
 
@@ -22,15 +24,17 @@ class PreprocessState extends Equatable {
         path: '',
         videoPlaybackSpeed: 1,
         datasetProp: null,
-        lastSelectedIndex: 0,
+        lastSelectedIndex: null,
         currentHighlightedIndex: 0,
         isJumpSelectMode: false,
         isFollowHighlightedMode: false,
         isPlaying: false,
         isEdited: false,
         isAutosave: false,
+        showBottomPanel: true,
         dataItems: [],
         selectedDataItemIndexes: {},
+        problems: [],
         presentationState: PreprocessInitial(),
       );
 
@@ -44,8 +48,10 @@ class PreprocessState extends Equatable {
   final bool isPlaying;
   final bool isEdited;
   final bool isAutosave;
+  final bool showBottomPanel;
   final List<DataItem> dataItems;
   final Set<int> selectedDataItemIndexes;
+  final List<Problem> problems;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -59,8 +65,10 @@ class PreprocessState extends Equatable {
     bool? isPlaying,
     bool? isEdited,
     bool? isAutosave,
+    bool? showBottomPanel,
     List<DataItem>? dataItems,
     Set<int>? selectedDataItemIndexes,
+    List<Problem>? problems,
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(
@@ -78,9 +86,11 @@ class PreprocessState extends Equatable {
       isPlaying: isPlaying ?? this.isPlaying,
       isEdited: isEdited ?? this.isEdited,
       isAutosave: isAutosave ?? this.isAutosave,
+      showBottomPanel: showBottomPanel ?? this.showBottomPanel,
       dataItems: dataItems ?? this.dataItems,
       selectedDataItemIndexes:
           selectedDataItemIndexes ?? this.selectedDataItemIndexes,
+      problems: problems ?? this.problems,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -97,8 +107,10 @@ class PreprocessState extends Equatable {
         isPlaying,
         isEdited,
         isAutosave,
+        showBottomPanel,
         dataItems,
         selectedDataItemIndexes,
+        problems,
         presentationState,
       ];
 }
@@ -119,6 +131,20 @@ final class GetDatasetPropFailureState extends PreprocessPresentationState {
 
 final class ReadDatasetsFailureState extends PreprocessPresentationState {
   const ReadDatasetsFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class AnalyseDatasetLoadingState extends PreprocessPresentationState {
+  const AnalyseDatasetLoadingState();
+}
+
+final class AnalyseDatasetSuccessState extends PreprocessPresentationState {
+  const AnalyseDatasetSuccessState();
+}
+
+final class AnalyseDatasetFailureState extends PreprocessPresentationState {
+  const AnalyseDatasetFailureState(this.failure);
 
   final Failure failure;
 }

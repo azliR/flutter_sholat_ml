@@ -10,6 +10,7 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 @RoutePage()
 class DatasetsPage extends ConsumerStatefulWidget {
@@ -322,6 +323,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             );
             showSnackbar(context, 'Dataset downloaded succesfully!');
           case DownloadDatasetFailureState():
+            context.loaderOverlay.hide();
             showErrorSnackbar(context, 'Failed to download dataset!');
           case ExportDatasetProgressState():
             _showExportProgressDialog(presentationState.progress);
@@ -387,18 +389,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                   return SliverAppBar.medium(
                     title: const Text('Datasets'),
                     actions: [
-                      IconButton(
-                        tooltip: 'Refresh',
-                        onPressed: () {
-                          switch (_tabController.index) {
-                            case 0:
-                              _needReviewRefreshKey.currentState?.show();
-                            case 1:
-                              _reviewedRefreshKey.currentState?.show();
-                          }
-                        },
-                        icon: const Icon(Symbols.refresh_rounded),
-                      ),
                       if (isSelectMode && _tabController.index == 0) ...[
                         Consumer(
                           builder: (context, ref, child) {
@@ -437,6 +427,18 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
                           icon: const Icon(Symbols.share_rounded),
                         ),
                       ],
+                      IconButton(
+                        tooltip: 'Refresh',
+                        onPressed: () {
+                          switch (_tabController.index) {
+                            case 0:
+                              _needReviewRefreshKey.currentState?.show();
+                            case 1:
+                              _reviewedRefreshKey.currentState?.show();
+                          }
+                        },
+                        icon: const Icon(Symbols.refresh_rounded),
+                      ),
                       _buildMenu(),
                       const SizedBox(width: 12),
                     ],
@@ -491,6 +493,7 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
           style: IconButton.styleFrom(
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
+          tooltip: 'Menu',
           iconSize: 20,
           onPressed: () {
             if (controller.isOpen) {
@@ -509,6 +512,27 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
             await _notifier.importDatasets();
           },
           child: const Text('Import datasets'),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Symbols.info_rounded),
+          onPressed: () async {
+            final packageInfo = await PackageInfo.fromPlatform();
+
+            if (!context.mounted) return;
+
+            showAboutDialog(
+              context: context,
+              applicationIcon: const Image(
+                image: AssetImage('assets/images/ic_launcher.png'),
+                width: 48,
+                height: 48,
+              ),
+              applicationName: packageInfo.appName,
+              applicationVersion: packageInfo.version,
+              applicationLegalese: '© 2023 azliR',
+            );
+          },
+          child: const Text('About this app'),
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),

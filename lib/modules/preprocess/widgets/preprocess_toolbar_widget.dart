@@ -65,58 +65,115 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
                       style: textTheme.titleLarge,
                     ),
                     const SizedBox(height: 24),
-                    DropdownMenu<SholatMovementCategory>(
-                      expandedInsets: EdgeInsets.zero,
-                      label: const Text('Category'),
-                      onSelected: (value) {
-                        if (value != selectedCategory) {
-                          ref.read(categoryProvider.notifier).update(
-                                (state) => value,
-                              );
-
-                          final movements =
-                              SholatMovement.getByCategory(value!);
-                          ref.read(movementProvider.notifier).update(
-                                (state) => movements.length == 1
-                                    ? movements.first
-                                    : null,
-                              );
-                        }
-                      },
-                      dropdownMenuEntries: SholatMovementCategory.values.map(
+                    Wrap(
+                      spacing: 8,
+                      children: SholatMovementCategory.values.map(
                         (category) {
-                          return DropdownMenuEntry(
-                            label: category.name,
-                            value: category,
-                            leadingIcon: SvgPicture.asset(
-                              switch (category) {
-                                SholatMovementCategory.takbir =>
-                                  AssetImages.takbir,
-                                SholatMovementCategory.berdiri =>
-                                  AssetImages.berdiri,
-                                SholatMovementCategory.ruku => AssetImages.ruku,
-                                SholatMovementCategory.iktidal =>
-                                  AssetImages.iktidal,
-                                SholatMovementCategory.qunut =>
-                                  AssetImages.qunut,
-                                SholatMovementCategory.sujud =>
-                                  AssetImages.sujud,
-                                SholatMovementCategory.duduk =>
-                                  AssetImages.duduk,
-                                SholatMovementCategory.transisi =>
-                                  AssetImages.transisi,
-                              },
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                colorScheme.primary,
-                                BlendMode.srcIn,
-                              ),
+                          return ChoiceChip(
+                            avatar: selectedCategory == category
+                                ? null
+                                : SvgPicture.asset(
+                                    switch (category) {
+                                      SholatMovementCategory.takbir =>
+                                        AssetImages.takbir,
+                                      SholatMovementCategory.berdiri =>
+                                        AssetImages.berdiri,
+                                      SholatMovementCategory.ruku =>
+                                        AssetImages.ruku,
+                                      SholatMovementCategory.iktidal =>
+                                        AssetImages.iktidal,
+                                      SholatMovementCategory.qunut =>
+                                        AssetImages.qunut,
+                                      SholatMovementCategory.sujud =>
+                                        AssetImages.sujud,
+                                      SholatMovementCategory.duduk =>
+                                        AssetImages.duduk,
+                                      SholatMovementCategory.transisi =>
+                                        AssetImages.transisi,
+                                    },
+                                    width: 24,
+                                    height: 24,
+                                    colorFilter: ColorFilter.mode(
+                                      colorScheme.primary,
+                                      BlendMode.srcIn,
+                                    ),
+                                  ),
+                            label: Text(category.name),
+                            color: MaterialStatePropertyAll(
+                              colorScheme.secondaryContainer,
                             ),
+                            tooltip: category.name,
+                            selected: selectedCategory == category,
+                            onSelected: (value) {
+                              if (value) {
+                                ref.read(categoryProvider.notifier).update(
+                                      (state) => category,
+                                    );
+                                final movements =
+                                    SholatMovement.getByCategory(category);
+                                ref.read(movementProvider.notifier).update(
+                                      (state) => movements.length == 1
+                                          ? movements.first
+                                          : null,
+                                    );
+                              }
+                            },
                           );
                         },
                       ).toList(),
                     ),
+                    // DropdownMenu<SholatMovementCategory>(
+                    //   expandedInsets: EdgeInsets.zero,
+                    //   label: const Text('Category'),
+                    //   onSelected: (value) {
+                    //     if (value != selectedCategory) {
+                    //       ref.read(categoryProvider.notifier).update(
+                    //             (state) => value,
+                    //           );
+
+                    //       final movements =
+                    //           SholatMovement.getByCategory(value!);
+                    //       ref.read(movementProvider.notifier).update(
+                    //             (state) => movements.length == 1
+                    //                 ? movements.first
+                    //                 : null,
+                    //           );
+                    //     }
+                    //   },
+                    //   dropdownMenuEntries: SholatMovementCategory.values.map(
+                    //     (category) {
+                    //       return DropdownMenuEntry(
+                    //         label: category.name,
+                    //         value: category,
+                    //         leadingIcon: SvgPicture.asset(
+                    //           switch (category) {
+                    //             SholatMovementCategory.takbir =>
+                    //               AssetImages.takbir,
+                    //             SholatMovementCategory.berdiri =>
+                    //               AssetImages.berdiri,
+                    //             SholatMovementCategory.ruku => AssetImages.ruku,
+                    //             SholatMovementCategory.iktidal =>
+                    //               AssetImages.iktidal,
+                    //             SholatMovementCategory.qunut =>
+                    //               AssetImages.qunut,
+                    //             SholatMovementCategory.sujud =>
+                    //               AssetImages.sujud,
+                    //             SholatMovementCategory.duduk =>
+                    //               AssetImages.duduk,
+                    //             SholatMovementCategory.transisi =>
+                    //               AssetImages.transisi,
+                    //           },
+                    //           width: 24,
+                    //           height: 24,
+                    //           colorFilter: ColorFilter.mode(
+                    //             colorScheme.primary,
+                    //             BlendMode.srcIn,
+                    //           ),
+                    //         ),
+                    //       );
+                    //     },
+                    //   ).toList(),
+                    // ),
                     if (selectedCategory != null) ...[
                       const SizedBox(height: 16),
                       DropdownMenu<SholatMovement>(
@@ -213,7 +270,8 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
         return AlertDialog(
           title: const Text('Merge labels'),
           content: const Text(
-              'The selected labels is the same as previous data item label. Do you want to merge them with the same movement IDs?'),
+            'The selected labels is the same as previous data item label. Do you want to merge them with the same movement IDs?',
+          ),
           actions: [
             OutlinedButton(
               onPressed: () {
@@ -437,7 +495,8 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
     );
     final startJumpIndex = ref.watch(
       preprocessProvider.select(
-        (state) => state.selectedDataItemIndexes.isEmpty
+        (state) => state.lastSelectedIndex == null ||
+                state.selectedDataItemIndexes.isEmpty
             ? state.currentHighlightedIndex
             : state.lastSelectedIndex,
       ),
@@ -485,7 +544,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
-                'Select end index (start index: ${startJumpIndex!})',
+                'Select end index (start index: $startJumpIndex)',
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),

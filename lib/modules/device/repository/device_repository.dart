@@ -163,7 +163,7 @@ class DeviceRepository {
 
       log(body.toString());
 
-      final response = await _dio.post(
+      final response = await _dio.post<dynamic>(
         url,
         data: body,
         options: Options(

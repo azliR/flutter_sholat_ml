@@ -33,4 +33,6 @@ enum SholatMovementCategory {
         SholatMovementCategory.duduk => 'duduk',
         SholatMovementCategory.transisi => 'transisi',
       };
+
+  bool get isDeprecated => false;
 }

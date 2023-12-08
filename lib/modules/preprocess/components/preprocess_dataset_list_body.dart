@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/widgets/data_item_tile_widget.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:video_player/video_player.dart';
 
 class PreprocessDatasetList extends ConsumerStatefulWidget {
   const PreprocessDatasetList({
     required this.scrollController,
-    required this.videoPlayerController,
-    required this.trackballBehavior,
     required this.onDataItemPressed,
     super.key,
   });
 
   final ScrollController scrollController;
-  final VideoPlayerController videoPlayerController;
-  final TrackballBehavior trackballBehavior;
   final void Function(int index) onDataItemPressed;
 
   @override
@@ -67,19 +63,44 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                     preprocessProvider
                         .select((value) => value.currentHighlightedIndex),
                   );
-                  final selectedDataItemIndexes = ref.watch(
-                    preprocessProvider
-                        .select((state) => state.selectedDataItemIndexes),
+                  final selected = ref.watch(
+                    preprocessProvider.select(
+                      (state) => state.selectedDataItemIndexes.contains(index),
+                    ),
+                  );
+                  final hasProblem = ref.watch(
+                    preprocessProvider.select(
+                      (state) => state.problems.any(
+                        (problem) => switch (problem) {
+                          MissingLabelProblem() => Iterable.generate(
+                              problem.endIndex - problem.startIndex + 1,
+                              (index) => problem.startIndex + index,
+                            ).contains(index),
+                          DeprecatedLabelProblem() => Iterable.generate(
+                              problem.endIndex - problem.startIndex + 1,
+                              (index) => problem.startIndex + index,
+                            ).contains(index),
+                          DeprecatedLabelCategoryProblem() => Iterable.generate(
+                              problem.endIndex - problem.startIndex + 1,
+                              (index) => problem.startIndex + index,
+                            ).contains(index),
+                          WrongMovementSequenceProblem() => Iterable.generate(
+                              problem.endIndex - problem.startIndex + 1,
+                              (index) => problem.startIndex + index,
+                            ).contains(index),
+                        },
+                      ),
+                    ),
                   );
 
                   final dataItem = dataItems[index];
-                  final selected = selectedDataItemIndexes.contains(index);
 
                   return DataItemTile(
                     index: index,
                     dataItem: dataItem,
                     isHighlighted: index == currentHighlightedIndex,
                     isSelected: selected,
+                    hasProblem: hasProblem,
                     onTap: () => widget.onDataItemPressed(index),
                     onLongPress: () async {
                       _notifier
@@ -100,6 +121,12 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
               onPressed: () {
                 final lastLabeledIndex =
                     dataItems.lastIndexWhere((dataItem) => dataItem.isLabeled);
+
+                if (lastLabeledIndex < 0) {
+                  showSnackbar(context, 'No labeled data items were found.');
+                  return;
+                }
+
                 widget.scrollController.jumpTo(lastLabeledIndex * 32);
                 _notifier.setCurrentHighlightedIndex(lastLabeledIndex);
               },

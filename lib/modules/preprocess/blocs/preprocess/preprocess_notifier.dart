@@ -9,6 +9,7 @@ import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:path/path.dart';
@@ -33,18 +34,52 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
   Future<void> initialise(String path) async {
     final isAutoSave = _preprocessRepository.getAutoSave();
-    state = state.copyWith(path: path, isAutosave: isAutoSave);
+    final isFollowHighlighted = _preprocessRepository.getFollowHighlighted();
+    final isShowBottomPanel = _preprocessRepository.getShowBottomPanel();
+
+    state = state.copyWith(
+      path: path,
+      isAutosave: isAutoSave,
+      isFollowHighlightedMode: isFollowHighlighted,
+      showBottomPanel: isShowBottomPanel,
+    );
     await readDataItems();
+    await analyseDataset();
   }
 
-  Future<bool> readDataItems() async {
+  Future<void> analyseDataset() async {
+    state = state.copyWith(
+      presentationState: const AnalyseDatasetLoadingState(),
+    );
+
+    final (failure, problems) =
+        await _preprocessRepository.analyseDataset(state.dataItems);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: AnalyseDatasetFailureState(failure),
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      problems: problems,
+      presentationState: const AnalyseDatasetSuccessState(),
+    );
+  }
+
+  void setShowBottomPanel({required bool enable}) {
+    _preprocessRepository.setShowBottomPanel(isShowBottomPanel: enable);
+    state = state.copyWith(showBottomPanel: enable);
+  }
+
+  Future<void> readDataItems() async {
     final (datasetPropFailure, datasetProp) =
         await _preprocessRepository.readDatasetProp(state.path);
     if (datasetPropFailure != null) {
       state = state.copyWith(
         presentationState: ReadDatasetsFailureState(datasetPropFailure),
       );
-      return false;
+      return;
     }
 
     final (datasetsFailure, datasets) =
@@ -53,18 +88,17 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       state = state.copyWith(
         presentationState: ReadDatasetsFailureState(datasetsFailure),
       );
-      return false;
+      return;
     }
 
     state = state.copyWith(
       dataItems: datasets,
       datasetProp: datasetProp,
     );
-    return true;
   }
 
   void setIsAutosave({required bool isAutosave}) {
-    _preprocessRepository.setAutoSave(isAutoSave: isAutosave);
+    _preprocessRepository.setAutoSave(enable: isAutosave);
     state = state.copyWith(isAutosave: isAutosave);
   }
 
@@ -77,6 +111,8 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   void setCurrentHighlightedIndex(int index) {
+    if (index < 0 || index >= state.dataItems.length) return;
+
     state = state.copyWith(currentHighlightedIndex: index);
   }
 
@@ -105,13 +141,16 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   void setFollowHighlightedMode({required bool enable}) {
+    _preprocessRepository.setFollowHighlighted(enable: enable);
     state = state.copyWith(isFollowHighlightedMode: enable);
   }
 
-  Future<void> jumpSelect(int endIndex) async {
-    final startJumpIndex = state.selectedDataItemIndexes.isEmpty
-        ? state.currentHighlightedIndex
-        : state.lastSelectedIndex;
+  Future<void> jumpSelect(int endIndex, [int? startIndex]) async {
+    final startJumpIndex = startIndex ??
+        (state.lastSelectedIndex == null ||
+                state.selectedDataItemIndexes.isEmpty
+            ? state.currentHighlightedIndex
+            : state.lastSelectedIndex);
     if (startJumpIndex == null) return;
 
     final selectedDataItemIndexes = List.generate(
@@ -131,11 +170,8 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     );
   }
 
-  Future<void> jumpRemove(int endIndex) async {
-    final startJumpIndex = state.selectedDataItemIndexes.isEmpty
-        ? state.currentHighlightedIndex
-        : state.lastSelectedIndex;
-    if (startJumpIndex == null) return;
+  Future<void> jumpRemove(int startIndex, int endIndex) async {
+    final startJumpIndex = startIndex;
 
     final selectedDataItemIndexes = List.generate(
       1 +
@@ -147,7 +183,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     state = state.copyWith(
       selectedDataItemIndexes: state.selectedDataItemIndexes
         ..removeAll(selectedDataItemIndexes),
-      lastSelectedIndex: () => endIndex,
+      lastSelectedIndex: () => null,
       isJumpSelectMode: false,
     );
   }

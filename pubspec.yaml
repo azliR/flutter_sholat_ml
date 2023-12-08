@@ -1,6 +1,6 @@
 name: flutter_sholat_ml
 description: A Very Good Project created by Very Good CLI.
-version: 1.0.0-beta2+1
+version: 1.0.0-beta3+1
 publish_to: none
 
 environment:
@@ -25,6 +25,7 @@ dependencies:
   firebase_ui_firestore: ^1.5.12
   flutter:
     sdk: flutter
+  flutter_animate: ^4.3.0
   flutter_blue_plus: ^1.28.10
   flutter_localizations:
     sdk: flutter
@@ -37,6 +38,8 @@ dependencies:
   isar_flutter_libs: ^4.0.0-dev.13
   loader_overlay: ^3.0.0
   material_symbols_icons: ^4.2668.0
+  multi_split_view: ^2.4.0
+  package_info_plus: ^5.0.1
   path: ^1.8.3
   path_provider: ^2.1.1
   permission_handler: ^11.0.0

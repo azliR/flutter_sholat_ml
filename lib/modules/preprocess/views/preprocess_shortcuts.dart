@@ -4,18 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/modules/preprocess/blocs/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:video_player/video_player.dart';
 
 class PreprocessShortcuts extends ConsumerStatefulWidget {
   const PreprocessShortcuts({
     required this.scrollController,
     required this.videoPlayerController,
+    required this.onRightKeyPressed,
+    required this.onLeftKeyPressed,
     required this.child,
     super.key,
   });
 
   final ScrollController scrollController;
   final VideoPlayerController videoPlayerController;
+  // ignore: avoid_positional_boolean_parameters
+  final void Function(bool isControlPressed) onRightKeyPressed;
+  // ignore: avoid_positional_boolean_parameters
+  final void Function(bool isControlPressed) onLeftKeyPressed;
   final Widget child;
 
   @override
@@ -30,35 +37,28 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
       <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.space): _playVideo,
         const SingleActivator(LogicalKeyboardKey.escape): _clearSelection,
-        const SingleActivator(LogicalKeyboardKey.keyZ): _increasePlaybackSpeed,
-        const SingleActivator(LogicalKeyboardKey.keyX): _decreasePlaybackSpeed,
+        const SingleActivator(LogicalKeyboardKey.keyX): _increasePlaybackSpeed,
+        const SingleActivator(LogicalKeyboardKey.keyZ): _decreasePlaybackSpeed,
         const SingleActivator(LogicalKeyboardKey.arrowUp): _moveHighlightUp,
-        const SingleActivator(LogicalKeyboardKey.arrowRight): _moveHighlightUp,
         const SingleActivator(LogicalKeyboardKey.arrowDown): _moveHighlightDown,
-        const SingleActivator(LogicalKeyboardKey.arrowLeft): _moveHighlightDown,
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+            widget.onRightKeyPressed(false),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+            widget.onLeftKeyPressed(false),
         const SingleActivator(LogicalKeyboardKey.arrowUp, control: true): () =>
             _moveHighlightUp(isControlPressed: true),
-        const SingleActivator(LogicalKeyboardKey.arrowRight, control: true):
-            () => _moveHighlightUp(isControlPressed: true),
         const SingleActivator(LogicalKeyboardKey.arrowDown, control: true):
             () => _moveHighlightDown(isControlPressed: true),
+        const SingleActivator(LogicalKeyboardKey.arrowRight, control: true):
+            () => widget.onRightKeyPressed(true),
         const SingleActivator(LogicalKeyboardKey.arrowLeft, control: true):
-            () => _moveHighlightDown(isControlPressed: true),
+            () => widget.onLeftKeyPressed(true),
         const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true): () =>
-            _moveHighlightUp(isShiftPressed: true),
-        const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): () =>
             _moveHighlightUp(isShiftPressed: true),
         const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): () =>
             _moveHighlightDown(isShiftPressed: true),
-        const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): () =>
-            _moveHighlightDown(isShiftPressed: true),
         const SingleActivator(
           LogicalKeyboardKey.arrowUp,
-          control: true,
-          shift: true,
-        ): () => _moveHighlightUp(isControlPressed: true, isShiftPressed: true),
-        const SingleActivator(
-          LogicalKeyboardKey.arrowRight,
           control: true,
           shift: true,
         ): () => _moveHighlightUp(isControlPressed: true, isShiftPressed: true),
@@ -68,16 +68,20 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
           shift: true,
         ): () =>
             _moveHighlightDown(isControlPressed: true, isShiftPressed: true),
-        const SingleActivator(
-          LogicalKeyboardKey.arrowLeft,
-          control: true,
-          shift: true,
-        ): () =>
-            _moveHighlightDown(isControlPressed: true, isShiftPressed: true),
+        const SingleActivator(LogicalKeyboardKey.backquote, control: true):
+            _showBottomPanel,
       };
 
   void _playVideo() {
-    final isPlaying = ref.read(preprocessProvider).isPlaying;
+    final videoValue = widget.videoPlayerController.value;
+    final isInitialized = videoValue.isInitialized;
+    final isPlaying = videoValue.isPlaying;
+
+    if (!isInitialized) {
+      showSnackbar(context, 'Video is not ready');
+      return;
+    }
+
     if (isPlaying) {
       widget.videoPlayerController.pause();
     } else {
@@ -137,9 +141,15 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         );
 
         if (selectedDataItemIndexes.containsAll(updatedDataItemIndexes)) {
-          _notifier.jumpRemove(updatedHighlightedIndex);
+          _notifier.jumpRemove(
+            currentHighlightedIndex,
+            updatedHighlightedIndex + 1,
+          );
         } else {
-          _notifier.jumpSelect(updatedHighlightedIndex);
+          _notifier.jumpSelect(
+            updatedHighlightedIndex,
+            currentHighlightedIndex,
+          );
         }
       } else {
         if (selectedDataItemIndexes.contains(updatedHighlightedIndex)) {
@@ -187,9 +197,15 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         );
 
         if (selectedDataItemIndexes.containsAll(updatedDataItemIndexes)) {
-          _notifier.jumpRemove(updatedHighlightedIndex);
+          _notifier.jumpRemove(
+            currentHighlightedIndex,
+            updatedHighlightedIndex - 1,
+          );
         } else {
-          _notifier.jumpSelect(updatedHighlightedIndex);
+          _notifier.jumpSelect(
+            updatedHighlightedIndex,
+            currentHighlightedIndex,
+          );
         }
       } else {
         if (selectedDataItemIndexes.contains(updatedHighlightedIndex)) {
@@ -210,6 +226,11 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         currentOffset - maxBottomOffset + maxTopOffset + 32.0,
       );
     }
+  }
+
+  void _showBottomPanel() {
+    final isShowBottomPanel = ref.read(preprocessProvider).showBottomPanel;
+    _notifier.setShowBottomPanel(enable: !isShowBottomPanel);
   }
 
   @override

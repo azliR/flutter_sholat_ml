@@ -11,8 +11,11 @@ import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/enums/dataset_prop_version.dart';
 import 'package:flutter_sholat_ml/enums/dataset_version.dart';
 import 'package:flutter_sholat_ml/enums/device_location.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/modules/home/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/modules/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -113,6 +116,119 @@ class PreprocessRepository {
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed getting dataset file paths';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, List<Problem>?)> analyseDataset(
+    List<DataItem> dataItems,
+  ) async {
+    try {
+      final problems = await compute(
+        (dataItems) {
+          int? lastLabeledIndex;
+
+          final labelRecords = dataItems.indexed
+              .fold(<(int, int?, SholatMovement?, SholatMovementCategory?)>[],
+                  (previous, record) {
+            final (index, dataItem) = record;
+
+            final label = dataItem.label;
+            final labelCategory = dataItem.labelCategory;
+
+            if (dataItem.isLabeled) lastLabeledIndex = index;
+
+            if (previous.lastOrNull == null) {
+              return previous..add((index, null, label, labelCategory));
+            }
+
+            final (prevStartIndex, _, prevLabel, prevLabelCategory) =
+                previous.last;
+
+            if (prevLabel == label) {
+              return previous;
+            }
+
+            return previous
+              ..last = (prevStartIndex, index - 1, prevLabel, prevLabelCategory)
+              ..add((index, null, label, labelCategory));
+          });
+
+          final problems =
+              labelRecords.indexed.fold(<Problem>[], (previous, record) {
+            final index = record.$1;
+            final (startIndex, endIndex, label, labelCategory) = record.$2;
+
+            if (label == null || labelCategory == null) {
+              if (lastLabeledIndex == null ||
+                  startIndex > lastLabeledIndex! ||
+                  startIndex == 0) {
+                return previous;
+              }
+              previous.add(
+                MissingLabelProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                ),
+              );
+              return previous;
+            }
+
+            if (label.isDeprecated) {
+              previous.add(
+                DeprecatedLabelProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                  label: label,
+                ),
+              );
+            }
+
+            if (labelCategory.isDeprecated) {
+              previous.add(
+                DeprecatedLabelCategoryProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                  labelCategory: labelCategory,
+                ),
+              );
+            }
+
+            if (labelCategory == SholatMovementCategory.qunut) {
+              final prevLabelRecord = labelRecords.elementAtOrNull(index - 1);
+              final nextLabelRecord = labelRecords.elementAtOrNull(index + 1);
+
+              final prevLabel = prevLabelRecord?.$3;
+              final nextLabel = nextLabelRecord?.$3;
+
+              if (prevLabel != SholatMovement.transisiBerdiriKeQunut ||
+                  nextLabel != SholatMovement.transisiQunutKeBerdiri) {
+                previous.add(
+                  WrongMovementSequenceProblem(
+                    startIndex: startIndex,
+                    endIndex: endIndex!,
+                    label: label,
+                    expectedPreviousLabels: [
+                      SholatMovement.transisiBerdiriKeQunut,
+                    ],
+                    expectedNextLabels: [
+                      SholatMovement.transisiQunutKeBerdiri,
+                    ],
+                  ),
+                );
+              }
+            }
+            return previous;
+          });
+
+          return problems;
+        },
+        dataItems,
+      );
+      return (null, problems);
+    } catch (e, stackTrace) {
+      const message = 'Failed validating dataset';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }
@@ -395,11 +511,29 @@ class PreprocessRepository {
     }
   }
 
-  void setAutoSave({required bool isAutoSave}) {
-    LocalStorageService.setAutoSave(isAutoSave: isAutoSave);
+  void setAutoSave({required bool enable}) {
+    LocalStorageService.setAutoSave(enable: enable);
   }
 
-  bool getAutoSave() {
+  bool? getAutoSave() {
     return LocalStorageService.getAutoSave();
+  }
+
+  void setFollowHighlighted({required bool enable}) {
+    LocalStorageService.setFollowHighlighted(enable: enable);
+  }
+
+  bool? getFollowHighlighted() {
+    return LocalStorageService.getFollowHighlighted();
+  }
+
+  void setShowBottomPanel({required bool isShowBottomPanel}) {
+    LocalStorageService.setShowBottomPanel(
+      enable: isShowBottomPanel,
+    );
+  }
+
+  bool? getShowBottomPanel() {
+    return LocalStorageService.getShowBottomPanel();
   }
 }

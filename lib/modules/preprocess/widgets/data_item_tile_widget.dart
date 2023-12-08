@@ -14,6 +14,7 @@ class DataItemTile extends StatelessWidget {
     required this.onLongPress,
     required this.isHighlighted,
     required this.isSelected,
+    required this.hasProblem,
     super.key,
   });
 
@@ -23,6 +24,7 @@ class DataItemTile extends StatelessWidget {
   final void Function() onLongPress;
   final bool isHighlighted;
   final bool isSelected;
+  final bool hasProblem;
 
   bool _isColorDark(Color color) {
     return color.computeLuminance() < 0.5;
@@ -96,7 +98,14 @@ class DataItemTile extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 2,
-                  child: Center(child: Text(index.toString())),
+                  child: Center(
+                    child: hasProblem
+                        ? Icon(
+                            Symbols.error_circle_rounded_error_rounded,
+                            color: colorScheme.error,
+                          )
+                        : Text(index.toString()),
+                  ),
                 ),
                 Expanded(
                   flex: 3,
@@ -121,44 +130,50 @@ class DataItemTile extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: Center(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: dataItem.noiseMovement != null
-                          ? () {
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
-                              showSnackbar(
-                                context,
-                                dataItem.noiseMovement!.name,
-                              );
-                            }
-                          : null,
-                      child: dataItem.noiseMovement != null
-                          ? Icon(
-                              Symbols.report_rounded,
-                              color: colorScheme.secondary,
-                              weight: 300,
-                            )
-                          : const SizedBox(),
+                    child: Tooltip(
+                      message: dataItem.noiseMovement?.name ?? '',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: dataItem.noiseMovement != null
+                            ? () {
+                                ScaffoldMessenger.of(context)
+                                    .hideCurrentSnackBar();
+                                showSnackbar(
+                                  context,
+                                  dataItem.noiseMovement!.name,
+                                );
+                              }
+                            : null,
+                        child: dataItem.noiseMovement != null
+                            ? Icon(
+                                Symbols.report_rounded,
+                                color: colorScheme.secondary,
+                                weight: 300,
+                              )
+                            : const SizedBox(),
+                      ),
                     ),
                   ),
                 ),
                 Expanded(
                   child: Center(
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: dataItem.isLabeled
-                          ? () {
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
-                              showSnackbar(
-                                context,
-                                '${dataItem.label!.name} with movement ID:\n'
-                                '${dataItem.movementSetId!}',
-                              );
-                            }
-                          : null,
-                      child: icon,
+                    child: Tooltip(
+                      message: dataItem.label?.name ?? '',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: dataItem.isLabeled
+                            ? () {
+                                ScaffoldMessenger.of(context)
+                                    .hideCurrentSnackBar();
+                                showSnackbar(
+                                  context,
+                                  '${dataItem.label!.name} with movement ID: '
+                                  '${dataItem.movementSetId!}',
+                                );
+                              }
+                            : null,
+                        child: icon,
+                      ),
                     ),
                   ),
                 ),
