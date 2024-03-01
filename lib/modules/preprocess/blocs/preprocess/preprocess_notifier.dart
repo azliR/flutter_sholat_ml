@@ -316,6 +316,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
   Future<void> saveDataset({
     bool diskOnly = false,
+    bool withVideo = true,
     bool isAutoSaving = false,
   }) async {
     state = state.copyWith(
@@ -330,6 +331,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       dataItems: state.dataItems,
       datasetProp: state.datasetProp!,
       diskOnly: diskOnly,
+      withVideo: withVideo,
     );
 
     if (failure != null) {

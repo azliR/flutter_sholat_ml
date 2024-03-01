@@ -67,12 +67,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     enableMouseWheelZooming: true,
     enableSelectionZooming: true,
   );
-  final _primaryXAxis = NumericAxis(
-    visibleMaximum: 200,
-    majorGridLines: const MajorGridLines(width: 0),
-    axisLine: const AxisLine(width: 0.4),
+  final _primaryXAxis = const NumericAxis(
+    initialVisibleMaximum: 200,
+    majorGridLines: MajorGridLines(width: 0),
+    axisLine: AxisLine(width: 0.4),
     decimalPlaces: 0,
-    borderWidth: 0,
   );
 
   final _xDataItems = <num>[];
@@ -301,6 +300,21 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                 _notifier.saveDataset();
               },
             ),
+            if (!isUploaded) ...[
+              const Divider(height: 8, indent: 16, endIndent: 16),
+              ListTile(
+                title: const Text('Upload without video'),
+                subtitle: const Text(
+                  'Dataset will be backed up without the video and will still counted as in local until you upload the video',
+                ),
+                leading: const Icon(Symbols.upload_file_rounded),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                onTap: () {
+                  Navigator.pop(context);
+                  _notifier.saveDataset(withVideo: false);
+                },
+              ),
+            ],
             const SizedBox(height: 8),
             SizedBox(height: data.padding.bottom),
           ],

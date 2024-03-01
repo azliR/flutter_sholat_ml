@@ -24,7 +24,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Future<void> _connectToSavedDevice() async {
     final device = await _authDeviceNotifier.getPrimaryDevice();
     if (device == null) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       await context.router.replace(const SavedDevicesPage());
       return;
     }

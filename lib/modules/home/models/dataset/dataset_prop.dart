@@ -215,6 +215,8 @@ class DatasetProp extends Equatable {
 
   bool get isUploaded => csvUrl != null && videoUrl != null;
 
+  bool get csvOnly => csvUrl != null && videoUrl == null;
+
   DatasetProp copyWith({
     String? id,
     String? csvUrl,

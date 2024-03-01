@@ -267,6 +267,7 @@ class PreprocessRepository {
     required List<DataItem> dataItems,
     required DatasetProp datasetProp,
     required bool diskOnly,
+    required bool withVideo,
   }) async {
     try {
       final datasetStr = await compute(
@@ -308,6 +309,7 @@ class PreprocessRepository {
         videoFile: File('$path/$datasetVideoPath'),
         thumbnailFile: File('$path/$datasetThumbnailPath'),
         datasetProp: datasetProp,
+        withVideo: withVideo,
       );
       if (saveDatasetFailure != null) return (saveDatasetFailure, null, null);
 
@@ -319,18 +321,28 @@ class PreprocessRepository {
         return (writeDatasetPropFailure, null, null);
       }
 
-      final fullNewDir = Directory(
-        path.replaceFirst(
-          Directories.needReviewDirPath,
-          Directories.reviewedDirPath,
-        ),
-      );
+      final dir = await getApplicationDocumentsDirectory();
+      final fullNewDir = dir.directory(Directories.reviewedDirPath);
+      final sourceDir = Directory(path);
 
-      if (!fullNewDir.existsSync()) {
-        await fullNewDir.create(recursive: true);
+      try {
+        final files = sourceDir.listSync();
+        if (files.isEmpty) {
+          await sourceDir.rename(fullNewDir.path);
+        } else {
+          for (final file in files) {
+            if (file is Directory) continue;
+
+            await file.rename(join(fullNewDir.path, basename(file.path)));
+          }
+        }
+      } on FileSystemException catch (_) {
+        if (fullNewDir.existsSync()) {
+          await fullNewDir.delete(recursive: true);
+        }
+        await sourceDir.copyRecursively(fullNewDir);
+        await sourceDir.delete(recursive: true);
       }
-
-      await Directory(path).rename(fullNewDir.path);
 
       LocalDatasetStorageService.deleteDataset(basename(path));
 
@@ -374,6 +386,7 @@ class PreprocessRepository {
     required File videoFile,
     required File thumbnailFile,
     required DatasetProp datasetProp,
+    required bool withVideo,
   }) async {
     final ref = _firestore.collection('datasets');
     final docRef = ref.doc(datasetProp.isUploaded ? datasetProp.id : null);
@@ -398,6 +411,7 @@ class PreprocessRepository {
         videoFile: videoFile,
         thumbnailFile: thumbnailFile,
         forceReupload: forceReupload,
+        withVideo: withVideo,
       );
       if (failure != null) throw Exception(failure.message);
 
@@ -424,7 +438,8 @@ class PreprocessRepository {
     required File csvFile,
     required File videoFile,
     required File thumbnailFile,
-    bool forceReupload = false,
+    required bool forceReupload,
+    required bool withVideo,
   }) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
@@ -445,7 +460,7 @@ class PreprocessRepository {
           },
         ),
       );
-      if (forceReupload || datasetProp.videoUrl == null) {
+      if (forceReupload || (datasetProp.videoUrl == null && withVideo)) {
         await datasetVideoRef.putFile(
           videoFile,
           SettableMetadata(contentType: 'video/mp4'),
@@ -460,7 +475,17 @@ class PreprocessRepository {
 
       final updatedDatasetProp = datasetProp.copyWith(
         csvUrl: await datasetCsvRef.getDownloadURL(),
-        videoUrl: await datasetVideoRef.getDownloadURL(),
+        videoUrl: await Future<String?>.value(
+          datasetVideoRef.getDownloadURL(),
+        ).catchError((Object? e) async {
+          if (e is FirebaseException) {
+            if (e.code == 'object-not-found') {
+              return null;
+            }
+            throw e;
+          }
+          throw Exception(e);
+        }),
         thumbnailUrl: await datasetThumbnailRef.getDownloadURL(),
         isSyncedWithCloud: true,
         datasetVersion: DatasetVersion.values.last,

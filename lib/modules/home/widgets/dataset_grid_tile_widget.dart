@@ -67,6 +67,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
     final downloaded = dataset.downloaded;
     final hasEvaluated = datasetProp.hasEvaluated;
     final isSyncedWithCloud = datasetProp.isSyncedWithCloud;
+    final csvOnly = datasetProp.csvOnly;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -93,7 +94,6 @@ class _DatasetGridTileState extends State<DatasetGridTile>
               child: ColoredBox(
                 color: colorScheme.outlineVariant,
                 child: Stack(
-                  alignment: Alignment.topRight,
                   children: [
                     if (dataset.thumbnail == null)
                       const Center(
@@ -116,35 +116,61 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                         fit: BoxFit.cover,
                       ),
                     if (widget.selected)
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Symbols.check_rounded,
-                          color: colorScheme.onPrimary,
-                          size: 18,
-                          weight: 600,
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Symbols.check_rounded,
+                            color: colorScheme.onPrimary,
+                            size: 18,
+                            weight: 600,
+                          ),
                         ),
                       )
                     else if (widget.labeled &&
                         downloaded != null &&
                         !downloaded)
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        margin: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondary,
-                          shape: BoxShape.circle,
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: colorScheme.secondary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Symbols.download,
+                            color: colorScheme.onSecondary,
+                            size: 18,
+                            weight: 600,
+                          ),
                         ),
-                        child: Icon(
-                          Symbols.download,
-                          color: colorScheme.onSecondary,
-                          size: 18,
-                          weight: 600,
+                      ),
+                    if (csvOnly)
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          margin: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
+                          ),
+                          child: Text(
+                            'CSV ONLY',
+                            style: textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onPrimaryContainer,
+                            ),
+                          ),
                         ),
                       ),
                   ],

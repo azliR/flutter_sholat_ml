@@ -38,12 +38,12 @@ class AccelerometerChart extends StatelessWidget {
       ),
       primaryXAxis: primaryXAxis,
       plotAreaBorderWidth: 0,
-      primaryYAxis: NumericAxis(
-        axisLine: const AxisLine(width: 0),
+      primaryYAxis: const NumericAxis(
+        axisLine: AxisLine(width: 0),
         maximum: 8000,
         minimum: -8000,
-        majorTickLines: const MajorTickLines(width: 0),
-        majorGridLines: const MajorGridLines(
+        majorTickLines: MajorTickLines(width: 0),
+        majorGridLines: MajorGridLines(
           width: 0.4,
           dashArray: [5, 5],
           color: Colors.grey,
@@ -55,8 +55,7 @@ class AccelerometerChart extends StatelessWidget {
       onTrackballPositionChanging: onTrackballChanged,
       onActualRangeChanged: onActualRangeChanged,
       series: [
-        FastLineSeries(
-          animationDelay: 0,
+        FastLineSeries<num, num>(
           width: 1.4,
           dataSource: x,
           xValueMapper: (data, index) => index,
@@ -64,8 +63,7 @@ class AccelerometerChart extends StatelessWidget {
           color: Colors.red,
           legendItemText: 'x',
         ),
-        FastLineSeries(
-          animationDelay: 0,
+        FastLineSeries<num, num>(
           width: 1.4,
           dataSource: y,
           xValueMapper: (data, index) => index,
@@ -73,8 +71,7 @@ class AccelerometerChart extends StatelessWidget {
           color: Colors.green,
           legendItemText: 'y',
         ),
-        FastLineSeries(
-          animationDelay: 0,
+        FastLineSeries<num, num>(
           width: 1.4,
           dataSource: z,
           xValueMapper: (data, index) => index,

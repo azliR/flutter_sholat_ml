@@ -52,25 +52,23 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
             color: Colors.grey,
           ),
         ),
-        primaryXAxis: NumericAxis(
-          axisLine: const AxisLine(width: 0.4),
-          majorGridLines: const MajorGridLines(width: 0),
-          borderWidth: 0,
+        primaryXAxis: const NumericAxis(
+          axisLine: AxisLine(width: 0.4),
+          majorGridLines: MajorGridLines(width: 0),
         ),
         plotAreaBorderWidth: 0,
-        primaryYAxis: NumericAxis(
-          axisLine: const AxisLine(width: 0),
-          majorTickLines: const MajorTickLines(width: 0),
-          majorGridLines: const MajorGridLines(
+        primaryYAxis: const NumericAxis(
+          axisLine: AxisLine(width: 0),
+          majorTickLines: MajorTickLines(width: 0),
+          majorGridLines: MajorGridLines(
             width: 0.4,
             dashArray: [5, 5],
             color: Colors.grey,
           ),
         ),
         series: [
-          SplineSeries(
+          SplineSeries<num, num>(
             width: 1.4,
-            animationDelay: 0,
             animationDuration: 0,
             dataSource: xDatasets,
             xValueMapper: (data, index) => indexes[index],
@@ -78,9 +76,8 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
             color: Colors.red,
             legendItemText: 'x',
           ),
-          SplineSeries(
+          SplineSeries<num, num>(
             width: 1.4,
-            animationDelay: 0,
             animationDuration: 0,
             dataSource: yDatasets,
             xValueMapper: (data, index) => indexes[index],
@@ -88,9 +85,8 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
             color: Colors.green,
             legendItemText: 'y',
           ),
-          SplineSeries(
+          SplineSeries<num, num>(
             width: 1.4,
-            animationDelay: 0,
             animationDuration: 0,
             dataSource: zDatasets,
             xValueMapper: (data, index) => indexes[index],
