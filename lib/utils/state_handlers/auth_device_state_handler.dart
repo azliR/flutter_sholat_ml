@@ -50,13 +50,14 @@ void handleAuthDeviceState(
         if (onConnectDeviceFailure != null) {
           onConnectDeviceFailure.call(presentationState.failure);
         } else {
+          context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed connecting to device');
         }
       case SelectDeviceLoadingState():
         if (onSelectDeviceLoading != null) {
           onSelectDeviceLoading.call();
         } else {
-          context.loaderOverlay.hide();
+          context.loaderOverlay.show();
         }
       case SelectDeviceSuccessState():
         if (onSelectDeviceSuccess != null) {
@@ -68,6 +69,7 @@ void handleAuthDeviceState(
         if (onSelectDeviceFailure != null) {
           onSelectDeviceFailure.call(presentationState.failure);
         } else {
+          context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed selecting device');
         }
       case AuthDeviceLoadingState():

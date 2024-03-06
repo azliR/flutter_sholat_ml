@@ -98,7 +98,6 @@ class DeviceRepository {
 
       await device.connect(
         timeout: const Duration(seconds: 10),
-        autoConnect: true,
       );
 
       log('Connected to: ${device.remoteId.str}');

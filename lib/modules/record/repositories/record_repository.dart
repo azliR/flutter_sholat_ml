@@ -251,7 +251,7 @@ class RecordRepository {
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
   }) async {
-    log('Starting realtime...');
+    log('Starting realtime');
     try {
       await heartRateMeasureChar.setNotifyValue(true);
       await sensorChar.setNotifyValue(true);
@@ -272,6 +272,7 @@ class RecordRepository {
 
       // send ping request every 12 sec
       _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+        log('Sending ping request');
         await heartRateControlChar.write([0x16]);
         if (timer.tick % 5 == 0) {
           await sensorChar.write([0x00], withoutResponse: true);
@@ -302,7 +303,7 @@ class RecordRepository {
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
   }) async {
-    log('Stopping realtime...');
+    log('Stopping realtime');
     try {
       _timer?.cancel();
 
@@ -326,7 +327,7 @@ class RecordRepository {
     required BluetoothCharacteristic notificationChar,
     required String message,
   }) async {
-    log('Starting realtime...');
+    log('Starting realtime');
     try {
       await notificationChar.setNotifyValue(true);
 
