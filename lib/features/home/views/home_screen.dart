@@ -11,7 +11,7 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-enum HomeScreenNavigation { savedDevice, datasets }
+enum HomeScreenNavigation { savedDevice, datasets, labs }
 
 enum NavigationType { bottom, rail, drawer }
 
@@ -58,6 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _needReviewRefreshKeyCompleter.complete(reviewedRefreshKey);
               },
             ),
+          HomeScreenNavigation.labs => const LabsPage(),
         } as PageRouteInfo<dynamic>;
       }).toList();
 
@@ -66,15 +67,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       switch (section) {
         case HomeScreenNavigation.savedDevice:
           return const AdaptiveScaffoldDestination(
-            icon: Icon(Symbols.watch),
-            selectedIcon: Icon(Symbols.watch, fill: 1),
+            icon: Icon(Symbols.watch_rounded),
+            selectedIcon: Icon(Symbols.watch_rounded, fill: 1),
             label: 'Devices',
           );
         case HomeScreenNavigation.datasets:
           return const AdaptiveScaffoldDestination(
-            icon: Icon(Symbols.dataset),
-            selectedIcon: Icon(Symbols.dataset, fill: 1),
+            icon: Icon(Symbols.dataset_rounded),
+            selectedIcon: Icon(Symbols.dataset_rounded, fill: 1),
             label: 'Datasets',
+          );
+        case HomeScreenNavigation.labs:
+          return const AdaptiveScaffoldDestination(
+            icon: Icon(Symbols.experiment_rounded),
+            selectedIcon: Icon(Symbols.experiment_rounded, fill: 1),
+            label: 'Labs',
           );
       }
     }).toList();

@@ -9,8 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/data_item.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/preprocess_dataset_list_body.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
@@ -906,7 +906,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                           }
                           return datasetProp.isSyncedWithCloud
                               ? Symbols.cloud_done_rounded
-                              : Symbols.sync_saved_locally;
+                              : Symbols.sync_saved_locally_rounded;
                         }(),
                         size: 20,
                         fill: () {

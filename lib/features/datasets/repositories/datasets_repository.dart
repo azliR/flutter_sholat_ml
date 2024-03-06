@@ -10,8 +10,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
 import 'package:get_thumbnail_video/index.dart';
@@ -23,7 +23,7 @@ import 'package:tar/tar.dart';
 
 enum ImportDatasetErrorCode { canceled, unsupported, missingRequiredFiles }
 
-class HomeRepository {
+class DatasetsRepository {
   final _firestore = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
 

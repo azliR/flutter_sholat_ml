@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:hive/hive.dart';
 
 class LocalDatasetStorageService {

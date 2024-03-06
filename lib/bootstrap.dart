@@ -4,7 +4,7 @@ import 'dart:developer';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/firebase_options.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';

@@ -52,7 +52,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
           },
           decoration: InputDecoration(
             labelText: 'MAC address',
-            prefixIcon: const Icon(Symbols.bluetooth),
+            prefixIcon: const Icon(Symbols.bluetooth_rounded),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -191,7 +191,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                       onPressed: () async {
                         await _notifier.scanDevices();
                       },
-                      icon: const Icon(Symbols.refresh),
+                      icon: const Icon(Symbols.refresh_rounded),
                     ),
                 ],
               ),
@@ -234,7 +234,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 return RoundedListTile(
                   title: Text(name.isEmpty ? 'Unknown device' : name),
                   subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Symbols.bluetooth),
+                  leading: const Icon(Symbols.bluetooth_rounded),
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported ? null : () => _onConnectPressed(device),
                 );
@@ -265,7 +265,7 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 return RoundedListTile(
                   title: Text(name),
                   subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Symbols.bluetooth),
+                  leading: const Icon(Symbols.bluetooth_rounded),
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported
                       ? null

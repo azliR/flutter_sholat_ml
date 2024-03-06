@@ -83,7 +83,7 @@ class BottomPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(
-                          Symbols.error,
+                          Symbols.error_rounded,
                           size: 20,
                           color: colorScheme.error,
                         ),

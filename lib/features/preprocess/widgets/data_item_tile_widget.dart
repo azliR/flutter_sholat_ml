@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/data_item.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';

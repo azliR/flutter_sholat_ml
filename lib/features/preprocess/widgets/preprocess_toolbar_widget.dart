@@ -667,7 +667,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
               }
             },
             icon: isPlaying
-                ? const Icon(Symbols.pause, weight: 300)
+                ? const Icon(Symbols.pause_rounded, weight: 300)
                 : const Icon(
                     Symbols.play_arrow,
                     weight: 300,

@@ -15,6 +15,7 @@ class AppRouter extends $AppRouter {
         children: [
           AutoRoute(page: SavedDevicesPage.page),
           AutoRoute(page: DatasetsPage.page),
+          AutoRoute(page: LabsPage.page),
         ],
       ),
       AutoRoute(page: RecordRoute.page),

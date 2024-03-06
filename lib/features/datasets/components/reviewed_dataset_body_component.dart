@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
-import 'package:flutter_sholat_ml/features/home/blocs/datasets/datasets_notifier.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/features/home/widgets/dataset_grid_tile_widget.dart';
+import 'package:flutter_sholat_ml/features/datasets/blocs/datasets/datasets_notifier.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/features/datasets/widgets/dataset_grid_tile_widget.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:material_symbols_icons/symbols.dart';
 

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_prop.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_thumbnail.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_thumbnail.dart';
 
 @immutable
 class Dataset extends Equatable {

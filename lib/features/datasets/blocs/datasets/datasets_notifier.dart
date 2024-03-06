@@ -5,9 +5,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset_thumbnail.dart';
-import 'package:flutter_sholat_ml/features/home/repositories/home_repository.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_thumbnail.dart';
+import 'package:flutter_sholat_ml/features/datasets/repositories/datasets_repository.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 
@@ -20,10 +20,10 @@ final datasetsProvider =
 
 class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
   DatasetsNotifier()
-      : _homeRepository = HomeRepository(),
+      : _homeRepository = DatasetsRepository(),
         _preprocessRepository = PreprocessRepository();
 
-  final HomeRepository _homeRepository;
+  final DatasetsRepository _homeRepository;
   final PreprocessRepository _preprocessRepository;
 
   StreamSubscription<TaskSnapshot>? _downloadSubscription;

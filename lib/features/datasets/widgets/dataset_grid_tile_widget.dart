@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_sholat_ml/features/home/models/dataset/dataset.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -146,7 +146,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Symbols.download,
+                            Symbols.download_rounded,
                             color: colorScheme.onSecondary,
                             size: 18,
                             weight: 600,
@@ -205,7 +205,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                       Icon(
                         isSyncedWithCloud
                             ? Symbols.cloud_done_rounded
-                            : Symbols.sync_saved_locally,
+                            : Symbols.sync_saved_locally_rounded,
                         size: 16,
                         opticalSize: 20,
                         color: isSyncedWithCloud
@@ -240,7 +240,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                   Icon(
                     hasEvaluated
                         ? Symbols.check_circle_rounded
-                        : Symbols.pending,
+                        : Symbols.pending_rounded,
                     size: 16,
                     opticalSize: 20,
                     weight: hasEvaluated ? 500 : 400,
