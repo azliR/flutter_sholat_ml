@@ -1,4 +1,4 @@
-import 'package:flutter_sholat_ml/modules/device/models/device/device.dart';
+import 'package:flutter_sholat_ml/core/auth_device/models/device/device.dart';
 import 'package:hive/hive.dart';
 
 class LocalStorageService {

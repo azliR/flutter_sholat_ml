@@ -9,22 +9,24 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i10;
+import 'package:flutter/foundation.dart' as _i13;
 import 'package:flutter/material.dart' as _i12;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i11;
-import 'package:flutter_sholat_ml/core/splash/views/splash_screen.dart' as _i9;
-import 'package:flutter_sholat_ml/modules/device/views/auth_device_screen.dart'
+import 'package:flutter_sholat_ml/core/auth_device/views/auth_device_screen.dart'
     as _i1;
-import 'package:flutter_sholat_ml/modules/device/views/auth_with_xiaomi_account_screen.dart'
+import 'package:flutter_sholat_ml/core/auth_device/views/auth_with_xiaomi_account_screen.dart'
     as _i2;
-import 'package:flutter_sholat_ml/modules/device/views/discover_device_screen.dart'
+import 'package:flutter_sholat_ml/core/splash/views/splash_screen.dart' as _i9;
+import 'package:flutter_sholat_ml/features/discover_devices/views/discover_device_screen.dart'
     as _i4;
-import 'package:flutter_sholat_ml/modules/home/views/datasets_page.dart' as _i3;
-import 'package:flutter_sholat_ml/modules/home/views/home_screen.dart' as _i5;
-import 'package:flutter_sholat_ml/modules/home/views/saved_devices_page.dart'
+import 'package:flutter_sholat_ml/features/home/views/datasets_page.dart'
+    as _i3;
+import 'package:flutter_sholat_ml/features/home/views/home_screen.dart' as _i5;
+import 'package:flutter_sholat_ml/features/home/views/saved_devices_page.dart'
     as _i8;
-import 'package:flutter_sholat_ml/modules/preprocess/views/preprocess_screen.dart'
+import 'package:flutter_sholat_ml/features/preprocess/views/preprocess_screen.dart'
     as _i6;
-import 'package:flutter_sholat_ml/modules/record/views/record_screen.dart'
+import 'package:flutter_sholat_ml/features/record/views/record_screen.dart'
     as _i7;
 
 abstract class $AppRouter extends _i10.RootStackRouter {
@@ -308,7 +310,7 @@ class HomeRouteArgs {
 class PreprocessRoute extends _i10.PageRouteInfo<PreprocessRouteArgs> {
   PreprocessRoute({
     required String path,
-    _i12.Key? key,
+    _i13.Key? key,
     List<_i10.PageRouteInfo>? children,
   }) : super(
           PreprocessRoute.name,
@@ -333,7 +335,7 @@ class PreprocessRouteArgs {
 
   final String path;
 
-  final _i12.Key? key;
+  final _i13.Key? key;
 
   @override
   String toString() {
