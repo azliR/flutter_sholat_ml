@@ -384,8 +384,11 @@ class DatasetsRepository {
 
   Future<(Failure?, void)> importDatasets() async {
     try {
-      final result =
-          await FilePicker.platform.pickFiles(allowCompression: false);
+      final filePicker = FilePicker.platform;
+      await filePicker.clearTemporaryFiles();
+
+      final result = await filePicker.pickFiles(allowCompression: false);
+
       if (result == null) {
         const message = 'Cancelled by user';
         const code = ImportDatasetErrorCode.canceled;

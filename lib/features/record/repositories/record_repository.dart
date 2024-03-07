@@ -99,12 +99,12 @@ class RecordRepository {
 
   Future<(Failure?, void)> startRecording(
     Stopwatch stopwatch, {
-    required CameraController cameraController,
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
     required BluetoothCharacteristic notificationChar,
+    CameraController? cameraController,
   }) async {
     try {
       await _startRealtimeData(
@@ -113,7 +113,7 @@ class RecordRepository {
         sensorChar: sensorChar,
         hzChar: hzChar,
       );
-      await cameraController.startVideoRecording();
+      await cameraController?.startVideoRecording();
       stopwatch.start();
 
       await _sendNotificationToDevice(
@@ -129,14 +129,14 @@ class RecordRepository {
   }
 
   Future<(Failure?, void)> stopRecording({
-    required CameraController cameraController,
     required BluetoothCharacteristic heartRateMeasureChar,
     required BluetoothCharacteristic heartRateControlChar,
     required BluetoothCharacteristic sensorChar,
     required BluetoothCharacteristic hzChar,
+    CameraController? cameraController,
   }) async {
     try {
-      await cameraController.pauseVideoRecording();
+      await cameraController?.pauseVideoRecording();
       await _stopRealtimeData(
         heartRateMeasureChar: heartRateMeasureChar,
         heartRateControlChar: heartRateControlChar,

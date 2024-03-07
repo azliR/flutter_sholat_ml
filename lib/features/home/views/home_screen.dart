@@ -206,13 +206,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               : null,
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: navigationType == NavigationType.bottom
-              ? FloatingActionButton.large(
+          floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
+          floatingActionButton: () {
+            if (navigationType != NavigationType.bottom) return null;
+
+            switch (HomeScreenNavigation.values[tabsRouter.activeIndex]) {
+              case HomeScreenNavigation.savedDevice:
+              case HomeScreenNavigation.datasets:
+                return FloatingActionButton.large(
+                  key: const ValueKey('record'),
                   tooltip: 'Record',
                   onPressed: _onRecordPressed,
                   child: const Icon(Symbols.videocam_rounded),
-                )
-              : null,
+                );
+              case HomeScreenNavigation.labs:
+                return FloatingActionButton.large(
+                  key: const ValueKey('add_model'),
+                  tooltip: 'Add model',
+                  onPressed: () {},
+                  child: const Icon(Symbols.model_training_rounded),
+                );
+            }
+          }(),
           body: Row(
             children: [
               if (navigationType == NavigationType.drawer)

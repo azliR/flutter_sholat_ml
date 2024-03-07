@@ -20,6 +20,7 @@ class AppRouter extends $AppRouter {
       ),
       AutoRoute(page: RecordRoute.page),
       AutoRoute(page: PreprocessRoute.page),
+      AutoRoute(page: LabRoute.page),
     ];
   }
 }
