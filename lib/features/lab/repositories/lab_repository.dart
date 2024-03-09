@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
+import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:onnxruntime/onnxruntime.dart';
@@ -12,6 +15,8 @@ import 'package:onnxruntime/onnxruntime.dart';
 class LabRepository {
   OrtSession? _session;
   Future<void> Function()? _predictFuture;
+
+  final predictionWindow = <int>[];
 
   final _labelCategories = {
     0: SholatMovementCategory.takbir,
@@ -33,11 +38,8 @@ class LabRepository {
   bool predict({
     required String path,
     required List<num> data,
-    required List<num>? previousLabels,
-    required InputDataType inputDataType,
-    required int batchSize,
-    required int windowSize,
-    required int numberOfFeatures,
+    required List<SholatMovementCategory>? previousLabels,
+    required MlModelConfig config,
     required void Function(List<SholatMovementCategory> labelCategories)
         onPredict,
     required void Function(Failure failure) onError,
@@ -51,8 +53,8 @@ class LabRepository {
         }
 
         final inputOrt = OrtValueTensor.createTensorWithDataList(
-          _convertInputDType(data: data, inputDType: inputDataType),
-          [batchSize, windowSize, numberOfFeatures],
+          _convertInputDType(data: data, inputDType: config.inputDataType),
+          [config.batchSize, config.windowSize, config.numberOfFeatures],
         );
 
         OrtValueTensor? teacherInputOrt;
@@ -60,12 +62,20 @@ class LabRepository {
 
         if (previousLabels != null) {
           final numberOfClasses = _labelCategories.length;
-
-          teacherInputOrt = OrtValueTensor.createTensorWithDataList(
-            _convertInputDType(data: previousLabels, inputDType: inputDataType),
-            [batchSize, numberOfClasses],
+          final teacherInput = _generateTeacherForcingLabels(
+            lastPredictedCategories: previousLabels,
+            batchSize: config.batchSize,
           );
 
+          teacherInputOrt = OrtValueTensor.createTensorWithDataList(
+            _convertInputDType(
+              data: teacherInput,
+              inputDType: config.inputDataType,
+            ),
+            [config.batchSize, numberOfClasses],
+          );
+
+          log(teacherInputOrt.value.toString());
           inputs = {
             'input_data': inputOrt,
             'teacher_input': teacherInputOrt,
@@ -80,8 +90,8 @@ class LabRepository {
         final outputs = await _session!.runAsync(runOptions, inputs);
 
         final yPred = outputs![0]!.value! as List<List<double>>;
-        final smoothedPred = movingAverageSmoothing(yPred, windowSize);
-        final indexes = argmaxByAxis(smoothedPred, windowSize);
+        final smoothedPred = _movingAverageSmoothing(yPred, config.windowSize);
+        final indexes = _argmaxByAxis(smoothedPred, config.windowSize);
         // log(indexes.toString());
         // log(yPred.toString());
         // log(movingAverageSmoothing(yPred[0], windowSize).toString());
@@ -111,9 +121,34 @@ class LabRepository {
     return true;
   }
 
-  final predictionWindow = <int>[];
+  List<num> _generateTeacherForcingLabels({
+    required List<SholatMovementCategory>? lastPredictedCategories,
+    required int batchSize,
+  }) {
+    final numberOfClassess = SholatMovementCategory.values.length;
+    final totalDataSize = batchSize * numberOfClassess;
 
-  List<int> applyTransitionConstraints(
+    if (lastPredictedCategories == null) {
+      return List.filled(totalDataSize, 0);
+    }
+
+    final lastPredictedIndex = lastPredictedCategories
+        .takeLast(batchSize)
+        .map((e) => e.index)
+        .expand((e) => List.filled(numberOfClassess, 0)..[e] = 1)
+        .toList();
+
+    if (lastPredictedIndex.length < totalDataSize) {
+      lastPredictedIndex.insertAll(
+        0,
+        List.filled(totalDataSize - lastPredictedIndex.length, 0),
+      );
+    }
+
+    return lastPredictedIndex;
+  }
+
+  List<int> _applyTransitionConstraints(
     List<List<double>> predictions,
     int minDuration,
     int windowSize,
@@ -185,7 +220,7 @@ class LabRepository {
     return maxActivity;
   }
 
-  List<List<num>> movingAverageSmoothing(
+  List<List<num>> _movingAverageSmoothing(
     List<List<num>> predictions,
     int windowSize,
   ) {
@@ -209,7 +244,7 @@ class LabRepository {
     return smoothedPredictions;
   }
 
-  List<List<double>> majorityVoting(
+  List<List<double>> _majorityVoting(
     List<List<double>> predictions,
     int windowSize,
   ) {
@@ -261,7 +296,7 @@ class LabRepository {
     return maxIndex;
   }
 
-  List<int> argmaxByAxis(List<List<num>> matrix, int axis) {
+  List<int> _argmaxByAxis(List<List<num>> matrix, int axis) {
     if (axis == 0) {
       final maxIndices = <int>[];
       final numRows = matrix.length;

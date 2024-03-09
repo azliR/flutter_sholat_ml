@@ -163,16 +163,10 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
 
     final success = _labRepository.predict(
       path: _path,
-      inputDataType: modelConfig.inputDataType,
-      batchSize: modelConfig.batchSize,
-      windowSize: modelConfig.windowSize,
-      numberOfFeatures: modelConfig.numberOfFeatures,
       data: inputData,
+      config: modelConfig,
       previousLabels: modelConfig.enableTeacherForcing
-          ? _generateTeacherForcingLabels(
-              batchSize: modelConfig.batchSize,
-              predictedCategories: state.predictedCategories,
-            )
+          ? state.predictedCategories?.takeLast(modelConfig.batchSize)
           : null,
       onPredict: (labels) {
         state = state.copyWith(
@@ -202,34 +196,6 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
         ],
       );
     }
-  }
-
-  List<num>? _generateTeacherForcingLabels({
-    required List<SholatMovementCategory>? predictedCategories,
-    required int batchSize,
-  }) {
-    final numberOfClassess = SholatMovementCategory.values.length;
-    final totalDataSize = batchSize * numberOfClassess;
-
-    if (predictedCategories == null) {
-      return List.filled(totalDataSize, 0);
-    }
-
-    final lastPredictedIndex = predictedCategories
-        .takeLast(batchSize)
-        .map((e) => e.index)
-        .expand((e) => List.filled(numberOfClassess, 0)..[e] = 1)
-        .toList();
-
-    if (lastPredictedIndex.length < totalDataSize) {
-      lastPredictedIndex.insertAll(
-        0,
-        List.filled(totalDataSize - lastPredictedIndex.length, 0),
-      );
-    }
-    log(lastPredictedIndex.toString());
-
-    return lastPredictedIndex;
   }
 
   Future<void> startRecording() async {
@@ -308,10 +274,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     _labRepository.predict(
       path: _path,
       data: data,
-      inputDataType: modelConfig.inputDataType,
-      batchSize: modelConfig.batchSize,
-      windowSize: modelConfig.windowSize,
-      numberOfFeatures: modelConfig.numberOfFeatures,
+      config: modelConfig,
       previousLabels: null,
       onPredict: (labels) {
         state = state.copyWith(
