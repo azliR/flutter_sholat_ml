@@ -337,48 +337,6 @@ class LabRepository {
     return LocalStorageService.getLabShowBottomPanel();
   }
 
-  void setInputDataType(InputDataType type) {
-    LocalStorageService.setLabInputDataType(type);
-  }
-
-  InputDataType getInputDataType() {
-    return LocalStorageService.getLabInputDataType();
-  }
-
-  void setEnableTeacherForcing({required bool enableTeacherForcing}) {
-    LocalStorageService.setLabEnableTeacherForcing(
-      enable: enableTeacherForcing,
-    );
-  }
-
-  bool? getEnableTeacherForcing() {
-    return LocalStorageService.getLabEnableTeacherForcing();
-  }
-
-  void setBatchSize(int size) {
-    LocalStorageService.setLabBatchSize(size);
-  }
-
-  int getBatchSize() {
-    return LocalStorageService.getLabBatchSize();
-  }
-
-  void setWindowSize(int size) {
-    LocalStorageService.setLabWindowSize(size);
-  }
-
-  int getWindowSize() {
-    return LocalStorageService.getLabWindowSize();
-  }
-
-  void setNumberOfFeatures(int step) {
-    LocalStorageService.setLabNumberOfFeatures(step);
-  }
-
-  int getNumberOfFeatures() {
-    return LocalStorageService.getLabNumberOfFeatures();
-  }
-
   void dispose() {
     _session?.release();
     OrtEnv.instance.release();

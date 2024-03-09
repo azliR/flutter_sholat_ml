@@ -61,6 +61,9 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
         windowSize: 10,
         numberOfFeatures: 3,
         inputDataType: InputDataType.float32,
+        smoothings: {},
+        filterings: {},
+        temporalConsistencyEnforcements: {},
       ),
     );
   }
@@ -298,48 +301,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     state = state.copyWith(showBottomPanel: enable);
   }
 
-  void setEnableTeacherForcing({required bool enable}) {
-    _labRepository.setEnableTeacherForcing(enableTeacherForcing: enable);
-    state = state.copyWith(
-      modelConfig: state.modelConfig.copyWith(
-        enableTeacherForcing: enable,
-      ),
-    );
-  }
-
-  void setInputDataType(InputDataType type) {
-    _labRepository.setInputDataType(type);
-    state = state.copyWith(
-      modelConfig: state.modelConfig.copyWith(
-        inputDataType: type,
-      ),
-    );
-  }
-
-  void setBatchSize(int size) {
-    _labRepository.setBatchSize(size);
-    state = state.copyWith(
-      modelConfig: state.modelConfig.copyWith(
-        batchSize: size,
-      ),
-    );
-  }
-
-  void setWindowSize(int size) {
-    _labRepository.setWindowSize(size);
-    state = state.copyWith(
-      modelConfig: state.modelConfig.copyWith(
-        windowSize: size,
-      ),
-    );
-  }
-
-  void setNumberOfFeatures(int step) {
-    _labRepository.setNumberOfFeatures(step);
-    state = state.copyWith(
-      modelConfig: state.modelConfig.copyWith(
-        numberOfFeatures: step,
-      ),
-    );
+  void setModelConfig(MlModelConfig config) {
+    state = state.copyWith(modelConfig: config);
   }
 }

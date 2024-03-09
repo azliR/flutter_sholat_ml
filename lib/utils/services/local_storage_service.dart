@@ -1,5 +1,4 @@
 import 'package:flutter_sholat_ml/core/auth_device/models/device/device.dart';
-import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
 import 'package:hive/hive.dart';
 
 class LocalStorageService {
@@ -124,45 +123,5 @@ class LocalStorageService {
 
   static List<double> getLabSplitView1Weights() {
     return (_box.get(kLabSplitView1Weights) as List? ?? []).cast<double>();
-  }
-
-  static void setLabInputDataType(InputDataType type) {
-    _box.put(kLabInputDataType, type.index);
-  }
-
-  static InputDataType getLabInputDataType() {
-    return InputDataType.values[_box.get(kLabInputDataType) as int? ?? 0];
-  }
-
-  static void setLabEnableTeacherForcing({required bool enable}) {
-    _box.put(kLabEnableTeacherForcing, enable);
-  }
-
-  static bool getLabEnableTeacherForcing() {
-    return _box.get(kLabEnableTeacherForcing) as bool? ?? true;
-  }
-
-  static void setLabWindowSize(int size) {
-    _box.put(kLabWindowSize, size);
-  }
-
-  static int getLabWindowSize() {
-    return _box.get(kLabWindowSize) as int? ?? 20;
-  }
-
-  static void setLabBatchSize(int size) {
-    _box.put(kLabBatchSize, size);
-  }
-
-  static int getLabBatchSize() {
-    return _box.get(kLabBatchSize) as int? ?? 1;
-  }
-
-  static void setLabNumberOfFeatures(int step) {
-    _box.put(kLabNumberOfFeatures, step);
-  }
-
-  static int getLabNumberOfFeatures() {
-    return _box.get(kLabNumberOfFeatures) as int? ?? 5;
   }
 }

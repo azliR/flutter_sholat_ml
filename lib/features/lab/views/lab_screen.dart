@@ -150,9 +150,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         DropdownMenu<InputDataType>(
           initialSelection: modelConfig.inputDataType,
           enabled: recordState == RecordState.ready,
-          onSelected: (value) {
-            _notifier.setInputDataType(value!);
-          },
+          onSelected: (value) => _notifier
+              .setModelConfig(modelConfig.copyWith(inputDataType: value)),
           enableSearch: false,
           label: const Text('Input Data Type'),
           expandedInsets: EdgeInsets.zero,
@@ -181,7 +180,9 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                 onChanged: (value) {
                   if (_batchSizeValidator(value) != null) return;
 
-                  _notifier.setBatchSize(int.parse(value));
+                  _notifier.setModelConfig(
+                    modelConfig.copyWith(batchSize: int.parse(value)),
+                  );
                 },
               ),
             ),
@@ -200,7 +201,9 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                 onChanged: (value) {
                   if (_windowSizeValidator(value) != null) return;
 
-                  _notifier.setWindowSize(int.parse(value));
+                  _notifier.setModelConfig(
+                    modelConfig.copyWith(windowSize: int.parse(value)),
+                  );
                 },
               ),
             ),
@@ -219,7 +222,9 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                 onChanged: (value) {
                   if (_numberOfFeaturesValidator(value) != null) return;
 
-                  _notifier.setNumberOfFeatures(int.parse(value));
+                  _notifier.setModelConfig(
+                    modelConfig.copyWith(numberOfFeatures: int.parse(value)),
+                  );
                 },
               ),
             ),
@@ -228,8 +233,6 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         const SizedBox(height: 16),
         Consumer(
           builder: (context, ref, child) {
-            final colorScheme = Theme.of(context).colorScheme;
-
             final enableTeacherForcing = ref.watch(
               labProvider
                   .select((value) => value.modelConfig.enableTeacherForcing),
@@ -242,13 +245,14 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               ),
               clipBehavior: Clip.antiAlias,
               child: SwitchListTile(
-                title: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: const Text('Enable Teacher Forcing'),
+                title: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text('Enable Teacher Forcing'),
                 ),
                 value: enableTeacherForcing,
-                onChanged: (value) =>
-                    _notifier.setEnableTeacherForcing(enable: value),
+                onChanged: (value) => _notifier.setModelConfig(
+                  modelConfig.copyWith(enableTeacherForcing: value),
+                ),
               ),
             );
           },
@@ -261,7 +265,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         Text(
           'Predict Result: ${predictedCategory?.name}',
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),

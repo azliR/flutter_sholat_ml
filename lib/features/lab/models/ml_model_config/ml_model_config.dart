@@ -1,6 +1,12 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
 
+enum Smoothing { movingAverage, exponentialSmoothing }
+
+enum Filtering { medianFilter, lowPassFilter }
+
+enum TemporalConsistencyEnforcement { majorityVoting, transitionConstraints }
+
 class MlModelConfig extends Equatable {
   const MlModelConfig({
     required this.enableTeacherForcing,
@@ -8,6 +14,9 @@ class MlModelConfig extends Equatable {
     required this.windowSize,
     required this.numberOfFeatures,
     required this.inputDataType,
+    required this.smoothings,
+    required this.filterings,
+    required this.temporalConsistencyEnforcements,
   });
 
   final bool enableTeacherForcing;
@@ -15,6 +24,9 @@ class MlModelConfig extends Equatable {
   final int windowSize;
   final int numberOfFeatures;
   final InputDataType inputDataType;
+  final Set<Smoothing> smoothings;
+  final Set<Filtering> filterings;
+  final Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -33,6 +45,19 @@ class MlModelConfig extends Equatable {
       windowSize: (map['windowSize'] ?? 0) as int,
       numberOfFeatures: (map['numberOfFeatures'] ?? 0) as int,
       inputDataType: InputDataType.values[map['inputDataType'] as int? ?? 0],
+      smoothings: (map['smoothings'] as List<int>?)
+              ?.map((e) => Smoothing.values[e])
+              .toSet() ??
+          {},
+      filterings: (map['filterings'] as List<int>?)
+              ?.map((e) => Filtering.values[e])
+              .toSet() ??
+          {},
+      temporalConsistencyEnforcements:
+          (map['temporalConsistencyEnforcements'] as List<int>?)
+                  ?.map((e) => TemporalConsistencyEnforcement.values[e])
+                  .toSet() ??
+              {},
     );
   }
 
@@ -42,6 +67,9 @@ class MlModelConfig extends Equatable {
     int? windowSize,
     int? numberOfFeatures,
     InputDataType? inputDataType,
+    Set<Smoothing>? smoothings,
+    Set<Filtering>? filterings,
+    Set<TemporalConsistencyEnforcement>? temporalConsistencyEnforcements,
   }) {
     return MlModelConfig(
       enableTeacherForcing: enableTeacherForcing ?? this.enableTeacherForcing,
@@ -49,6 +77,10 @@ class MlModelConfig extends Equatable {
       windowSize: windowSize ?? this.windowSize,
       numberOfFeatures: numberOfFeatures ?? this.numberOfFeatures,
       inputDataType: inputDataType ?? this.inputDataType,
+      smoothings: smoothings ?? this.smoothings,
+      filterings: filterings ?? this.filterings,
+      temporalConsistencyEnforcements: temporalConsistencyEnforcements ??
+          this.temporalConsistencyEnforcements,
     );
   }
 
@@ -60,6 +92,9 @@ class MlModelConfig extends Equatable {
       windowSize,
       numberOfFeatures,
       inputDataType,
+      smoothings,
+      filterings,
+      temporalConsistencyEnforcements,
     ];
   }
 }
