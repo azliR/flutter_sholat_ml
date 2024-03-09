@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/features/datasets/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/features/datasets/components/need_review_datasets_body_component.dart';
 import 'package:flutter_sholat_ml/features/datasets/components/reviewed_dataset_body_component.dart';
@@ -10,7 +11,6 @@ import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
 @RoutePage()
 class DatasetsPage extends ConsumerStatefulWidget {
@@ -374,98 +374,96 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
 
         Navigator.pop(context);
       },
-      child: Material(
-        child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) => [
-            Consumer(
-              builder: (context, ref, child) {
-                final selectedDatasetIndexes = ref.watch(
-                  datasetsProvider
-                      .select((value) => value.selectedDatasetIndexes),
-                );
-                final isSelectMode = selectedDatasetIndexes.isNotEmpty;
+      child: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          Consumer(
+            builder: (context, ref, child) {
+              final selectedDatasetIndexes = ref.watch(
+                datasetsProvider
+                    .select((value) => value.selectedDatasetIndexes),
+              );
+              final isSelectMode = selectedDatasetIndexes.isNotEmpty;
 
-                return SliverAppBar.medium(
-                  title: const Text('Datasets'),
-                  actions: [
-                    if (isSelectMode && _tabController.index == 0) ...[
-                      Consumer(
-                        builder: (context, ref, child) {
-                          final needReviewDatasets = ref.watch(
-                            datasetsProvider
-                                .select((value) => value.needReviewDatasets),
-                          );
-                          if (selectedDatasetIndexes.length ==
-                              needReviewDatasets.length) {
-                            return const SizedBox();
-                          }
-                          return IconButton(
-                            tooltip: 'Select all',
-                            onPressed: () => _notifier.onSelectAllDatasets(),
-                            icon: const Icon(Symbols.select_all_rounded),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        tooltip: 'Delete',
-                        onPressed: _showDeleteDatasetsDialog,
-                        icon: const Icon(Symbols.delete_rounded),
-                      ),
-                      IconButton(
-                        tooltip: 'Share & Export',
-                        onPressed: () {
-                          final datasets =
-                              ref.read(datasetsProvider).needReviewDatasets;
-
-                          _notifier.exportAndShareDatasets(
-                            selectedDatasetIndexes
-                                .map((index) => datasets[index].path!)
-                                .toList(),
-                          );
-                        },
-                        icon: const Icon(Symbols.share_rounded),
-                      ),
-                    ],
-                    IconButton(
-                      tooltip: 'Refresh',
-                      onPressed: () {
-                        switch (_tabController.index) {
-                          case 0:
-                            _needReviewRefreshKey.currentState?.show();
-                          case 1:
-                            _reviewedRefreshKey.currentState?.show();
+              return SliverAppBar.medium(
+                title: const Text('Datasets'),
+                actions: [
+                  if (isSelectMode && _tabController.index == 0) ...[
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final needReviewDatasets = ref.watch(
+                          datasetsProvider
+                              .select((value) => value.needReviewDatasets),
+                        );
+                        if (selectedDatasetIndexes.length ==
+                            needReviewDatasets.length) {
+                          return const SizedBox();
                         }
+                        return IconButton(
+                          tooltip: 'Select all',
+                          onPressed: () => _notifier.onSelectAllDatasets(),
+                          icon: const Icon(Symbols.select_all_rounded),
+                        );
                       },
-                      icon: const Icon(Symbols.refresh_rounded),
                     ),
-                    _buildMenu(),
-                    const SizedBox(width: 12),
+                    IconButton(
+                      tooltip: 'Delete',
+                      onPressed: _showDeleteDatasetsDialog,
+                      icon: const Icon(Symbols.delete_rounded),
+                    ),
+                    IconButton(
+                      tooltip: 'Share & Export',
+                      onPressed: () {
+                        final datasets =
+                            ref.read(datasetsProvider).needReviewDatasets;
+
+                        _notifier.exportAndShareDatasets(
+                          selectedDatasetIndexes
+                              .map((index) => datasets[index].path!)
+                              .toList(),
+                        );
+                      },
+                      icon: const Icon(Symbols.share_rounded),
+                    ),
                   ],
-                  bottom: TabBar(
-                    controller: _tabController,
-                    isScrollable: data.size.width > 480,
-                    tabs: const [
-                      Tab(text: 'Local'),
-                      Tab(text: 'Cloud'),
-                    ],
+                  IconButton(
+                    tooltip: 'Refresh',
+                    onPressed: () {
+                      switch (_tabController.index) {
+                        case 0:
+                          _needReviewRefreshKey.currentState?.show();
+                        case 1:
+                          _reviewedRefreshKey.currentState?.show();
+                      }
+                    },
+                    icon: const Icon(Symbols.refresh_rounded),
                   ),
-                );
-              },
+                  _buildMenu(),
+                  const SizedBox(width: 12),
+                ],
+                bottom: TabBar(
+                  controller: _tabController,
+                  isScrollable: data.size.width > 480,
+                  tabs: const [
+                    Tab(text: 'Local'),
+                    Tab(text: 'Cloud'),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            NeedReviewDatasetBody(
+              pagingController: _needReviewPagingController,
+              refreshKey: _needReviewRefreshKey,
+            ),
+            ReviewedDatasetBody(
+              pagingController: _reviewedPagingController,
+              refreshKey: _reviewedRefreshKey,
             ),
           ],
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              NeedReviewDatasetBody(
-                pagingController: _needReviewPagingController,
-                refreshKey: _needReviewRefreshKey,
-              ),
-              ReviewedDatasetBody(
-                pagingController: _reviewedPagingController,
-                refreshKey: _reviewedRefreshKey,
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -493,31 +491,13 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
       menuChildren: [
         MenuItemButton(
           leadingIcon: const Icon(Symbols.upload_rounded),
-          onPressed: () async {
-            await _notifier.importDatasets();
-          },
+          onPressed: () async => _notifier.importDatasets(),
           child: const Text('Import datasets'),
         ),
         MenuItemButton(
-          leadingIcon: const Icon(Symbols.info_rounded),
-          onPressed: () async {
-            final packageInfo = await PackageInfo.fromPlatform();
-
-            if (!context.mounted) return;
-
-            showAboutDialog(
-              context: context,
-              applicationIcon: const Image(
-                image: AssetImage('assets/images/ic_launcher.png'),
-                width: 48,
-                height: 48,
-              ),
-              applicationName: packageInfo.appName,
-              applicationVersion: packageInfo.version,
-              applicationLegalese: '© 2023 azliR',
-            );
-          },
-          child: const Text('About this app'),
+          leadingIcon: const Icon(Symbols.settings_rounded),
+          onPressed: () => context.router.push(const SettingsRoute()),
+          child: const Text('Settings'),
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),

@@ -188,7 +188,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                       formattedDatasetName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleSmall,
+                      style: textTheme.bodyMedium,
                     ),
                   ),
                 ),
@@ -252,7 +252,7 @@ class _DatasetGridTileState extends State<DatasetGridTile>
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      hasEvaluated ? 'Has evaluated' : 'Not evaluated',
+                      hasEvaluated ? 'Evaluated' : 'Not evaluated',
                       style: textTheme.bodySmall?.copyWith(
                         fontWeight:
                             hasEvaluated ? FontWeight.bold : FontWeight.normal,

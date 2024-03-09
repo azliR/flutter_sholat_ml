@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.dart';
+import 'package:flutter_sholat_ml/core/settings/blocs/settings/settings_notifier.dart';
 import 'package:flutter_sholat_ml/l10n/l10n.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
@@ -31,6 +33,18 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
+    final darkColorScheme = ColorScheme.fromSeed(
+        seedColor: Colors.green, brightness: Brightness.dark);
+
+    final lightTheme = _generateThemeData(
+      colorScheme: colorScheme,
+      brightness: Brightness.light,
+    );
+
+    final darkTheme = _generateThemeData(
+      colorScheme: darkColorScheme,
+      brightness: Brightness.dark,
+    );
 
     return GlobalLoaderOverlay(
       useDefaultLoading: false,
@@ -46,26 +60,46 @@ class _AppState extends State<App> {
           ),
         );
       },
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: colorScheme,
-          snackBarTheme: const SnackBarThemeData(
-            behavior: SnackBarBehavior.floating,
-          ),
-          inputDecorationTheme: const InputDecorationTheme(
-            filled: true,
-          ),
-          dropdownMenuTheme: const DropdownMenuThemeData(
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-            ),
-          ),
+      child: Consumer(
+        builder: (context, ref, child) {
+          final themeMode =
+              ref.watch(settingsProvider.select((value) => value.themeMode));
+
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            themeMode: themeMode,
+            theme: lightTheme,
+            darkTheme: darkTheme,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            routerConfig: _appRouter.config(),
+          );
+        },
+      ),
+    );
+  }
+
+  ThemeData _generateThemeData({
+    required ColorScheme colorScheme,
+    required Brightness brightness,
+  }) {
+    final themeData = switch (brightness) {
+      Brightness.dark => ThemeData.dark(),
+      Brightness.light => ThemeData.light(),
+    };
+
+    return themeData.copyWith(
+      colorScheme: colorScheme,
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+      ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
         ),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: _appRouter.config(),
       ),
     );
   }

@@ -183,7 +183,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       transitionBuilder: (context, child, animation) => FadeThroughTransition(
         animation: animation,
         secondaryAnimation: ReverseAnimation(animation),
-        fillColor: Theme.of(context).canvasColor,
         child: child,
       ),
       builder: (context, child) {

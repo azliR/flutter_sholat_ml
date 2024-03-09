@@ -124,8 +124,6 @@ class _LabScreenState extends ConsumerState<LabScreen> {
   }
 
   Widget _buildMain() {
-    final textTheme = Theme.of(context).textTheme;
-
     final isInitialised =
         ref.watch(labProvider.select((value) => value.isInitialised));
     final recordState =
@@ -264,7 +262,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         Card.outlined(
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
-            title: const Text('Advance option'),
+            title: const Text('Advanced options'),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(24)),
             ),

@@ -113,55 +113,53 @@ class _LabsPageState extends ConsumerState<LabsPage> {
       },
     );
 
-    return Material(
-      child: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          const SliverAppBar.large(
-            title: Text('Labs'),
-          ),
-        ],
-        body: RefreshIndicator(
-          key: _mlModelsRefreshKey,
-          onRefresh: () async {
-            _mlModelsPagingController.refresh();
-            return Future.delayed(const Duration(seconds: 1), () => null);
-          },
-          child: PagedListView(
-            pagingController: _mlModelsPagingController,
-            padding: EdgeInsets.zero,
-            builderDelegate: PagedChildBuilderDelegate<MlModel>(
-              noItemsFoundIndicatorBuilder: (context) {
-                return const IllustrationWidget(
-                  title: Text('No models, yet'),
-                  description: Text('Add a model to start experimenting! 🧪'),
-                  icon: Icon(
-                    Symbols.model_training_rounded,
-                  ),
-                );
-              },
-              itemBuilder: (context, mlModel, index) {
-                return RoundedListTile(
-                  leading:
-                      Text(extension(mlModel.path).substring(1).toUpperCase()),
-                  title: Text(_formatDateTime(mlModel.createdAt)),
-                  trailing: _buildMenu(mlModel),
-                  onTap: () {
-                    final currentBluetoothDevice =
-                        ref.read(authDeviceProvider).currentBluetoothDevice;
-                    final currentServices =
-                        ref.read(authDeviceProvider).currentServices;
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) => [
+        const SliverAppBar.large(
+          title: Text('Labs'),
+        ),
+      ],
+      body: RefreshIndicator(
+        key: _mlModelsRefreshKey,
+        onRefresh: () async {
+          _mlModelsPagingController.refresh();
+          return Future.delayed(const Duration(seconds: 1), () => null);
+        },
+        child: PagedListView(
+          pagingController: _mlModelsPagingController,
+          padding: EdgeInsets.zero,
+          builderDelegate: PagedChildBuilderDelegate<MlModel>(
+            noItemsFoundIndicatorBuilder: (context) {
+              return const IllustrationWidget(
+                title: Text('No models, yet'),
+                description: Text('Add a model to start experimenting! 🧪'),
+                icon: Icon(
+                  Symbols.model_training_rounded,
+                ),
+              );
+            },
+            itemBuilder: (context, mlModel, index) {
+              return RoundedListTile(
+                leading:
+                    Text(extension(mlModel.path).substring(1).toUpperCase()),
+                title: Text(_formatDateTime(mlModel.createdAt)),
+                trailing: _buildMenu(mlModel),
+                onTap: () {
+                  final currentBluetoothDevice =
+                      ref.read(authDeviceProvider).currentBluetoothDevice;
+                  final currentServices =
+                      ref.read(authDeviceProvider).currentServices;
 
-                    context.router.push(
-                      LabRoute(
-                        path: mlModel.path,
-                        device: currentBluetoothDevice,
-                        services: currentServices,
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                  context.router.push(
+                    LabRoute(
+                      path: mlModel.path,
+                      device: currentBluetoothDevice,
+                      services: currentServices,
+                    ),
+                  );
+                },
+              );
+            },
           ),
         ),
       ),

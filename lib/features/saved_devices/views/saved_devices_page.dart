@@ -66,80 +66,78 @@ class SavedDevicesPage extends ConsumerWidget {
     final savedDevices =
         ref.watch(authDeviceProvider.select((state) => state.savedDevices));
 
-    return Material(
-      child: CustomScrollView(
-        slivers: [
-          const SliverAppBar.large(
-            title: Text('Saved Devices'),
-          ),
-          if (savedDevices.isEmpty)
-            const SliverFillRemaining(
-              child: IllustrationWidget(
-                icon: Icon(Symbols.watch_off_rounded),
-                title: Text('No devices saved, yet'),
-                description: Text(
-                  "Once you connect a device, it'll show up here for easy access! 😉",
-                ),
-              ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final device = savedDevices[index];
-                  return RoundedListTile(
-                    leading: const Icon(Symbols.watch_rounded),
-                    title: Row(
-                      children: [
-                        Text(
-                          device.deviceName,
-                        ),
-                        if (device == currentDevice) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.tertiary,
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(8)),
-                            ),
-                            child: Text(
-                              'CONNECTED',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    subtitle: Text(device.deviceId),
-                    trailing: _buildActions(
-                      context: context,
-                      ref: ref,
-                      notifier: notifier,
-                      device: device,
-                    ),
-                    onTap: () {
-                      if (savedDevices[index] == currentDevice) {
-                        AutoTabsRouter.of(context).setActiveIndex(index + 1);
-                      } else {
-                        notifier.connectToSavedDevice(savedDevices[index]);
-                      }
-                    },
-                  );
-                },
-                childCount: savedDevices.length,
+    return CustomScrollView(
+      slivers: [
+        const SliverAppBar.large(
+          title: Text('Saved Devices'),
+        ),
+        if (savedDevices.isEmpty)
+          const SliverFillRemaining(
+            child: IllustrationWidget(
+              icon: Icon(Symbols.watch_off_rounded),
+              title: Text('No devices saved, yet'),
+              description: Text(
+                "Once you connect a device, it'll show up here for easy access! 😉",
               ),
             ),
-          const SliverPadding(
-            padding: EdgeInsets.only(bottom: Dimens.bottomListPadding),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final device = savedDevices[index];
+                return RoundedListTile(
+                  leading: const Icon(Symbols.watch_rounded),
+                  title: Row(
+                    children: [
+                      Text(
+                        device.deviceName,
+                      ),
+                      if (device == currentDevice) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.tertiary,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(8)),
+                          ),
+                          child: Text(
+                            'CONNECTED',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  subtitle: Text(device.deviceId),
+                  trailing: _buildActions(
+                    context: context,
+                    ref: ref,
+                    notifier: notifier,
+                    device: device,
+                  ),
+                  onTap: () {
+                    if (savedDevices[index] == currentDevice) {
+                      AutoTabsRouter.of(context).setActiveIndex(index + 1);
+                    } else {
+                      notifier.connectToSavedDevice(savedDevices[index]);
+                    }
+                  },
+                );
+              },
+              childCount: savedDevices.length,
+            ),
           ),
-        ],
-      ),
+        const SliverPadding(
+          padding: EdgeInsets.only(bottom: Dimens.bottomListPadding),
+        ),
+      ],
     );
   }
 

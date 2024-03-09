@@ -29,6 +29,7 @@ class RoundedListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Card.filled(
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
