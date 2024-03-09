@@ -9,7 +9,7 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i14;
-import 'package:flutter/foundation.dart' as _i17;
+import 'package:flutter/foundation.dart' as _i18;
 import 'package:flutter/material.dart' as _i16;
 import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i15;
 import 'package:flutter_sholat_ml/core/auth_device/views/auth_device_screen.dart'
@@ -25,6 +25,8 @@ import 'package:flutter_sholat_ml/features/discover_devices/views/discover_devic
     as _i4;
 import 'package:flutter_sholat_ml/features/home/views/home_screen.dart' as _i5;
 import 'package:flutter_sholat_ml/features/lab/views/lab_screen.dart' as _i6;
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart'
+    as _i17;
 import 'package:flutter_sholat_ml/features/labs/views/labs_page.dart' as _i7;
 import 'package:flutter_sholat_ml/features/manual_device_connect/views/manual_device_connect_screen.dart'
     as _i8;
@@ -95,7 +97,7 @@ abstract class $AppRouter extends _i14.RootStackRouter {
       return _i14.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: _i6.LabScreen(
-          path: args.path,
+          mlModel: args.mlModel,
           device: args.device,
           services: args.services,
           key: args.key,
@@ -345,7 +347,7 @@ class HomeRouteArgs {
 /// [_i6.LabScreen]
 class LabRoute extends _i14.PageRouteInfo<LabRouteArgs> {
   LabRoute({
-    required String path,
+    required _i17.MlModel mlModel,
     required _i15.BluetoothDevice? device,
     required List<_i15.BluetoothService>? services,
     _i16.Key? key,
@@ -353,7 +355,7 @@ class LabRoute extends _i14.PageRouteInfo<LabRouteArgs> {
   }) : super(
           LabRoute.name,
           args: LabRouteArgs(
-            path: path,
+            mlModel: mlModel,
             device: device,
             services: services,
             key: key,
@@ -369,13 +371,13 @@ class LabRoute extends _i14.PageRouteInfo<LabRouteArgs> {
 
 class LabRouteArgs {
   const LabRouteArgs({
-    required this.path,
+    required this.mlModel,
     required this.device,
     required this.services,
     this.key,
   });
 
-  final String path;
+  final _i17.MlModel mlModel;
 
   final _i15.BluetoothDevice? device;
 
@@ -385,7 +387,7 @@ class LabRouteArgs {
 
   @override
   String toString() {
-    return 'LabRouteArgs{path: $path, device: $device, services: $services, key: $key}';
+    return 'LabRouteArgs{mlModel: $mlModel, device: $device, services: $services, key: $key}';
   }
 }
 
@@ -422,7 +424,7 @@ class ManualDeviceConnectRoute extends _i14.PageRouteInfo<void> {
 class PreprocessRoute extends _i14.PageRouteInfo<PreprocessRouteArgs> {
   PreprocessRoute({
     required String path,
-    _i17.Key? key,
+    _i18.Key? key,
     List<_i14.PageRouteInfo>? children,
   }) : super(
           PreprocessRoute.name,
@@ -447,7 +449,7 @@ class PreprocessRouteArgs {
 
   final String path;
 
-  final _i17.Key? key;
+  final _i18.Key? key;
 
   @override
   String toString() {

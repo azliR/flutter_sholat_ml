@@ -88,7 +88,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
             await context.router.push(
               LabRoute(
-                path: presentationState.path,
+                mlModel: presentationState.mlModel,
                 device: currentBluetoothDevice,
                 services: currentServices,
               ),
@@ -152,7 +152,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
                   context.router.push(
                     LabRoute(
-                      path: mlModel.path,
+                      mlModel: mlModel,
                       device: currentBluetoothDevice,
                       services: currentServices,
                     ),

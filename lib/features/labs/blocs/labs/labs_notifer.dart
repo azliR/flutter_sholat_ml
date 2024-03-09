@@ -28,7 +28,7 @@ class LabsNotifier extends AutoDisposeNotifier<LabsState> {
 
   Future<void> pickModel() async {
     state = state.copyWith(presentationState: const PickModelLoadingState());
-    final (failure, path) = await _labsRepository.pickModel();
+    final (failure, mlModel) = await _labsRepository.pickModel();
     if (failure != null) {
       state = state.copyWith(
         presentationState: PickModelFailureState(failure),
@@ -36,7 +36,7 @@ class LabsNotifier extends AutoDisposeNotifier<LabsState> {
       return;
     }
     state = state.copyWith(
-      presentationState: PickModelSuccessState(path!),
+      presentationState: PickModelSuccessState(mlModel!),
     );
   }
 

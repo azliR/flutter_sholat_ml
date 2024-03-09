@@ -28,7 +28,7 @@ class LabsRepository {
     }
   }
 
-  Future<(Failure?, String?)> pickModel() async {
+  Future<(Failure?, MlModel?)> pickModel() async {
     final filePicker = FilePicker.platform;
     try {
       await filePicker.clearTemporaryFiles();
@@ -44,12 +44,12 @@ class LabsRepository {
         return (Failure('File must be onnx'), null);
       }
 
-      final (failure, _) = await saveModel(tempPath: file.path!);
+      final (failure, mlModel) = await saveModel(tempPath: file.path!);
       if (failure != null) {
         return (failure, null);
       }
 
-      return (null, file.path!);
+      return (null, mlModel);
     } catch (e, stackTrace) {
       const message = 'Failed picking model';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
@@ -57,7 +57,7 @@ class LabsRepository {
     }
   }
 
-  Future<(Failure?, void)> saveModel({
+  Future<(Failure?, MlModel?)> saveModel({
     required String tempPath,
     String? name,
     String? description,
@@ -93,7 +93,7 @@ class LabsRepository {
 
       LocalMlModelStorageService.putMlModel(mlModel);
 
-      return (null, null);
+      return (null, mlModel);
     } catch (e, stackTrace) {
       const message = 'Failed picking model';
       final failure = Failure(message, error: e, stackTrace: stackTrace);

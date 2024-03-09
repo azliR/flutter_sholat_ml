@@ -37,9 +37,9 @@ final class PickModelLoadingState extends LabsPresentationState {
 }
 
 final class PickModelSuccessState extends LabsPresentationState {
-  const PickModelSuccessState(this.path);
+  const PickModelSuccessState(this.mlModel);
 
-  final String path;
+  final MlModel mlModel;
 }
 
 final class PickModelFailureState extends LabsPresentationState {

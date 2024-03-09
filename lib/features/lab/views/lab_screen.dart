@@ -7,6 +7,7 @@ import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
 import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/lab/widgets/bottom_panel_widget.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -16,13 +17,13 @@ import 'package:multi_split_view/multi_split_view.dart';
 @RoutePage()
 class LabScreen extends ConsumerStatefulWidget {
   const LabScreen({
-    required this.path,
+    required this.mlModel,
     required this.device,
     required this.services,
     super.key,
   });
 
-  final String path;
+  final MlModel mlModel;
   final BluetoothDevice? device;
   final List<BluetoothService>? services;
 
@@ -41,7 +42,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
           (area) => Area(
             minimalSize: area.minimalSize,
             minimalWeight: area.minimalWeight,
-            weight: 0.5,
+            weight: 0.2,
           ),
         )
         .toList();
@@ -54,8 +55,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
     final mainWeights = LocalStorageService.getLabSplitView1Weights();
     _mainSplitController = MultiSplitViewController(
       areas: [
-        Area(minimalWeight: 0.2, weight: mainWeights.elementAtOrNull(0)),
-        Area(minimalWeight: 0.2, weight: mainWeights.elementAtOrNull(1)),
+        Area(minimalWeight: 0.6, weight: mainWeights.elementAtOrNull(0)),
+        Area(minimalWeight: 0.1, weight: mainWeights.elementAtOrNull(1)),
       ],
     );
 
@@ -63,7 +64,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
       if (widget.device == null || widget.services == null) {
         return;
       }
-      _notifier.initialise(widget.path, widget.device!, widget.services!);
+      _notifier.initialise(widget.mlModel, widget.device!, widget.services!);
     });
     super.initState();
   }

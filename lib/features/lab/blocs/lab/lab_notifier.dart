@@ -10,6 +10,7 @@ import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/lab/repositories/lab_repository.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -28,7 +29,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
   final LabRepository _labRepository;
   final RecordRepository _recordRepository;
 
-  late final String _path;
+  late final MlModel _mlModel;
   late final BluetoothCharacteristic _heartRateMeasureChar;
   late final BluetoothCharacteristic _heartRateControlChar;
   late final BluetoothCharacteristic _sensorChar;
@@ -69,7 +70,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
   }
 
   Future<void> initialise(
-    String path,
+    MlModel mlModel,
     BluetoothDevice device,
     List<BluetoothService> services,
   ) async {
@@ -79,7 +80,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
       logs: [...state.logs, 'Initialising...'],
     );
 
-    _path = path;
+    _mlModel = mlModel;
 
     final miBand1Service = services.firstWhere(
       (service) => service.uuid.str128 == DeviceUuids.serviceMiBand1,
@@ -165,7 +166,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     final inputData = lastAccelData.takeLast(totalDataSize);
 
     final success = _labRepository.predict(
-      path: _path,
+      path: _mlModel.path,
       data: inputData,
       config: modelConfig,
       previousLabels: modelConfig.enableTeacherForcing
@@ -275,7 +276,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     );
 
     _labRepository.predict(
-      path: _path,
+      path: _mlModel.path,
       data: data,
       config: modelConfig,
       previousLabels: null,
