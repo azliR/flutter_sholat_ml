@@ -7,10 +7,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
-import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
+import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/lab/repositories/lab_repository.dart';
 import 'package:flutter_sholat_ml/features/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
+import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
 part 'lab_state.dart';
 
@@ -22,8 +24,6 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
   LabNotifier()
       : _labRepository = LabRepository(),
         _recordRepository = RecordRepository();
-
-  static const int _timesteps = 40;
 
   final LabRepository _labRepository;
   final RecordRepository _recordRepository;
@@ -53,7 +53,16 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
       _labRepository.dispose();
     });
 
-    return LabState.initial();
+    return LabState.initial(
+      showBottomPanel: LocalStorageService.getLabShowBottomPanel(),
+      modelConfig: const MlModelConfig(
+        enableTeacherForcing: false,
+        batchSize: 1,
+        windowSize: 10,
+        numberOfFeatures: 3,
+        inputDataType: InputDataType.float32,
+      ),
+    );
   }
 
   Future<void> initialise(
@@ -62,6 +71,10 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     List<BluetoothService> services,
   ) async {
     if (state.isInitialised) return;
+
+    state = state.copyWith(
+      logs: [...state.logs, 'Initialising...'],
+    );
 
     _path = path;
 
@@ -102,6 +115,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     if (failure != null) {
       state = state.copyWith(
         presentationState: PredictFailureState(failure),
+        logs: [...state.logs, 'Initialising failed: $failure'],
       );
     }
 
@@ -117,7 +131,10 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
 
     _hzSubscription ??= _hzChar.onValueReceived.listen(_handleAccelerometer);
 
-    state = state.copyWith(isInitialised: true);
+    state = state.copyWith(
+      isInitialised: true,
+      logs: [...state.logs, 'Initialised'],
+    );
   }
 
   void _handleAccelerometer(List<int> event) {
@@ -126,47 +143,100 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
 
     if (datasets == null || !_stopwatch.isRunning) return;
 
-    final accelData = datasets
-        .expand((e) => [e.x.toDouble(), e.y.toDouble(), e.z.toDouble()])
-        .toList();
+    final accelData = datasets.expand((e) => [e.x, e.y, e.z]).toList();
     final lastAccelData = [...?state.lastAccelData, ...accelData];
 
-    // log(lastAccelData.join(','));
+    state = state.copyWith(
+      lastAccelData: () => lastAccelData,
+    );
 
-    if (lastAccelData.length < _timesteps * 3) {
-      log('Not enough data: ${lastAccelData.length}');
-      state = state.copyWith(lastAccelData: () => lastAccelData);
+    final modelConfig = state.modelConfig;
+    final totalDataSize = modelConfig.batchSize *
+        modelConfig.windowSize *
+        modelConfig.numberOfFeatures;
+
+    if (lastAccelData.length < totalDataSize) {
       return;
     }
 
-    log('Predicting...');
+    final inputData = lastAccelData.takeLast(totalDataSize);
 
-    final (failure, success) = _labRepository.predict(
+    final success = _labRepository.predict(
       path: _path,
-      data: Float32List.fromList(lastAccelData.takeLast(_timesteps * 3)),
-      onPredict: (label) {
-        log('Predicted: $label');
-        state = state.copyWith(predictResult: label);
+      inputDataType: modelConfig.inputDataType,
+      batchSize: modelConfig.batchSize,
+      windowSize: modelConfig.windowSize,
+      numberOfFeatures: modelConfig.numberOfFeatures,
+      data: inputData,
+      previousLabels: modelConfig.enableTeacherForcing
+          ? _generateTeacherForcingLabels(
+              batchSize: modelConfig.batchSize,
+              predictedCategories: state.predictedCategories,
+            )
+          : null,
+      onPredict: (labels) {
+        state = state.copyWith(
+          predictState: PredictState.ready,
+          predictedCategory: labels.last,
+          predictedCategories: [...?state.predictedCategories, ...labels],
+          logs: [...state.logs, 'Predicted: $labels'],
+        );
+      },
+      onError: (failure) {
+        state = state.copyWith(
+          presentationState: PredictFailureState(failure),
+          logs: [...state.logs, 'Predict failed: $failure'],
+        );
       },
     );
-    if (failure != null || !success) {
+    if (!success) {
       state = state.copyWith(
-        // lastAccelData: () => lastAccelData.takeLast(_timesteps - 10),
-        presentationState:
-            failure != null ? PredictFailureState(failure) : null,
+        logs: [...state.logs, 'Skipped'],
       );
     } else {
       state = state.copyWith(
-        lastAccelData: () => null,
+        predictState: PredictState.predicting,
+        logs: [
+          ...state.logs,
+          'Predicting (${modelConfig.batchSize}, ${modelConfig.windowSize}, ${modelConfig.numberOfFeatures})',
+        ],
       );
     }
   }
 
+  List<num>? _generateTeacherForcingLabels({
+    required List<SholatMovementCategory>? predictedCategories,
+    required int batchSize,
+  }) {
+    final numberOfClassess = SholatMovementCategory.values.length;
+    final totalDataSize = batchSize * numberOfClassess;
+
+    if (predictedCategories == null) {
+      return List.filled(totalDataSize, 0);
+    }
+
+    final lastPredictedIndex = predictedCategories
+        .takeLast(batchSize)
+        .map((e) => e.index)
+        .expand((e) => List.filled(numberOfClassess, 0)..[e] = 1)
+        .toList();
+
+    if (lastPredictedIndex.length < totalDataSize) {
+      lastPredictedIndex.insertAll(
+        0,
+        List.filled(totalDataSize - lastPredictedIndex.length, 0),
+      );
+    }
+    log(lastPredictedIndex.toString());
+
+    return lastPredictedIndex;
+  }
+
   Future<void> startRecording() async {
     state = state.copyWith(
-      dataItems: [],
-      predictState: PredictState.preparing,
+      recordState: RecordState.preparing,
       lastAccelData: () => null,
+      logs: [...state.logs, 'Starting to record...'],
     );
     _lastHeartRate = null;
 
@@ -180,11 +250,16 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     );
     if (failure != null) {
       state = state.copyWith(
+        recordState: RecordState.ready,
         presentationState: PredictFailureState(failure),
+        logs: [...state.logs, 'Starting recording failed: $failure'],
       );
       return;
     }
-    state = state.copyWith(predictState: PredictState.predicting);
+    state = state.copyWith(
+      recordState: RecordState.recording,
+      logs: [...state.logs, 'Started recording'],
+    );
   }
 
   Future<void> stopRecording() async {
@@ -192,39 +267,116 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
       ..stop()
       ..reset();
 
-    state = state.copyWith(predictState: PredictState.stopping);
+    state = state.copyWith(
+      recordState: RecordState.stopping,
+      logs: [...state.logs, 'Stopping recording'],
+    );
 
-    final (stopFailure, _) = await _recordRepository.stopRecording(
+    final (failure, _) = await _recordRepository.stopRecording(
       heartRateMeasureChar: _heartRateMeasureChar,
       heartRateControlChar: _heartRateControlChar,
       sensorChar: _sensorChar,
       hzChar: _hzChar,
     );
-    if (stopFailure != null) {
+    if (failure != null) {
       state = state.copyWith(
-        presentationState: PredictFailureState(stopFailure),
-        predictState: PredictState.ready,
+        presentationState: PredictFailureState(failure),
+        recordState: RecordState.ready,
+        logs: [...state.logs, 'Stopping recording failed: $failure'],
       );
       return;
     }
 
     state = state.copyWith(
       presentationState: const PredictSuccessState(),
-      predictState: PredictState.ready,
+      recordState: RecordState.ready,
+      logs: [...state.logs, 'Stopped recording'],
     );
   }
 
-  Future<void> predict(List<double> data) async {
-    final (failure, _) = _labRepository.predict(
+  Future<void> singlePredict(List<num> data) async {
+    final modelConfig = state.modelConfig;
+
+    state = state.copyWith(
+      predictState: PredictState.predicting,
+      logs: [
+        ...state.logs,
+        'Predicting (${modelConfig.batchSize}, ${modelConfig.windowSize}, ${modelConfig.numberOfFeatures})',
+      ],
+    );
+
+    _labRepository.predict(
       path: _path,
-      data: Float32List.fromList(data),
-      onPredict: (label) {
-        state = state.copyWith(predictResult: label);
+      data: data,
+      inputDataType: modelConfig.inputDataType,
+      batchSize: modelConfig.batchSize,
+      windowSize: modelConfig.windowSize,
+      numberOfFeatures: modelConfig.numberOfFeatures,
+      previousLabels: null,
+      onPredict: (labels) {
+        state = state.copyWith(
+          predictedCategory: labels[0],
+          predictState: PredictState.ready,
+          logs: [...state.logs, 'Predicted: $labels'],
+        );
+      },
+      onError: (failure) {
+        state = state.copyWith(
+          predictState: PredictState.ready,
+          logs: [...state.logs, 'Predict failed: $failure'],
+          presentationState: PredictFailureState(failure),
+        );
       },
     );
-    if (failure != null) {
-      state = state.copyWith(presentationState: PredictFailureState(failure));
-      return;
-    }
+  }
+
+  void setShowBottomPanel({required bool enable}) {
+    _labRepository.setShowBottomPanel(showBottomPanel: enable);
+    state = state.copyWith(showBottomPanel: enable);
+  }
+
+  void setEnableTeacherForcing({required bool enable}) {
+    _labRepository.setEnableTeacherForcing(enableTeacherForcing: enable);
+    state = state.copyWith(
+      modelConfig: state.modelConfig.copyWith(
+        enableTeacherForcing: enable,
+      ),
+    );
+  }
+
+  void setInputDataType(InputDataType type) {
+    _labRepository.setInputDataType(type);
+    state = state.copyWith(
+      modelConfig: state.modelConfig.copyWith(
+        inputDataType: type,
+      ),
+    );
+  }
+
+  void setBatchSize(int size) {
+    _labRepository.setBatchSize(size);
+    state = state.copyWith(
+      modelConfig: state.modelConfig.copyWith(
+        batchSize: size,
+      ),
+    );
+  }
+
+  void setWindowSize(int size) {
+    _labRepository.setWindowSize(size);
+    state = state.copyWith(
+      modelConfig: state.modelConfig.copyWith(
+        windowSize: size,
+      ),
+    );
+  }
+
+  void setNumberOfFeatures(int step) {
+    _labRepository.setNumberOfFeatures(step);
+    state = state.copyWith(
+      modelConfig: state.modelConfig.copyWith(
+        numberOfFeatures: step,
+      ),
+    );
   }
 }

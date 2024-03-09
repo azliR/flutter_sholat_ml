@@ -7,7 +7,7 @@ class RoundedListTile extends StatelessWidget {
     this.leading,
     this.trailing,
     this.tileColor,
-    this.padding,
+    this.margin,
     this.contentPadding,
     this.selected,
     this.onTap,
@@ -20,7 +20,7 @@ class RoundedListTile extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final Color? tileColor;
-  final EdgeInsetsGeometry? padding;
+  final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry? contentPadding;
   final bool? selected;
   final void Function()? onTap;
@@ -30,11 +30,10 @@ class RoundedListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding:
-          padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    return Card.filled(
+      margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      clipBehavior: Clip.antiAlias,
       child: ListTile(
-        tileColor: tileColor ?? colorScheme.surfaceVariant,
         title: title,
         subtitle: subtitle,
         leading: leading,
@@ -48,9 +47,6 @@ class RoundedListTile extends StatelessWidget {
         enabled: onTap != null,
         selected: selected ?? false,
         selectedTileColor: colorScheme.primaryContainer,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
       ),
     );
   }

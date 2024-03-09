@@ -41,7 +41,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> onSuccess() async {
     await context.router.pushAndPopUntil(
-      HomeRoute(initialNavigation: HomeScreenNavigation.datasets),
+      HomeRoute(initialNavigation: HomeScreenNavigationTab.datasets),
       predicate: (_) => false,
     );
   }
@@ -91,7 +91,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           children: [
             Center(
               child: Icon(
-                Symbols.watch_rounded,
+                Symbols.watch_screentime_rounded,
                 size: 64,
                 color: colorScheme.primary,
               ),

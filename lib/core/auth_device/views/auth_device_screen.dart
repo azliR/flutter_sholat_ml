@@ -111,9 +111,6 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
                     onPressed: _showClipboardDialog,
                     icon: const Icon(Symbols.content_paste_rounded),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
             ),

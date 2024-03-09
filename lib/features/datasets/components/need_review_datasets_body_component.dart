@@ -7,6 +7,7 @@ import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/features/datasets/blocs/datasets/datasets_notifier.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/features/datasets/widgets/dataset_grid_tile_widget.dart';
+import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -37,9 +38,6 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return RefreshIndicator(
       key: widget.refreshKey,
       onRefresh: () async {
@@ -52,46 +50,12 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
           return Scrollbar(
             child: CustomScrollView(
               slivers: [
-                SliverToBoxAdapter(
-                  child: Card(
-                    color: colorScheme.errorContainer,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                    ),
-                    margin: const EdgeInsets.all(8),
-                    elevation: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Icon(
-                              Symbols.warning_rounded,
-                              color: colorScheme.error,
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Be careful!',
-                                    style: textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  const Text(
-                                    'Dataset that saved in local will deleted when the app uninstalled.',
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                const SliverToBoxAdapter(
+                  child: RoundedBanner(
+                    type: BannerType.warning,
+                    title: Text('Heads up!'),
+                    description: Text(
+                      'Just so you know, any dataset saved locally will be removed if the app is uninstalled.',
                     ),
                   ),
                 ),
@@ -127,7 +91,11 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
       builderDelegate: PagedChildBuilderDelegate<Dataset>(
         noItemsFoundIndicatorBuilder: (context) {
           return IllustrationWidget(
-            type: IllustrationWidgetType.noData,
+            icon: const Icon(Symbols.folder_off_rounded),
+            title: const Text('Oops, no datasets found!'),
+            description: const Text(
+              "Let's import some datasets and or start recording! 📹",
+            ),
             actions: [
               FilledButton.tonalIcon(
                 onPressed: () => _notifier.importDatasets(),

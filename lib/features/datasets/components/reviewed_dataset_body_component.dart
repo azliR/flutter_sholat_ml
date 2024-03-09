@@ -68,7 +68,11 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
               builderDelegate: PagedChildBuilderDelegate<Dataset>(
                 noItemsFoundIndicatorBuilder: (context) {
                   return IllustrationWidget(
-                    type: IllustrationWidgetType.noData,
+                    icon: const Icon(Symbols.cloud_off_rounded),
+                    title: const Text('No uploaded datasets found!'),
+                    description: const Text(
+                      'You can upload datasets when reviewing datasets. ☁️',
+                    ),
                     actions: [
                       FilledButton.tonalIcon(
                         onPressed: () => widget.refreshKey.currentState?.show(),

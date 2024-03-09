@@ -30,7 +30,7 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = ColorScheme.fromSeed(seedColor: Colors.blue);
+    final colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
 
     return GlobalLoaderOverlay(
       useDefaultLoading: false,
@@ -53,6 +53,14 @@ class _AppState extends State<App> {
           colorScheme: colorScheme,
           snackBarTheme: const SnackBarThemeData(
             behavior: SnackBarBehavior.floating,
+          ),
+          inputDecorationTheme: const InputDecorationTheme(
+            filled: true,
+          ),
+          dropdownMenuTheme: const DropdownMenuThemeData(
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+            ),
           ),
         ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,

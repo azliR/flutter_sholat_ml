@@ -383,8 +383,8 @@ class DatasetsRepository {
   }
 
   Future<(Failure?, void)> importDatasets() async {
+    final filePicker = FilePicker.platform;
     try {
-      final filePicker = FilePicker.platform;
       await filePicker.clearTemporaryFiles();
 
       final result = await filePicker.pickFiles(allowCompression: false);
@@ -497,6 +497,8 @@ class DatasetsRepository {
       const message = 'Failed importing dataset';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
+    } finally {
+      await filePicker.clearTemporaryFiles();
     }
   }
 }

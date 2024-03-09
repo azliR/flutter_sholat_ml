@@ -376,98 +376,83 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
       },
       child: Material(
         child: NestedScrollView(
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              Consumer(
-                builder: (context, ref, child) {
-                  final selectedDatasetIndexes = ref.watch(
-                    datasetsProvider
-                        .select((value) => value.selectedDatasetIndexes),
-                  );
-                  final isSelectMode = selectedDatasetIndexes.isNotEmpty;
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            Consumer(
+              builder: (context, ref, child) {
+                final selectedDatasetIndexes = ref.watch(
+                  datasetsProvider
+                      .select((value) => value.selectedDatasetIndexes),
+                );
+                final isSelectMode = selectedDatasetIndexes.isNotEmpty;
 
-                  return SliverAppBar.medium(
-                    title: const Text('Datasets'),
-                    actions: [
-                      if (isSelectMode && _tabController.index == 0) ...[
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final needReviewDatasets = ref.watch(
-                              datasetsProvider
-                                  .select((value) => value.needReviewDatasets),
-                            );
-                            if (selectedDatasetIndexes.length ==
-                                needReviewDatasets.length) {
-                              return const SizedBox();
-                            }
-                            return IconButton(
-                              tooltip: 'Select all',
-                              onPressed: () => _notifier.onSelectAllDatasets(),
-                              icon: const Icon(Symbols.select_all_rounded),
-                            );
-                          },
-                        ),
-                        IconButton(
-                          tooltip: 'Delete',
-                          onPressed: _showDeleteDatasetsDialog,
-                          icon: const Icon(Symbols.delete_rounded),
-                        ),
-                        IconButton(
-                          tooltip: 'Share & Export',
-                          onPressed: () {
-                            final datasets =
-                                ref.read(datasetsProvider).needReviewDatasets;
-
-                            _notifier.exportAndShareDatasets(
-                              selectedDatasetIndexes
-                                  .map((index) => datasets[index].path!)
-                                  .toList(),
-                            );
-                          },
-                          icon: const Icon(Symbols.share_rounded),
-                        ),
-                      ],
-                      IconButton(
-                        tooltip: 'Refresh',
-                        onPressed: () {
-                          switch (_tabController.index) {
-                            case 0:
-                              _needReviewRefreshKey.currentState?.show();
-                            case 1:
-                              _reviewedRefreshKey.currentState?.show();
+                return SliverAppBar.medium(
+                  title: const Text('Datasets'),
+                  actions: [
+                    if (isSelectMode && _tabController.index == 0) ...[
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final needReviewDatasets = ref.watch(
+                            datasetsProvider
+                                .select((value) => value.needReviewDatasets),
+                          );
+                          if (selectedDatasetIndexes.length ==
+                              needReviewDatasets.length) {
+                            return const SizedBox();
                           }
+                          return IconButton(
+                            tooltip: 'Select all',
+                            onPressed: () => _notifier.onSelectAllDatasets(),
+                            icon: const Icon(Symbols.select_all_rounded),
+                          );
                         },
-                        icon: const Icon(Symbols.refresh_rounded),
                       ),
-                      _buildMenu(),
-                      const SizedBox(width: 12),
+                      IconButton(
+                        tooltip: 'Delete',
+                        onPressed: _showDeleteDatasetsDialog,
+                        icon: const Icon(Symbols.delete_rounded),
+                      ),
+                      IconButton(
+                        tooltip: 'Share & Export',
+                        onPressed: () {
+                          final datasets =
+                              ref.read(datasetsProvider).needReviewDatasets;
+
+                          _notifier.exportAndShareDatasets(
+                            selectedDatasetIndexes
+                                .map((index) => datasets[index].path!)
+                                .toList(),
+                          );
+                        },
+                        icon: const Icon(Symbols.share_rounded),
+                      ),
                     ],
-                    bottom: TabBar(
-                      controller: _tabController,
-                      isScrollable: data.size.width > 480,
-                      tabs: const [
-                        Tab(text: 'Local'),
-                        Tab(text: 'Cloud'),
-                      ],
+                    IconButton(
+                      tooltip: 'Refresh',
+                      onPressed: () {
+                        switch (_tabController.index) {
+                          case 0:
+                            _needReviewRefreshKey.currentState?.show();
+                          case 1:
+                            _reviewedRefreshKey.currentState?.show();
+                        }
+                      },
+                      icon: const Icon(Symbols.refresh_rounded),
                     ),
-                  );
-                },
-              ),
-              Consumer(
-                builder: (context, ref, child) {
-                  final isLoading = ref.watch(
-                    datasetsProvider.select((state) => state.isLoading),
-                  );
-                  if (isLoading) {
-                    return const SliverToBoxAdapter(
-                      child: LinearProgressIndicator(),
-                    );
-                  }
-                  return const SliverToBoxAdapter();
-                },
-              ),
-            ];
-          },
+                    _buildMenu(),
+                    const SizedBox(width: 12),
+                  ],
+                  bottom: TabBar(
+                    controller: _tabController,
+                    isScrollable: data.size.width > 480,
+                    tabs: const [
+                      Tab(text: 'Local'),
+                      Tab(text: 'Cloud'),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
           body: TabBarView(
             controller: _tabController,
             children: [

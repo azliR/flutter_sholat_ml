@@ -1,47 +1,76 @@
 part of 'lab_notifier.dart';
 
+enum InputDataType {
+  float32,
+  int32,
+}
+
 @immutable
 class LabState extends Equatable {
   const LabState({
     required this.isInitialised,
+    required this.showBottomPanel,
+    required this.modelConfig,
     required this.predictState,
-    required this.dataItems,
+    required this.recordState,
+    required this.logs,
     required this.lastAccelData,
-    required this.predictResult,
+    required this.predictedCategory,
+    required this.predictedCategories,
     required this.presentationState,
   });
 
-  factory LabState.initial() => const LabState(
+  factory LabState.initial({
+    required bool showBottomPanel,
+    required MlModelConfig modelConfig,
+  }) =>
+      LabState(
         isInitialised: false,
+        showBottomPanel: showBottomPanel,
+        modelConfig: modelConfig,
         predictState: PredictState.ready,
-        dataItems: [],
+        recordState: RecordState.ready,
+        logs: const [],
         lastAccelData: null,
-        predictResult: null,
-        presentationState: LabInitialState(),
+        predictedCategory: null,
+        predictedCategories: null,
+        presentationState: const LabInitialState(),
       );
 
   final bool isInitialised;
+  final bool showBottomPanel;
+  final MlModelConfig modelConfig;
   final PredictState predictState;
-  final List<DataItem> dataItems;
-  final List<double>? lastAccelData;
-  final String? predictResult;
+  final RecordState recordState;
+  final List<String> logs;
+  final List<num>? lastAccelData;
+  final SholatMovementCategory? predictedCategory;
+  final List<SholatMovementCategory>? predictedCategories;
   final LabPresentationState presentationState;
 
   LabState copyWith({
     bool? isInitialised,
+    bool? showBottomPanel,
+    MlModelConfig? modelConfig,
     PredictState? predictState,
-    List<DataItem>? dataItems,
-    ValueGetter<List<double>?>? lastAccelData,
-    String? predictResult,
+    RecordState? recordState,
+    List<String>? logs,
+    ValueGetter<List<num>?>? lastAccelData,
+    SholatMovementCategory? predictedCategory,
+    List<SholatMovementCategory>? predictedCategories,
     LabPresentationState? presentationState,
   }) {
     return LabState(
       isInitialised: isInitialised ?? this.isInitialised,
+      showBottomPanel: showBottomPanel ?? this.showBottomPanel,
+      modelConfig: modelConfig ?? this.modelConfig,
       predictState: predictState ?? this.predictState,
-      dataItems: dataItems ?? this.dataItems,
+      recordState: recordState ?? this.recordState,
+      logs: logs ?? this.logs,
       lastAccelData:
           lastAccelData != null ? lastAccelData() : this.lastAccelData,
-      predictResult: predictResult ?? this.predictResult,
+      predictedCategory: predictedCategory ?? this.predictedCategory,
+      predictedCategories: predictedCategories ?? this.predictedCategories,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -49,18 +78,27 @@ class LabState extends Equatable {
   @override
   List<Object?> get props => [
         isInitialised,
+        showBottomPanel,
+        modelConfig,
         predictState,
-        dataItems,
+        recordState,
+        logs,
         lastAccelData,
-        predictResult,
+        predictedCategory,
+        predictedCategories,
         presentationState,
       ];
 }
 
 enum PredictState {
   ready,
-  preparing,
   predicting,
+}
+
+enum RecordState {
+  ready,
+  preparing,
+  recording,
   stopping,
 }
 

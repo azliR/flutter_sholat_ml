@@ -9,7 +9,6 @@ import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/features/discover_devices/blocs/discover_device/discover_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
-import 'package:flutter_sholat_ml/utils/ui/input_formatters.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -26,58 +25,6 @@ class DiscoverDeviceScreen extends ConsumerStatefulWidget {
 class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
   late final DiscoverDeviceNotifier _notifier;
   late final AuthDeviceNotifier _authDeviceNotifier;
-
-  Future<void> _showInputMacDialog() async {
-    var macAddress = '';
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Input MAC address'),
-        content: TextFormField(
-          autocorrect: false,
-          autofocus: true,
-          maxLength: 17,
-          textCapitalization: TextCapitalization.sentences,
-          inputFormatters: [
-            UpperCaseTextFormatter(),
-          ],
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: (value) {
-            final macAddressFormat =
-                RegExp(r'^([0-9A-Za-z]{2}:){5}[0-9A-Za-z]{2}$');
-            if (!macAddressFormat.hasMatch(value ?? '')) {
-              return 'Mac address is not valid';
-            }
-            return null;
-          },
-          decoration: InputDecoration(
-            labelText: 'MAC address',
-            prefixIcon: const Icon(Symbols.bluetooth_rounded),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onChanged: (value) => macAddress = value,
-        ),
-        actions: [
-          OutlinedButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final bluetoothDevice = BluetoothDevice.fromId(macAddress);
-              await _onConnectPressed(bluetoothDevice);
-            },
-            child: const Text('Input'),
-          ),
-        ],
-      ),
-    );
-  }
 
   Future<void> _onConnectPressed(
     BluetoothDevice bluetoothDevice, {
@@ -160,7 +107,8 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverToBoxAdapter(
               child: FilledButton.tonalIcon(
-                onPressed: _showInputMacDialog,
+                onPressed: () =>
+                    context.router.push(const ManualDeviceConnectRoute()),
                 icon: const Icon(Symbols.login_rounded),
                 label: const Text('Input MAC address manually'),
               ),
@@ -234,7 +182,9 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 return RoundedListTile(
                   title: Text(name.isEmpty ? 'Unknown device' : name),
                   subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Symbols.bluetooth_rounded),
+                  leading: isSupported
+                      ? const Icon(Symbols.watch_rounded)
+                      : const Icon(Symbols.bluetooth_rounded),
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported ? null : () => _onConnectPressed(device),
                 );
@@ -265,7 +215,9 @@ class _DiscoverDevicePageState extends ConsumerState<DiscoverDeviceScreen> {
                 return RoundedListTile(
                   title: Text(name),
                   subtitle: Text(device.remoteId.str),
-                  leading: const Icon(Symbols.bluetooth_rounded),
+                  leading: isSupported
+                      ? const Icon(Symbols.watch_rounded)
+                      : const Icon(Symbols.bluetooth_rounded),
                   trailing: isSupported ? null : const Text('Not Supported'),
                   onTap: !isSupported
                       ? null

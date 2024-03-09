@@ -32,8 +32,8 @@ final class LabsInitialState extends LabsPresentationState {
   const LabsInitialState();
 }
 
-final class PickModelProgressState extends LabsPresentationState {
-  const PickModelProgressState();
+final class PickModelLoadingState extends LabsPresentationState {
+  const PickModelLoadingState();
 }
 
 final class PickModelSuccessState extends LabsPresentationState {
@@ -44,6 +44,22 @@ final class PickModelSuccessState extends LabsPresentationState {
 
 final class PickModelFailureState extends LabsPresentationState {
   const PickModelFailureState(this.failure);
+
+  final Failure failure;
+}
+
+final class DeleteMlModelLoadingState extends LabsPresentationState {
+  const DeleteMlModelLoadingState();
+}
+
+final class DeleteMlModelSuccessState extends LabsPresentationState {
+  const DeleteMlModelSuccessState(this.mlModels);
+
+  final List<MlModel> mlModels;
+}
+
+final class DeleteMlModelFailureState extends LabsPresentationState {
+  const DeleteMlModelFailureState(this.failure);
 
   final Failure failure;
 }

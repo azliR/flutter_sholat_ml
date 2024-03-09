@@ -8,6 +8,7 @@ class AppRouter extends $AppRouter {
     return [
       AutoRoute(page: SplashRoute.page, initial: true),
       AutoRoute(page: DiscoverDeviceRoute.page),
+      AutoRoute(page: ManualDeviceConnectRoute.page),
       AutoRoute(page: AuthDeviceRoute.page),
       AutoRoute(page: AuthWithXiaomiAccountRoute.page),
       AutoRoute(

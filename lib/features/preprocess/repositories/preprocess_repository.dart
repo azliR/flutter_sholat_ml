@@ -537,28 +537,28 @@ class PreprocessRepository {
   }
 
   void setAutoSave({required bool enable}) {
-    LocalStorageService.setAutoSave(enable: enable);
+    LocalStorageService.setPreprocessAutoSave(enable: enable);
   }
 
   bool? getAutoSave() {
-    return LocalStorageService.getAutoSave();
+    return LocalStorageService.getPreprocessAutoSave();
   }
 
   void setFollowHighlighted({required bool enable}) {
-    LocalStorageService.setFollowHighlighted(enable: enable);
+    LocalStorageService.setPreprocessFollowHighlighted(enable: enable);
   }
 
   bool? getFollowHighlighted() {
-    return LocalStorageService.getFollowHighlighted();
+    return LocalStorageService.getPreprocessFollowHighlighted();
   }
 
   void setShowBottomPanel({required bool isShowBottomPanel}) {
-    LocalStorageService.setShowBottomPanel(
+    LocalStorageService.setPreprocessShowBottomPanel(
       enable: isShowBottomPanel,
     );
   }
 
   bool? getShowBottomPanel() {
-    return LocalStorageService.getShowBottomPanel();
+    return LocalStorageService.getPreprocessShowBottomPanel();
   }
 }

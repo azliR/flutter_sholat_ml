@@ -6,12 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
+import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-enum HomeScreenNavigation { savedDevice, datasets, labs }
+enum HomeScreenNavigationTab { savedDevice, datasets, labs }
 
 enum NavigationType { bottom, rail, drawer }
 
@@ -29,11 +30,11 @@ class AdaptiveScaffoldDestination {
 @RoutePage()
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({
-    this.initialNavigation = HomeScreenNavigation.savedDevice,
+    this.initialNavigation = HomeScreenNavigationTab.savedDevice,
     super.key,
   });
 
-  final HomeScreenNavigation initialNavigation;
+  final HomeScreenNavigationTab initialNavigation;
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
@@ -47,10 +48,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   var _currentPage = 0;
 
   List<PageRouteInfo<dynamic>> get _routes =>
-      HomeScreenNavigation.values.map((section) {
+      HomeScreenNavigationTab.values.map((section) {
         return switch (section) {
-          HomeScreenNavigation.savedDevice => const SavedDevicesPage(),
-          HomeScreenNavigation.datasets => DatasetsPage(
+          HomeScreenNavigationTab.savedDevice => const SavedDevicesPage(),
+          HomeScreenNavigationTab.datasets => DatasetsPage(
               onInitialised: (
                 needReviewRefreshKey,
                 reviewedRefreshKey,
@@ -58,26 +59,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _needReviewRefreshKeyCompleter.complete(reviewedRefreshKey);
               },
             ),
-          HomeScreenNavigation.labs => const LabsPage(),
+          HomeScreenNavigationTab.labs => const LabsPage(),
         } as PageRouteInfo<dynamic>;
       }).toList();
 
   List<AdaptiveScaffoldDestination> get _destinations {
-    return HomeScreenNavigation.values.map((section) {
+    return HomeScreenNavigationTab.values.map((section) {
       switch (section) {
-        case HomeScreenNavigation.savedDevice:
+        case HomeScreenNavigationTab.savedDevice:
           return const AdaptiveScaffoldDestination(
             icon: Icon(Symbols.watch_rounded),
             selectedIcon: Icon(Symbols.watch_rounded, fill: 1),
             label: 'Devices',
           );
-        case HomeScreenNavigation.datasets:
+        case HomeScreenNavigationTab.datasets:
           return const AdaptiveScaffoldDestination(
             icon: Icon(Symbols.dataset_rounded),
             selectedIcon: Icon(Symbols.dataset_rounded, fill: 1),
             label: 'Datasets',
           );
-        case HomeScreenNavigation.labs:
+        case HomeScreenNavigationTab.labs:
           return const AdaptiveScaffoldDestination(
             icon: Icon(Symbols.experiment_rounded),
             selectedIcon: Icon(Symbols.experiment_rounded, fill: 1),
@@ -95,6 +96,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  Future<void> _onAddDevicePressed() async {
+    await context.router.push(const DiscoverDeviceRoute());
+  }
+
   Future<void> _onRecordPressed() async {
     final currentBluetoothDevice =
         ref.read(authDeviceProvider).currentBluetoothDevice;
@@ -103,7 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (currentBluetoothDevice == null || currentServices == null) {
       showSnackbar(context, 'No connected device found');
       final tabRouter = await _tabsRouterCompleter.future;
-      tabRouter.setActiveIndex(HomeScreenNavigation.savedDevice.index);
+      tabRouter.setActiveIndex(HomeScreenNavigationTab.savedDevice.index);
       return;
     }
     await context.router.push(
@@ -118,6 +123,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _onAddModelPressed() async {
+    await ref.read(labsProvider.notifier).pickModel();
   }
 
   @override
@@ -153,6 +162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } else {
       navigationType = NavigationType.drawer;
     }
+    final navigationTab = HomeScreenNavigationTab.values[_currentPage];
 
     ref.listen(
       authDeviceProvider,
@@ -210,23 +220,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           floatingActionButton: () {
             if (navigationType != NavigationType.bottom) return null;
 
-            switch (HomeScreenNavigation.values[tabsRouter.activeIndex]) {
-              case HomeScreenNavigation.savedDevice:
-              case HomeScreenNavigation.datasets:
-                return FloatingActionButton.large(
-                  key: const ValueKey('record'),
-                  tooltip: 'Record',
-                  onPressed: _onRecordPressed,
-                  child: const Icon(Symbols.videocam_rounded),
-                );
-              case HomeScreenNavigation.labs:
-                return FloatingActionButton.large(
-                  key: const ValueKey('add_model'),
-                  tooltip: 'Add model',
-                  onPressed: () {},
-                  child: const Icon(Symbols.model_training_rounded),
-                );
-            }
+            return _buildLargeFAB(navigationTab);
           }(),
           body: Row(
             children: [
@@ -256,13 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           horizontal: 16,
                           vertical: 16,
                         ),
-                        child: FloatingActionButton.extended(
-                          elevation: 2,
-                          tooltip: 'Record',
-                          onPressed: _onRecordPressed,
-                          label: const Text('Record'),
-                          icon: const Icon(Symbols.videocam_rounded),
-                        ),
+                        child: _buildExtendedFAB(navigationTab),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -279,12 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 NavigationRail(
                   selectedIndex: _currentPage,
                   backgroundColor: Colors.transparent,
-                  leading: FloatingActionButton(
-                    elevation: 2,
-                    tooltip: 'Record',
-                    onPressed: _onRecordPressed,
-                    child: const Icon(Symbols.videocam_rounded),
-                  ),
+                  leading: _buildFAB(navigationTab),
                   labelType: NavigationRailLabelType.all,
                   groupAlignment: -0.2,
                   onDestinationSelected: (index) =>
@@ -318,5 +301,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         );
       },
     );
+  }
+
+  Widget _buildFAB(HomeScreenNavigationTab navigationTab) {
+    return switch (navigationTab) {
+      HomeScreenNavigationTab.savedDevice => FloatingActionButton(
+          key: const ValueKey('add_device'),
+          tooltip: 'Record',
+          elevation: 2,
+          onPressed: _onAddDevicePressed,
+          child: const Icon(Symbols.add_rounded),
+        ),
+      HomeScreenNavigationTab.datasets => FloatingActionButton(
+          key: const ValueKey('record'),
+          tooltip: 'Record',
+          elevation: 2,
+          onPressed: _onRecordPressed,
+          child: const Icon(Symbols.videocam_rounded),
+        ),
+      HomeScreenNavigationTab.labs => FloatingActionButton(
+          key: const ValueKey('add_model'),
+          tooltip: 'Add model',
+          elevation: 2,
+          onPressed: _onAddModelPressed,
+          child: const Icon(Symbols.add_rounded),
+        ),
+    };
+  }
+
+  Widget _buildLargeFAB(HomeScreenNavigationTab navigationTab) {
+    return switch (navigationTab) {
+      HomeScreenNavigationTab.savedDevice => FloatingActionButton.large(
+          key: const ValueKey('add_device'),
+          tooltip: 'Record',
+          onPressed: _onAddDevicePressed,
+          child: const Icon(Symbols.add_rounded),
+        ),
+      HomeScreenNavigationTab.datasets => FloatingActionButton.large(
+          key: const ValueKey('record'),
+          tooltip: 'Record',
+          onPressed: _onRecordPressed,
+          child: const Icon(Symbols.videocam_rounded),
+        ),
+      HomeScreenNavigationTab.labs => FloatingActionButton.large(
+          key: const ValueKey('add_model'),
+          tooltip: 'Add model',
+          onPressed: _onAddModelPressed,
+          child: const Icon(Symbols.add_rounded),
+        ),
+    };
+  }
+
+  Widget _buildExtendedFAB(HomeScreenNavigationTab navigationTab) {
+    return switch (navigationTab) {
+      HomeScreenNavigationTab.savedDevice => FloatingActionButton.extended(
+          key: const ValueKey('add_device'),
+          tooltip: 'Record',
+          elevation: 2,
+          onPressed: _onAddDevicePressed,
+          icon: const Icon(Symbols.add_rounded),
+          label: const Text('Add device'),
+        ),
+      HomeScreenNavigationTab.datasets => FloatingActionButton.extended(
+          key: const ValueKey('record'),
+          tooltip: 'Record',
+          elevation: 2,
+          onPressed: _onRecordPressed,
+          icon: const Icon(Symbols.videocam_rounded),
+          label: const Text('Record'),
+        ),
+      HomeScreenNavigationTab.labs => FloatingActionButton.extended(
+          key: const ValueKey('add_model'),
+          tooltip: 'Add model',
+          elevation: 2,
+          onPressed: _onAddModelPressed,
+          icon: const Icon(Symbols.add_rounded),
+          label: const Text('Add model'),
+        ),
+    };
   }
 }

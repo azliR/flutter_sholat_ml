@@ -1,9 +1,10 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
+import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/core/auth_device/models/device/device.dart';
+import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -71,68 +72,71 @@ class SavedDevicesPage extends ConsumerWidget {
           const SliverAppBar.large(
             title: Text('Saved Devices'),
           ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final device = savedDevices[index];
-                return RoundedListTile(
-                  title: Row(
-                    children: [
-                      Text(
-                        device.deviceName,
-                      ),
-                      if (device == currentDevice) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.tertiary,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(8)),
-                          ),
-                          child: Text(
-                            'CONNECTED',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.onSecondary,
+          if (savedDevices.isEmpty)
+            const SliverFillRemaining(
+              child: IllustrationWidget(
+                icon: Icon(Symbols.watch_off_rounded),
+                title: Text('No devices saved, yet'),
+                description: Text(
+                  "Once you connect a device, it'll show up here for easy access! 😉",
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final device = savedDevices[index];
+                  return RoundedListTile(
+                    leading: const Icon(Symbols.watch_rounded),
+                    title: Row(
+                      children: [
+                        Text(
+                          device.deviceName,
+                        ),
+                        if (device == currentDevice) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.tertiary,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(8)),
+                            ),
+                            child: Text(
+                              'CONNECTED',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onSecondary,
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                  subtitle: Text(device.deviceId),
-                  trailing: _buildActions(
-                    context: context,
-                    ref: ref,
-                    notifier: notifier,
-                    device: device,
-                  ),
-                  onTap: () {
-                    if (savedDevices[index] == currentDevice) {
-                      AutoTabsRouter.of(context).setActiveIndex(index + 1);
-                    } else {
-                      notifier.connectToSavedDevice(savedDevices[index]);
-                    }
-                  },
-                );
-              },
-              childCount: savedDevices.length,
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverToBoxAdapter(
-              child: FilledButton.tonalIcon(
-                onPressed: () {
-                  context.router.push(const DiscoverDeviceRoute());
+                    ),
+                    subtitle: Text(device.deviceId),
+                    trailing: _buildActions(
+                      context: context,
+                      ref: ref,
+                      notifier: notifier,
+                      device: device,
+                    ),
+                    onTap: () {
+                      if (savedDevices[index] == currentDevice) {
+                        AutoTabsRouter.of(context).setActiveIndex(index + 1);
+                      } else {
+                        notifier.connectToSavedDevice(savedDevices[index]);
+                      }
+                    },
+                  );
                 },
-                icon: const Icon(Symbols.add_rounded),
-                label: const Text('Add new device'),
+                childCount: savedDevices.length,
               ),
             ),
+          const SliverPadding(
+            padding: EdgeInsets.only(bottom: Dimens.bottomListPadding),
           ),
         ],
       ),

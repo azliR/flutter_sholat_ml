@@ -2,7 +2,6 @@ part of 'datasets_notifier.dart';
 
 class DatasetsState extends Equatable {
   const DatasetsState({
-    required this.isLoading,
     required this.needReviewDatasets,
     required this.reviewedDatasets,
     required this.selectedDatasetIndexes,
@@ -10,28 +9,24 @@ class DatasetsState extends Equatable {
   });
 
   factory DatasetsState.initial() => const DatasetsState(
-        isLoading: false,
         needReviewDatasets: [],
         reviewedDatasets: [],
         selectedDatasetIndexes: [],
         presentationState: DatasetsInitial(),
       );
 
-  final bool isLoading;
   final List<Dataset> needReviewDatasets;
   final List<Dataset> reviewedDatasets;
   final List<int> selectedDatasetIndexes;
   final DatasetsPresentationState presentationState;
 
   DatasetsState copyWith({
-    bool? isLoading,
     List<Dataset>? needReviewDatasets,
     List<Dataset>? reviewedDatasets,
     List<int>? selectedDatasetIndexes,
     DatasetsPresentationState? presentationState,
   }) {
     return DatasetsState(
-      isLoading: isLoading ?? this.isLoading,
       needReviewDatasets: needReviewDatasets ?? this.needReviewDatasets,
       reviewedDatasets: reviewedDatasets ?? this.reviewedDatasets,
       selectedDatasetIndexes:
@@ -42,7 +37,6 @@ class DatasetsState extends Equatable {
 
   @override
   List<Object?> get props => [
-        isLoading,
         needReviewDatasets,
         reviewedDatasets,
         selectedDatasetIndexes,

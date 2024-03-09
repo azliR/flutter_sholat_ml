@@ -309,7 +309,6 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
     final (failure, _) = await _homeRepository.deleteDatasets([dataset.path!]);
     if (failure != null) {
       state = state.copyWith(
-        isLoading: false,
         presentationState: DeleteDatasetFailureState(failure),
       );
       return false;

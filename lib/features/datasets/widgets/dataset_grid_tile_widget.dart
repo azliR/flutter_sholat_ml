@@ -69,11 +69,11 @@ class _DatasetGridTileState extends State<DatasetGridTile>
     final isSyncedWithCloud = datasetProp.isSyncedWithCloud;
     final csvOnly = datasetProp.csvOnly;
 
-    return Card(
+    return Card.filled(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       elevation: widget.selected ? 0 : null,
-      color: widget.selected ? colorScheme.primaryContainer : null,
+      color: widget.selected ? colorScheme.secondaryContainer : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
         side: widget.selected
