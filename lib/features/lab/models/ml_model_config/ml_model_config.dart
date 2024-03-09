@@ -1,11 +1,36 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
 
-enum Smoothing { movingAverage, exponentialSmoothing }
+enum Smoothing {
+  movingAverage,
+  exponentialSmoothing;
 
-enum Filtering { medianFilter, lowPassFilter }
+  String get name => switch (this) {
+        Smoothing.movingAverage => 'Moving Average',
+        Smoothing.exponentialSmoothing => 'Exponential Smoothing'
+      };
+}
 
-enum TemporalConsistencyEnforcement { majorityVoting, transitionConstraints }
+enum Filtering {
+  medianFilter,
+  lowPassFilter;
+
+  String get name => switch (this) {
+        Filtering.medianFilter => 'Median Filter',
+        Filtering.lowPassFilter => 'Low Pass Filter'
+      };
+}
+
+enum TemporalConsistencyEnforcement {
+  majorityVoting,
+  transitionConstraints;
+
+  String get name => switch (this) {
+        TemporalConsistencyEnforcement.majorityVoting => 'Majority Voting',
+        TemporalConsistencyEnforcement.transitionConstraints =>
+          'Transition Constraints'
+      };
+}
 
 class MlModelConfig extends Equatable {
   const MlModelConfig({

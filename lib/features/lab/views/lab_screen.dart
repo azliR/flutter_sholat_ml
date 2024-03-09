@@ -5,6 +5,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
+import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/lab/widgets/bottom_panel_widget.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -123,6 +124,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
   }
 
   Widget _buildMain() {
+    final textTheme = Theme.of(context).textTheme;
+
     final isInitialised =
         ref.watch(labProvider.select((value) => value.isInitialised));
     final recordState =
@@ -256,6 +259,113 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               ),
             );
           },
+        ),
+        const SizedBox(height: 16),
+        Card.outlined(
+          clipBehavior: Clip.antiAlias,
+          child: ExpansionTile(
+            title: const Text('Advance option'),
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(24)),
+            ),
+            collapsedShape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(24)),
+            ),
+            children: [
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Consumer(
+                builder: (context, ref, child) {
+                  final selectedFilters = ref.watch(
+                    labProvider.select((value) => value.modelConfig.smoothings),
+                  );
+
+                  return FilterList(
+                    title: const Text('Smoothing'),
+                    selectedFilters: selectedFilters,
+                    filters: Smoothing.values,
+                    filterNameBuilder: (filter) => filter.name,
+                    onSelected: (filter, selected) {
+                      final modelConfig = ref.read(
+                          labProvider.select((value) => value.modelConfig));
+
+                      _notifier.setModelConfig(
+                        modelConfig.copyWith(
+                          smoothings: selected
+                              ? {...selectedFilters, filter}
+                              : selectedFilters
+                                  .where((e) => e != filter)
+                                  .toSet(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Consumer(
+                builder: (context, ref, child) {
+                  final selectedFilters = ref.watch(
+                    labProvider.select((value) => value.modelConfig.filterings),
+                  );
+
+                  return FilterList(
+                    title: const Text('Filtering'),
+                    selectedFilters: selectedFilters,
+                    filters: Filtering.values,
+                    filterNameBuilder: (filter) => filter.name,
+                    onSelected: (filter, selected) {
+                      final modelConfig = ref.read(
+                          labProvider.select((value) => value.modelConfig));
+
+                      _notifier.setModelConfig(
+                        modelConfig.copyWith(
+                          filterings: selected
+                              ? {...selectedFilters, filter}
+                              : selectedFilters
+                                  .where((e) => e != filter)
+                                  .toSet(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              Consumer(
+                builder: (context, ref, child) {
+                  final selectedFilters = ref.watch(
+                    labProvider.select(
+                      (value) =>
+                          value.modelConfig.temporalConsistencyEnforcements,
+                    ),
+                  );
+
+                  return FilterList(
+                    title: const Text('Temporal Consistency Enforcement'),
+                    selectedFilters: selectedFilters,
+                    filters: TemporalConsistencyEnforcement.values,
+                    filterNameBuilder: (filter) => filter.name,
+                    onSelected: (filter, selected) {
+                      final modelConfig = ref.read(
+                          labProvider.select((value) => value.modelConfig));
+
+                      _notifier.setModelConfig(
+                        modelConfig.copyWith(
+                          temporalConsistencyEnforcements: selected
+                              ? {...selectedFilters, filter}
+                              : selectedFilters
+                                  .where((e) => e != filter)
+                                  .toSet(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         Text(
@@ -545,6 +655,61 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),
+    );
+  }
+}
+
+class FilterList<T extends Enum> extends StatelessWidget {
+  const FilterList({
+    required this.title,
+    required this.selectedFilters,
+    required this.filters,
+    required this.filterNameBuilder,
+    required this.onSelected,
+    super.key,
+  });
+
+  final Widget title;
+  final Set<T> selectedFilters;
+  final List<T> filters;
+  final String Function(T filter) filterNameBuilder;
+  final void Function(T filter, bool selected) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: DefaultTextStyle(
+            style: textTheme.bodyMedium!,
+            child: title,
+          ),
+        ),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: filters.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final filter = filters[index];
+
+              return FilterChip(
+                label: Text(filterNameBuilder(filter)),
+                labelStyle: textTheme.labelMedium,
+                selected: selectedFilters.contains(filter),
+                onSelected: (value) => onSelected(filter, value),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

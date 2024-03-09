@@ -60,7 +60,7 @@ class LabRepository {
         OrtValueTensor? teacherInputOrt;
         final Map<String, OrtValueTensor> inputs;
 
-        if (previousLabels != null) {
+        if (config.enableTeacherForcing) {
           final numberOfClasses = _labelCategories.length;
           final teacherInput = _generateTeacherForcingLabels(
             lastPredictedCategories: previousLabels,
@@ -90,8 +90,34 @@ class LabRepository {
         final outputs = await _session!.runAsync(runOptions, inputs);
 
         final yPred = outputs![0]!.value! as List<List<double>>;
-        final smoothedPred = _movingAverageSmoothing(yPred, config.windowSize);
-        final indexes = _argmaxByAxis(smoothedPred, config.windowSize);
+        var postProcessedPred = yPred;
+
+        for (final smoothing in config.smoothings) {
+          switch (smoothing) {
+            case Smoothing.movingAverage:
+              postProcessedPred =
+                  _movingAverageSmoothing(postProcessedPred, config.windowSize);
+            case Smoothing.exponentialSmoothing:
+            // postProcessedPred = _exponentialSmoothing(postProcessedPred, 0.5);
+          }
+        }
+
+        for (final filtering in config.filterings) {
+          switch (filtering) {
+            case Filtering.medianFilter:
+            case Filtering.lowPassFilter:
+          }
+        }
+
+        for (final tce in config.temporalConsistencyEnforcements) {
+          switch (tce) {
+            case TemporalConsistencyEnforcement.majorityVoting:
+              postProcessedPred = _majorityVoting(yPred, config.windowSize);
+            case TemporalConsistencyEnforcement.transitionConstraints:
+          }
+        }
+
+        final indexes = _argmaxByAxis(postProcessedPred, 1);
         // log(indexes.toString());
         // log(yPred.toString());
         // log(movingAverageSmoothing(yPred[0], windowSize).toString());
@@ -148,7 +174,94 @@ class LabRepository {
     return lastPredictedIndex;
   }
 
-  List<int> _applyTransitionConstraints(
+  List<List<double>> _movingAverageSmoothing(
+    List<List<double>> predictions,
+    int windowSize,
+  ) {
+    final smoothedPredictions = <List<double>>[];
+    for (var i = 0; i < predictions.length; i++) {
+      final smoothedProbabilities =
+          List<double>.filled(predictions[i].length, 0);
+      for (var j = 0; j < predictions[i].length; j++) {
+        var sum = 0.0;
+        var count = 0;
+        for (int k = math.max(0, i - windowSize ~/ 2);
+            k <= math.min(predictions.length - 1, i + windowSize ~/ 2);
+            k++) {
+          sum += predictions[k][j];
+          count++;
+        }
+        smoothedProbabilities[j] = sum / count;
+      }
+      smoothedPredictions.add(smoothedProbabilities);
+    }
+    return smoothedPredictions;
+  }
+
+  List<double> _exponentialSmoothing(
+    List<List<double>> predictions,
+    double alpha,
+  ) {
+    final smoothedPredictions = <double>[];
+    double? prevSmoothedValue;
+
+    for (var i = 0; i < predictions.length; i++) {
+      final probabilities = predictions[i];
+      final currentActivity =
+          probabilities.indexOf(probabilities.reduce(math.max));
+
+      if (i == 0) {
+        prevSmoothedValue = currentActivity.toDouble();
+      } else {
+        final smoothedValue =
+            alpha * currentActivity + (1 - alpha) * prevSmoothedValue!;
+        prevSmoothedValue = smoothedValue;
+        smoothedPredictions.add(smoothedValue);
+      }
+    }
+
+    return smoothedPredictions;
+  }
+
+  List<List<double>> _majorityVoting(
+    List<List<double>> predictions,
+    int windowSize,
+  ) {
+    final votedPredictions = <List<double>>[];
+
+    for (var i = 0; i < predictions.length; i++) {
+      final start = math.max(0, i - windowSize ~/ 2);
+      final end = math.min(predictions.length - 1, i + windowSize ~/ 2);
+      final window = predictions.sublist(start, end + 1);
+
+      final numClasses = window.first.length;
+      final voteCounts = List.generate(numClasses, (_) => 0);
+
+      for (final probabilities in window) {
+        final maxIndex = probabilities.indexOf(probabilities.reduce(math.max));
+        voteCounts[maxIndex]++;
+      }
+
+      final maxVoteCount = voteCounts.reduce(math.max);
+      final winnerIndices = [
+        for (int j = 0; j < voteCounts.length; j++)
+          if (voteCounts[j] == maxVoteCount) j,
+      ];
+
+      if (winnerIndices.length == 1) {
+        final winnerIndex = winnerIndices.first;
+        final votedProbabilities = List.filled(numClasses, 0.0);
+        votedProbabilities[winnerIndex] = 1.0;
+        votedPredictions.add(votedProbabilities);
+      } else {
+        votedPredictions.add(predictions[i]);
+      }
+    }
+
+    return votedPredictions;
+  }
+
+  List<int> _transitionConstraints(
     List<List<double>> predictions,
     int minDuration,
     int windowSize,
@@ -162,15 +275,12 @@ class LabRepository {
       final currentActivity =
           probabilities.indexOf(probabilities.reduce(math.max));
 
-      // Add the current prediction to the window
       predictionWindow.add(currentActivity);
 
-      // Remove the oldest prediction from the window if it exceeds the window size
       if (predictionWindow.length > windowSize) {
         predictionWindow.removeAt(0);
       }
 
-      // Use the majority vote from the window as the current activity
       final windowActivities = predictionWindow.toList();
       final majVote = _getMajorityVote(windowActivities);
 
@@ -220,89 +330,15 @@ class LabRepository {
     return maxActivity;
   }
 
-  List<List<num>> _movingAverageSmoothing(
-    List<List<num>> predictions,
-    int windowSize,
-  ) {
-    final smoothedPredictions = <List<num>>[];
-    for (var i = 0; i < predictions.length; i++) {
-      final smoothedProbabilities =
-          List<num>.filled(predictions[i].length, 0.0);
-      for (var j = 0; j < predictions[i].length; j++) {
-        var sum = 0.0;
-        var count = 0;
-        for (int k = math.max(0, i - windowSize ~/ 2);
-            k <= math.min(predictions.length - 1, i + windowSize ~/ 2);
-            k++) {
-          sum += predictions[k][j];
-          count++;
-        }
-        smoothedProbabilities[j] = sum / count;
-      }
-      smoothedPredictions.add(smoothedProbabilities);
-    }
-    return smoothedPredictions;
-  }
+  int _argmax(List<double> list) => list.indexOf(list.reduce(math.max));
 
-  List<List<double>> _majorityVoting(
-    List<List<double>> predictions,
-    int windowSize,
-  ) {
-    final votedPredictions = <List<double>>[];
-
-    for (var i = 0; i < predictions.length; i++) {
-      final start = math.max(0, i - windowSize ~/ 2);
-      final end = math.min(predictions.length - 1, i + windowSize ~/ 2);
-      final window = predictions.sublist(start, end + 1);
-
-      final numClasses = window.first.length;
-      final voteCounts = List.generate(numClasses, (_) => 0);
-
-      for (final probabilities in window) {
-        final maxIndex = probabilities.indexOf(probabilities.reduce(math.max));
-        voteCounts[maxIndex]++;
-      }
-
-      final maxVoteCount = voteCounts.reduce(math.max);
-      final winnerIndices = [
-        for (int j = 0; j < voteCounts.length; j++)
-          if (voteCounts[j] == maxVoteCount) j,
-      ];
-
-      if (winnerIndices.length == 1) {
-        final winnerIndex = winnerIndices.first;
-        final votedProbabilities = List.filled(numClasses, 0.0);
-        votedProbabilities[winnerIndex] = 1.0;
-        votedPredictions.add(votedProbabilities);
-      } else {
-        votedPredictions.add(predictions[i]);
-      }
-    }
-
-    return votedPredictions;
-  }
-
-  int _argmax(List<num> list) {
-    var maxValue = -1 as num;
-    var maxIndex = 0;
-
-    for (var i = 0; i < list.length; i++) {
-      if (list[i] > maxValue) {
-        maxValue = list[i];
-        maxIndex = i;
-      }
-    }
-
-    return maxIndex;
-  }
-
-  List<int> _argmaxByAxis(List<List<num>> matrix, int axis) {
+  List<int> _argmaxByAxis(List<List<double>> matrix, int axis) {
     if (axis == 0) {
       final maxIndices = <int>[];
       final numRows = matrix.length;
 
       for (var row = 0; row < numRows; row++) {
-        final rowValues = <num>[];
+        final rowValues = <double>[];
         for (final col in matrix) {
           rowValues.add(col[row]);
         }
