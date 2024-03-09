@@ -46,12 +46,17 @@ class _AppState extends State<App> {
       brightness: Brightness.dark,
     );
 
+    final currentBrightness = Theme.of(context).brightness;
+
     return GlobalLoaderOverlay(
       useDefaultLoading: false,
       useBackButtonInterceptor: true,
       duration: const Duration(milliseconds: 250),
       reverseDuration: const Duration(milliseconds: 250),
-      overlayColor: colorScheme.surface.withOpacity(0.6),
+      overlayColor: switch (currentBrightness) {
+        Brightness.dark => darkColorScheme.surface.withOpacity(0.5),
+        Brightness.light => colorScheme.surface.withOpacity(0.5),
+      },
       overlayWidgetBuilder: (_) {
         return const SafeArea(
           child: Align(

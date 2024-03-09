@@ -20,10 +20,10 @@ class LabsNotifier extends AutoDisposeNotifier<LabsState> {
     return LabsState.initial();
   }
 
-  (Failure?, List<MlModel>?) getLocalMlModels(
+  Future<(Failure?, List<MlModel>?)> getLocalMlModels(
     int start,
     int limit,
-  ) =>
+  ) async =>
       _labsRepository.getLocalMlModels(start, limit);
 
   Future<void> pickModel() async {

@@ -5,9 +5,10 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/dimens.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
-import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/lab/widgets/bottom_panel_widget.dart';
+import 'package:flutter_sholat_ml/features/lab/widgets/filter_list_widget.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -17,15 +18,17 @@ import 'package:multi_split_view/multi_split_view.dart';
 @RoutePage()
 class LabScreen extends ConsumerStatefulWidget {
   const LabScreen({
-    required this.mlModel,
+    required this.model,
     required this.device,
     required this.services,
+    required this.onModelChanged,
     super.key,
   });
 
-  final MlModel mlModel;
+  final MlModel model;
   final BluetoothDevice? device;
   final List<BluetoothService>? services;
+  final void Function(MlModel model) onModelChanged;
 
   @override
   ConsumerState<LabScreen> createState() => _LabScreenState();
@@ -33,8 +36,24 @@ class LabScreen extends ConsumerStatefulWidget {
 
 class _LabScreenState extends ConsumerState<LabScreen> {
   late final LabNotifier _notifier;
+  late final ProviderListenable<LabState> labProviderFamily;
 
   late final MultiSplitViewController _mainSplitController;
+
+  final _modelNameController = TextEditingController();
+
+  var _editNameMode = false;
+
+  void _onEditModelNameDone() {
+    if (_modelNameController.text.isEmpty) return;
+
+    final model = ref.read(labProviderFamily).model;
+    _notifier.setModel(
+      model.copyWith(name: _modelNameController.text),
+    );
+
+    setState(() => _editNameMode = false);
+  }
 
   List<Area> _resetViews(List<Area> areas) {
     return areas
@@ -50,7 +69,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
 
   @override
   void initState() {
-    _notifier = ref.read(labProvider.notifier);
+    _notifier = ref.read(labProvider(LabArg(model: widget.model)).notifier);
+    labProviderFamily = labProvider(LabArg(model: widget.model));
 
     final mainWeights = LocalStorageService.getLabSplitView1Weights();
     _mainSplitController = MultiSplitViewController(
@@ -64,76 +84,161 @@ class _LabScreenState extends ConsumerState<LabScreen> {
       if (widget.device == null || widget.services == null) {
         return;
       }
-      _notifier.initialise(widget.mlModel, widget.device!, widget.services!);
+      _notifier.initialise(widget.model, widget.device!, widget.services!);
     });
     super.initState();
   }
 
   @override
+  void dispose() {
+    _mainSplitController.dispose();
+    _modelNameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    ref.listen(
-      labProvider.select((value) => value.presentationState),
-      (previous, presentationState) async {
-        switch (presentationState) {
-          case LabInitialState():
-            break;
-          case PredictFailureState():
-            showErrorSnackbar(context, presentationState.failure.message);
-          case PredictSuccessState():
-            showSnackbar(context, 'Success predicting');
-        }
-      },
-    );
+    ref
+      ..listen(
+        labProviderFamily.select((value) => value.presentationState),
+        (previous, presentationState) async {
+          switch (presentationState) {
+            case LabInitialState():
+              break;
+            case PredictFailureState():
+              showErrorSnackbar(context, presentationState.failure.message);
+            case PredictSuccessState():
+              showSnackbar(context, 'Success predicting');
+          }
+        },
+      )
+      ..listen(
+        labProviderFamily.select((value) => value.model),
+        (previous, model) {
+          widget.onModelChanged(model);
+        },
+      );
 
     final showBottomPanel =
-        ref.watch(labProvider.select((value) => value.showBottomPanel));
+        ref.watch(labProviderFamily.select((value) => value.showBottomPanel));
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text('Lab'),
-        actions: [
-          _buildMenu(),
-          const SizedBox(width: 8),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+
+        if (_editNameMode) {
+          setState(() => _editNameMode = false);
+        } else {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        appBar: AppBar(
+          title: _editNameMode ? _buildEditModelNameField() : _buildAppBar(),
+          actions: [
+            if (!_editNameMode) ...[
+              _buildMenu(),
+              const SizedBox(width: 8),
+            ],
+          ],
+        ),
+        body: MultiSplitView(
+          controller: _mainSplitController,
+          axis: Axis.vertical,
+          dividerBuilder: _buildSplitDivider,
+          onWeightChange: () {
+            final weights = _mainSplitController.areas
+                .map((area) => area.weight ?? 1)
+                .toList();
+            LocalStorageService.setLabSplitView1Weights(weights);
+          },
+          children: [
+            _buildMain(),
+            if (showBottomPanel)
+              Consumer(
+                builder: (context, ref, child) {
+                  return BottomPanel(
+                    logs: ref
+                        .watch(labProviderFamily.select((value) => value.logs)),
+                    onClosePressed: () =>
+                        _notifier.setShowBottomPanel(enable: false),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
-      body: MultiSplitView(
-        controller: _mainSplitController,
-        axis: Axis.vertical,
-        dividerBuilder: _buildSplitDivider,
-        onWeightChange: () {
-          final weights = _mainSplitController.areas
-              .map((area) => area.weight ?? 1)
-              .toList();
-          LocalStorageService.setLabSplitView1Weights(weights);
-        },
+    );
+  }
+
+  Row _buildEditModelNameField() {
+    return Row(
+      children: [
+        Flexible(
+          child: TextField(
+            controller: _modelNameController,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (value) => _onEditModelNameDone(),
+            decoration: const InputDecoration(
+              hintText: 'Input model name',
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: _onEditModelNameDone,
+          icon: const Icon(Symbols.check_rounded),
+        ),
+      ],
+    );
+  }
+
+  InkWell _buildAppBar() {
+    return InkWell(
+      onTap: () {
+        _modelNameController.text =
+            ref.read(labProviderFamily.select((value) => value.model.name)) ??
+                '';
+        setState(() => _editNameMode = true);
+      },
+      child: Row(
         children: [
-          _buildMain(),
-          if (showBottomPanel)
-            Consumer(
+          Flexible(
+            child: Consumer(
               builder: (context, ref, child) {
-                return BottomPanel(
-                  logs: ref.watch(labProvider.select((value) => value.logs)),
-                  onClosePressed: () =>
-                      _notifier.setShowBottomPanel(enable: false),
-                );
+                final modelName = ref.watch(
+                    labProviderFamily.select((value) => value.model.name));
+                return Text(modelName ?? 'Input model name');
               },
             ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(
+            Symbols.edit_rounded,
+            size: 16,
+            weight: 600,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildMain() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     final isInitialised =
-        ref.watch(labProvider.select((value) => value.isInitialised));
+        ref.watch(labProviderFamily.select((value) => value.isInitialised));
     final recordState =
-        ref.watch(labProvider.select((value) => value.recordState));
+        ref.watch(labProviderFamily.select((value) => value.recordState));
     final predictedCategory =
-        ref.watch(labProvider.select((value) => value.predictedCategory));
+        ref.watch(labProviderFamily.select((value) => value.predictedCategory));
 
     final modelConfig =
-        ref.read(labProvider.select((value) => value.modelConfig));
+        ref.read(labProviderFamily.select((value) => value.modelConfig));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, Dimens.bottomListPadding),
@@ -153,7 +258,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
           initialSelection: modelConfig.inputDataType,
           enabled: recordState == RecordState.ready,
           onSelected: (value) => _notifier
-              .setModelConfig(modelConfig.copyWith(inputDataType: value)),
+              .setModelConfig(modelConfig.copyWith(inputDataType: value!)),
           enableSearch: false,
           label: const Text('Input Data Type'),
           expandedInsets: EdgeInsets.zero,
@@ -236,7 +341,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         Consumer(
           builder: (context, ref, child) {
             final enableTeacherForcing = ref.watch(
-              labProvider
+              labProviderFamily
                   .select((value) => value.modelConfig.enableTeacherForcing),
             );
 
@@ -263,7 +368,40 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         Card.outlined(
           clipBehavior: Clip.antiAlias,
           child: ExpansionTile(
-            title: const Text('Advanced options'),
+            title: Consumer(
+              builder: (context, ref, child) {
+                final selectedFilterLength = ref.watch(
+                  labProviderFamily.select(
+                    (value) =>
+                        value.modelConfig.smoothings.length +
+                        value.modelConfig.filterings.length +
+                        value
+                            .modelConfig.temporalConsistencyEnforcements.length,
+                  ),
+                );
+                return Row(
+                  children: [
+                    const Flexible(
+                      child: Text('Advanced options'),
+                    ),
+                    if (selectedFilterLength > 0)
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.secondary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          selectedFilterLength.toString(),
+                          style: textTheme.labelMedium
+                              ?.copyWith(color: colorScheme.onSecondary),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
             shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(24)),
             ),
@@ -276,28 +414,31 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   final selectedFilters = ref.watch(
-                    labProvider.select((value) => value.modelConfig.smoothings),
+                    labProviderFamily
+                        .select((value) => value.modelConfig.smoothings),
                   );
 
-                  return FilterList(
+                  return FilterList<Smoothing>(
                     title: const Text('Smoothing'),
                     selectedFilters: selectedFilters,
                     filters: Smoothing.values,
                     filterNameBuilder: (filter) => filter.name,
-                    onSelected: (filter, selected) {
-                      final modelConfig = ref.read(
-                          labProvider.select((value) => value.modelConfig));
+                    onSelected: recordState != RecordState.ready
+                        ? null
+                        : (filter, selected) {
+                            final modelConfig = ref.read(labProviderFamily
+                                .select((value) => value.modelConfig));
 
-                      _notifier.setModelConfig(
-                        modelConfig.copyWith(
-                          smoothings: selected
-                              ? {...selectedFilters, filter}
-                              : selectedFilters
-                                  .where((e) => e != filter)
-                                  .toSet(),
-                        ),
-                      );
-                    },
+                            _notifier.setModelConfig(
+                              modelConfig.copyWith(
+                                smoothings: selected
+                                    ? {...selectedFilters, filter}
+                                    : selectedFilters
+                                        .where((e) => e != filter)
+                                        .toSet(),
+                              ),
+                            );
+                          },
                   );
                 },
               ),
@@ -305,28 +446,31 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   final selectedFilters = ref.watch(
-                    labProvider.select((value) => value.modelConfig.filterings),
+                    labProviderFamily
+                        .select((value) => value.modelConfig.filterings),
                   );
 
-                  return FilterList(
+                  return FilterList<Filtering>(
                     title: const Text('Filtering'),
                     selectedFilters: selectedFilters,
                     filters: Filtering.values,
                     filterNameBuilder: (filter) => filter.name,
-                    onSelected: (filter, selected) {
-                      final modelConfig = ref.read(
-                          labProvider.select((value) => value.modelConfig));
+                    onSelected: recordState != RecordState.ready
+                        ? null
+                        : (filter, selected) {
+                            final modelConfig = ref.read(labProviderFamily
+                                .select((value) => value.modelConfig));
 
-                      _notifier.setModelConfig(
-                        modelConfig.copyWith(
-                          filterings: selected
-                              ? {...selectedFilters, filter}
-                              : selectedFilters
-                                  .where((e) => e != filter)
-                                  .toSet(),
-                        ),
-                      );
-                    },
+                            _notifier.setModelConfig(
+                              modelConfig.copyWith(
+                                filterings: selected
+                                    ? {...selectedFilters, filter}
+                                    : selectedFilters
+                                        .where((e) => e != filter)
+                                        .toSet(),
+                              ),
+                            );
+                          },
                   );
                 },
               ),
@@ -334,31 +478,33 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   final selectedFilters = ref.watch(
-                    labProvider.select(
+                    labProviderFamily.select(
                       (value) =>
                           value.modelConfig.temporalConsistencyEnforcements,
                     ),
                   );
 
-                  return FilterList(
+                  return FilterList<TemporalConsistencyEnforcement>(
                     title: const Text('Temporal Consistency Enforcement'),
                     selectedFilters: selectedFilters,
                     filters: TemporalConsistencyEnforcement.values,
                     filterNameBuilder: (filter) => filter.name,
-                    onSelected: (filter, selected) {
-                      final modelConfig = ref.read(
-                          labProvider.select((value) => value.modelConfig));
+                    onSelected: recordState != RecordState.ready
+                        ? null
+                        : (filter, selected) {
+                            final modelConfig = ref.read(labProviderFamily
+                                .select((value) => value.modelConfig));
 
-                      _notifier.setModelConfig(
-                        modelConfig.copyWith(
-                          temporalConsistencyEnforcements: selected
-                              ? {...selectedFilters, filter}
-                              : selectedFilters
-                                  .where((e) => e != filter)
-                                  .toSet(),
-                        ),
-                      );
-                    },
+                            _notifier.setModelConfig(
+                              modelConfig.copyWith(
+                                temporalConsistencyEnforcements: selected
+                                    ? {...selectedFilters, filter}
+                                    : selectedFilters
+                                        .where((e) => e != filter)
+                                        .toSet(),
+                              ),
+                            );
+                          },
                   );
                 },
               ),
@@ -569,7 +715,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
     if (numberOfFeatures == null) {
       return 'Please enter a valid number';
     }
-    if (numberOfFeatures > ref.read(labProvider).modelConfig.windowSize) {
+    if (numberOfFeatures > ref.read(labProviderFamily).modelConfig.windowSize) {
       return 'Window step must be less than window size';
     }
     return null;
@@ -625,7 +771,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
             Consumer(
               builder: (context, ref, child) {
                 final isShowBottomPanel = ref.watch(
-                  labProvider.select((value) => value.showBottomPanel),
+                  labProviderFamily.select((value) => value.showBottomPanel),
                 );
                 return MenuItemButton(
                   leadingIcon: isShowBottomPanel
@@ -654,61 +800,6 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),
-    );
-  }
-}
-
-class FilterList<T extends Enum> extends StatelessWidget {
-  const FilterList({
-    required this.title,
-    required this.selectedFilters,
-    required this.filters,
-    required this.filterNameBuilder,
-    required this.onSelected,
-    super.key,
-  });
-
-  final Widget title;
-  final Set<T> selectedFilters;
-  final List<T> filters;
-  final String Function(T filter) filterNameBuilder;
-  final void Function(T filter, bool selected) onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DefaultTextStyle(
-            style: textTheme.bodyMedium!,
-            child: title,
-          ),
-        ),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: filters.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final filter = filters[index];
-
-              return FilterChip(
-                label: Text(filterNameBuilder(filter)),
-                labelStyle: textTheme.labelMedium,
-                selected: selectedFilters.contains(filter),
-                onSelected: (value) => onSelected(filter, value),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }

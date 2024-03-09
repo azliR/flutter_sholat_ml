@@ -6,9 +6,10 @@ import 'dart:typed_data';
 
 import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
-import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
-import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
+import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 
@@ -98,14 +99,17 @@ class LabRepository {
               postProcessedPred =
                   _movingAverageSmoothing(postProcessedPred, config.windowSize);
             case Smoothing.exponentialSmoothing:
-            // postProcessedPred = _exponentialSmoothing(postProcessedPred, 0.5);
+              postProcessedPred = _exponentialSmoothing(postProcessedPred, 0.5);
           }
         }
 
         for (final filtering in config.filterings) {
           switch (filtering) {
             case Filtering.medianFilter:
+              postProcessedPred =
+                  _medianFilter(postProcessedPred, config.windowSize);
             case Filtering.lowPassFilter:
+              postProcessedPred = _lowPassFilter(postProcessedPred, 0.5);
           }
         }
 
@@ -114,6 +118,8 @@ class LabRepository {
             case TemporalConsistencyEnforcement.majorityVoting:
               postProcessedPred = _majorityVoting(yPred, config.windowSize);
             case TemporalConsistencyEnforcement.transitionConstraints:
+              postProcessedPred =
+                  _applyTransitionConstraints(postProcessedPred, 2);
           }
         }
 
@@ -198,29 +204,98 @@ class LabRepository {
     return smoothedPredictions;
   }
 
-  List<double> _exponentialSmoothing(
+  List<List<double>> _exponentialSmoothing(
     List<List<double>> predictions,
     double alpha,
   ) {
-    final smoothedPredictions = <double>[];
-    double? prevSmoothedValue;
+    final smoothedPredictions =
+        List<List<double>>.filled(predictions.length, []);
 
     for (var i = 0; i < predictions.length; i++) {
-      final probabilities = predictions[i];
-      final currentActivity =
-          probabilities.indexOf(probabilities.reduce(math.max));
-
-      if (i == 0) {
-        prevSmoothedValue = currentActivity.toDouble();
-      } else {
-        final smoothedValue =
-            alpha * currentActivity + (1 - alpha) * prevSmoothedValue!;
-        prevSmoothedValue = smoothedValue;
-        smoothedPredictions.add(smoothedValue);
-      }
+      final sublist = predictions[i];
+      final smoothedSublist = _exponentialSmoothingSublist(sublist, alpha);
+      smoothedPredictions[i] = smoothedSublist;
     }
 
     return smoothedPredictions;
+  }
+
+  List<double> _exponentialSmoothingSublist(
+    List<double> sublist,
+    double alpha,
+  ) {
+    final smoothedSublist = List<double>.filled(sublist.length, 0);
+
+    // Initialize the previous smoothed value with the first data point
+    var prevSmoothedValue = sublist[0];
+    smoothedSublist[0] = prevSmoothedValue;
+
+    for (var i = 1; i < sublist.length; i++) {
+      final currentValue = sublist[i];
+      final smoothedValue =
+          alpha * currentValue + (1 - alpha) * prevSmoothedValue;
+      smoothedSublist[i] = smoothedValue;
+      prevSmoothedValue = smoothedValue;
+    }
+
+    return smoothedSublist;
+  }
+
+  List<List<double>> _medianFilter(
+    List<List<double>> predictions,
+    int windowSize,
+  ) {
+    if (windowSize.isEven) {
+      throw ArgumentError('Window size should be an odd number');
+    }
+
+    final filteredData = List<List<double>>.filled(predictions.length, []);
+
+    for (var i = 0; i < predictions.length; i++) {
+      final start = math.max(0, i - (windowSize ~/ 2));
+      final end = math.min(predictions.length, i + (windowSize ~/ 2) + 1);
+      final window = predictions
+          .sublist(start, end)
+          .expand((element) => element)
+          .toList()
+        ..sort();
+      final medianValue = window[window.length ~/ 2];
+      filteredData[i] = List.filled(predictions[i].length, medianValue);
+    }
+
+    return filteredData;
+  }
+
+  List<List<double>> _lowPassFilter(
+    List<List<double>> predictions,
+    double alpha,
+  ) {
+    final filteredData = List<List<double>>.filled(predictions.length, []);
+
+    for (var i = 0; i < predictions.length; i++) {
+      final sublist = predictions[i];
+      final filteredSublist = _lowPassFilterSublist(sublist, alpha);
+      filteredData[i] = filteredSublist;
+    }
+
+    return filteredData;
+  }
+
+  List<double> _lowPassFilterSublist(List<double> sublist, double alpha) {
+    final filteredSublist = List<double>.filled(sublist.length, 0);
+
+    // Initialize the previous value with the first data point
+    var prevValue = sublist[0];
+    filteredSublist[0] = prevValue;
+
+    for (var i = 1; i < sublist.length; i++) {
+      final currentValue = sublist[i];
+      final filteredValue = alpha * prevValue + (1 - alpha) * currentValue;
+      filteredSublist[i] = filteredValue;
+      prevValue = filteredValue;
+    }
+
+    return filteredSublist;
   }
 
   List<List<double>> _majorityVoting(
@@ -250,7 +325,7 @@ class LabRepository {
 
       if (winnerIndices.length == 1) {
         final winnerIndex = winnerIndices.first;
-        final votedProbabilities = List.filled(numClasses, 0.0);
+        final votedProbabilities = List<double>.filled(numClasses, 0);
         votedProbabilities[winnerIndex] = 1.0;
         votedPredictions.add(votedProbabilities);
       } else {
@@ -261,73 +336,37 @@ class LabRepository {
     return votedPredictions;
   }
 
-  List<int> _transitionConstraints(
+  List<List<double>> _applyTransitionConstraints(
     List<List<double>> predictions,
     int minDuration,
-    int windowSize,
   ) {
-    final classLabels = <int>[];
-    int? prevActivity;
-    var activityDuration = 0;
+    final constrainedPredictions = List<List<double>>.from(predictions);
 
-    for (var i = 0; i < predictions.length; i++) {
-      final probabilities = predictions[i];
-      final currentActivity =
-          probabilities.indexOf(probabilities.reduce(math.max));
+    for (var i = 1; i < predictions.length; i++) {
+      final prevPrediction = predictions[i - 1];
+      final currentPrediction = predictions[i];
 
-      predictionWindow.add(currentActivity);
+      if (prevPrediction != currentPrediction) {
+        var durationCount = 1;
+        var j = i + 1;
 
-      if (predictionWindow.length > windowSize) {
-        predictionWindow.removeAt(0);
-      }
-
-      final windowActivities = predictionWindow.toList();
-      final majVote = _getMajorityVote(windowActivities);
-
-      if (majVote != prevActivity) {
-        activityDuration = 1;
-        prevActivity = majVote;
-
-        if (activityDuration < minDuration) {
-          classLabels.addAll(List.filled(activityDuration, prevActivity));
-        } else {
-          classLabels.addAll(
-            List.filled(activityDuration - minDuration, prevActivity),
-          );
+        while (j < predictions.length && predictions[j] == currentPrediction) {
+          durationCount++;
+          j++;
         }
-      } else {
-        activityDuration++;
-      }
 
-      classLabels.add(majVote);
-    }
-
-    if (activityDuration < minDuration) {
-      classLabels.addAll(List.filled(activityDuration, prevActivity!));
-    } else {
-      classLabels
-          .addAll(List.filled(activityDuration - minDuration, prevActivity!));
-    }
-
-    return classLabels;
-  }
-
-  int _getMajorityVote(List<int> activities) {
-    final counts = <int, int>{};
-    for (final activity in activities) {
-      counts[activity] = (counts[activity] ?? 0) + 1;
-    }
-
-    var maxCount = 0;
-    var maxActivity = -1;
-    for (final entry in counts.entries) {
-      if (entry.value > maxCount) {
-        maxCount = entry.value;
-        maxActivity = entry.key;
+        if (durationCount < minDuration) {
+          for (var k = i; k < i + durationCount; k++) {
+            constrainedPredictions[k] = prevPrediction;
+          }
+          i += durationCount - 1;
+        } else {
+          i += durationCount - 1;
+        }
       }
     }
 
-    return maxActivity;
+    return constrainedPredictions;
   }
 
   int _argmax(List<double> list) => list.indexOf(list.reduce(math.max));
@@ -371,6 +410,10 @@ class LabRepository {
 
   bool? getShowBottomPanel() {
     return LocalStorageService.getLabShowBottomPanel();
+  }
+
+  void saveModel(MlModel model) {
+    LocalMlModelStorageService.putMlModel(model);
   }
 
   void dispose() {

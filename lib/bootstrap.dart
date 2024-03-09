@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/firebase_options.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
@@ -40,6 +41,10 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   Hive.registerAdapter<MlModel>(
     'MlModel',
     (json) => MlModel.fromJson(json as Map<String, dynamic>),
+  );
+  Hive.registerAdapter<MlModelConfig>(
+    'MlModelConfig',
+    (json) => MlModelConfig.fromJson(json as Map<String, dynamic>),
   );
 
   runApp(

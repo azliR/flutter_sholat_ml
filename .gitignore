@@ -113,3 +113,5 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm
+
+*.g.dart

@@ -12,7 +12,7 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' hide context;
 
 @RoutePage()
 class LabsPage extends ConsumerStatefulWidget {
@@ -33,7 +33,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
   Future<void> _fetchLocalMlModelsPage(int pageKey) async {
     final (failure, mlModelMlModels) =
-        _notifier.getLocalMlModels(pageKey, _pageSize);
+        await _notifier.getLocalMlModels(pageKey, _pageSize);
 
     if (failure != null) {
       _mlModelsPagingController.error = failure.error;
@@ -88,9 +88,15 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
             await context.router.push(
               LabRoute(
-                mlModel: presentationState.mlModel,
+                model: presentationState.model,
                 device: currentBluetoothDevice,
                 services: currentServices,
+                onModelChanged: (model) {
+                  final index = _mlModelsPagingController.itemList!
+                      .indexWhere((e) => e.id == model.id);
+                  _mlModelsPagingController.itemList![index] = model;
+                  _mlModelsPagingController.notifyListeners();
+                },
               ),
             );
 
@@ -115,8 +121,12 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
-        const SliverAppBar.large(
-          title: Text('Labs'),
+        SliverAppBar.large(
+          title: const Text('Labs'),
+          actions: [
+            _buildAppBarMenu(),
+            const SizedBox(width: 8),
+          ],
         ),
       ],
       body: RefreshIndicator(
@@ -138,12 +148,11 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                 ),
               );
             },
-            itemBuilder: (context, mlModel, index) {
+            itemBuilder: (context, model, index) {
               return RoundedListTile(
-                leading:
-                    Text(extension(mlModel.path).substring(1).toUpperCase()),
-                title: Text(_formatDateTime(mlModel.createdAt)),
-                trailing: _buildMenu(mlModel),
+                leading: Text(extension(model.path).substring(1).toUpperCase()),
+                title: Text(model.name ?? _formatDateTime(model.createdAt)),
+                trailing: _buildMenu(model),
                 onTap: () {
                   final currentBluetoothDevice =
                       ref.read(authDeviceProvider).currentBluetoothDevice;
@@ -152,9 +161,13 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
                   context.router.push(
                     LabRoute(
-                      mlModel: mlModel,
+                      model: model,
                       device: currentBluetoothDevice,
                       services: currentServices,
+                      onModelChanged: (model) {
+                        _mlModelsPagingController.itemList![index] = model;
+                        _mlModelsPagingController.notifyListeners();
+                      },
                     ),
                   );
                 },
@@ -197,5 +210,33 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
   String _formatDateTime(DateTime dateTime) {
     return DateFormat("EEEE 'at' HH:mm").format(dateTime);
+  }
+
+  Widget _buildAppBarMenu() {
+    return MenuAnchor(
+      builder: (context, controller, child) {
+        return IconButton(
+          style: IconButton.styleFrom(
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          onPressed: () {
+            if (controller.isOpen) {
+              controller.close();
+            } else {
+              controller.open();
+            }
+          },
+          icon: child!,
+        );
+      },
+      menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Symbols.settings_rounded),
+          onPressed: () => context.router.push(const SettingsRoute()),
+          child: const Text('Settings'),
+        ),
+      ],
+      child: const Icon(Symbols.more_vert_rounded),
+    );
   }
 }

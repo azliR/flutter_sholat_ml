@@ -97,9 +97,10 @@ abstract class $AppRouter extends _i14.RootStackRouter {
       return _i14.AutoRoutePage<dynamic>(
         routeData: routeData,
         child: _i6.LabScreen(
-          mlModel: args.mlModel,
+          model: args.model,
           device: args.device,
           services: args.services,
+          onModelChanged: args.onModelChanged,
           key: args.key,
         ),
       );
@@ -347,17 +348,19 @@ class HomeRouteArgs {
 /// [_i6.LabScreen]
 class LabRoute extends _i14.PageRouteInfo<LabRouteArgs> {
   LabRoute({
-    required _i17.MlModel mlModel,
+    required _i17.MlModel model,
     required _i15.BluetoothDevice? device,
     required List<_i15.BluetoothService>? services,
+    required void Function(_i17.MlModel) onModelChanged,
     _i16.Key? key,
     List<_i14.PageRouteInfo>? children,
   }) : super(
           LabRoute.name,
           args: LabRouteArgs(
-            mlModel: mlModel,
+            model: model,
             device: device,
             services: services,
+            onModelChanged: onModelChanged,
             key: key,
           ),
           initialChildren: children,
@@ -371,23 +374,26 @@ class LabRoute extends _i14.PageRouteInfo<LabRouteArgs> {
 
 class LabRouteArgs {
   const LabRouteArgs({
-    required this.mlModel,
+    required this.model,
     required this.device,
     required this.services,
+    required this.onModelChanged,
     this.key,
   });
 
-  final _i17.MlModel mlModel;
+  final _i17.MlModel model;
 
   final _i15.BluetoothDevice? device;
 
   final List<_i15.BluetoothService>? services;
 
+  final void Function(_i17.MlModel) onModelChanged;
+
   final _i16.Key? key;
 
   @override
   String toString() {
-    return 'LabRouteArgs{mlModel: $mlModel, device: $device, services: $services, key: $key}';
+    return 'LabRouteArgs{model: $model, device: $device, services: $services, onModelChanged: $onModelChanged, key: $key}';
   }
 }
 

@@ -12,13 +12,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class LabsRepository {
-  (Failure?, List<MlModel>?) getLocalMlModels(
+  Future<(Failure?, List<MlModel>?)> getLocalMlModels(
     int start,
     int limit,
-  ) {
+  ) async {
     try {
-      final mlModelProps =
-          LocalMlModelStorageService.getMlModelRange(start, start + limit);
+      final mlModelProps = await LocalMlModelStorageService.getMlModelRange(
+        start,
+        start + limit,
+      );
 
       return (null, mlModelProps);
     } catch (e, stackTrace) {
@@ -87,8 +89,8 @@ class LabsRepository {
         name: name,
         path: outputPath,
         description: description,
-        createdAt: now,
         updatedAt: now,
+        createdAt: now,
       );
 
       LocalMlModelStorageService.putMlModel(mlModel);
@@ -113,7 +115,7 @@ class LabsRepository {
         if (dir.existsSync()) {
           await dir.delete(recursive: true);
         }
-        LocalMlModelStorageService.deleteMlModel(mlModel.id);
+        LocalMlModelStorageService.deleteMlModel(mlModel);
       }
       return (null, null);
     } catch (e, stackTrace) {

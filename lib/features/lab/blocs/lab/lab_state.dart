@@ -1,16 +1,11 @@
 part of 'lab_notifier.dart';
 
-enum InputDataType {
-  float32,
-  int32,
-}
-
 @immutable
 class LabState extends Equatable {
   const LabState({
     required this.isInitialised,
     required this.showBottomPanel,
-    required this.modelConfig,
+    required this.model,
     required this.predictState,
     required this.recordState,
     required this.logs,
@@ -22,12 +17,12 @@ class LabState extends Equatable {
 
   factory LabState.initial({
     required bool showBottomPanel,
-    required MlModelConfig modelConfig,
+    required MlModel model,
   }) =>
       LabState(
         isInitialised: false,
         showBottomPanel: showBottomPanel,
-        modelConfig: modelConfig,
+        model: model,
         predictState: PredictState.ready,
         recordState: RecordState.ready,
         logs: const [],
@@ -39,7 +34,7 @@ class LabState extends Equatable {
 
   final bool isInitialised;
   final bool showBottomPanel;
-  final MlModelConfig modelConfig;
+  final MlModel model;
   final PredictState predictState;
   final RecordState recordState;
   final List<String> logs;
@@ -48,10 +43,12 @@ class LabState extends Equatable {
   final List<SholatMovementCategory>? predictedCategories;
   final LabPresentationState presentationState;
 
+  MlModelConfig get modelConfig => model.config;
+
   LabState copyWith({
     bool? isInitialised,
     bool? showBottomPanel,
-    MlModelConfig? modelConfig,
+    MlModel? model,
     PredictState? predictState,
     RecordState? recordState,
     List<String>? logs,
@@ -63,7 +60,7 @@ class LabState extends Equatable {
     return LabState(
       isInitialised: isInitialised ?? this.isInitialised,
       showBottomPanel: showBottomPanel ?? this.showBottomPanel,
-      modelConfig: modelConfig ?? this.modelConfig,
+      model: model ?? this.model,
       predictState: predictState ?? this.predictState,
       recordState: recordState ?? this.recordState,
       logs: logs ?? this.logs,
@@ -79,7 +76,7 @@ class LabState extends Equatable {
   List<Object?> get props => [
         isInitialised,
         showBottomPanel,
-        modelConfig,
+        model,
         predictState,
         recordState,
         logs,

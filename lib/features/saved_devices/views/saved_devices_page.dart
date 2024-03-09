@@ -116,7 +116,7 @@ class SavedDevicesPage extends ConsumerWidget {
                     ],
                   ),
                   subtitle: Text(device.deviceId),
-                  trailing: _buildActions(
+                  trailing: _buildAppBarMenu(
                     context: context,
                     ref: ref,
                     notifier: notifier,
@@ -141,7 +141,7 @@ class SavedDevicesPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildActions({
+  Widget _buildAppBarMenu({
     required BuildContext context,
     required WidgetRef ref,
     required AuthDeviceNotifier notifier,

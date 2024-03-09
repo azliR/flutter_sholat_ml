@@ -8,20 +8,30 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
-import 'package:flutter_sholat_ml/features/lab/models/ml_model_config/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/lab/repositories/lab_repository.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
 part 'lab_state.dart';
 
-final labProvider = NotifierProvider.autoDispose<LabNotifier, LabState>(
+class LabArg extends Equatable {
+  const LabArg({required this.model});
+
+  final MlModel model;
+
+  @override
+  List<Object?> get props => [model];
+}
+
+final labProvider =
+    NotifierProvider.autoDispose.family<LabNotifier, LabState, LabArg>(
   LabNotifier.new,
 );
 
-class LabNotifier extends AutoDisposeNotifier<LabState> {
+class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
   LabNotifier()
       : _labRepository = LabRepository(),
         _recordRepository = RecordRepository();
@@ -45,7 +55,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
   int? _lastHeartRate;
 
   @override
-  LabState build() {
+  LabState build(LabArg arg) {
     ref.onDispose(() {
       _heartRateMeasureSubscription?.cancel();
       _sensorSubscription?.cancel();
@@ -56,16 +66,7 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
 
     return LabState.initial(
       showBottomPanel: LocalStorageService.getLabShowBottomPanel(),
-      modelConfig: const MlModelConfig(
-        enableTeacherForcing: false,
-        batchSize: 1,
-        windowSize: 10,
-        numberOfFeatures: 3,
-        inputDataType: InputDataType.float32,
-        smoothings: {},
-        filterings: {},
-        temporalConsistencyEnforcements: {},
-      ),
+      model: arg.model,
     );
   }
 
@@ -302,7 +303,20 @@ class LabNotifier extends AutoDisposeNotifier<LabState> {
     state = state.copyWith(showBottomPanel: enable);
   }
 
+  void setModel(MlModel model) {
+    final updatedModel = model.copyWith(
+      updatedAt: DateTime.now(),
+    );
+    _labRepository.saveModel(updatedModel);
+    state = state.copyWith(model: updatedModel);
+  }
+
   void setModelConfig(MlModelConfig config) {
-    state = state.copyWith(modelConfig: config);
+    final model = state.model.copyWith(config: config);
+    final updatedModel = model.copyWith(
+      updatedAt: DateTime.now(),
+    );
+    _labRepository.saveModel(updatedModel);
+    state = state.copyWith(model: updatedModel);
   }
 }
