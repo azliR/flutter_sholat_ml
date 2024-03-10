@@ -23,6 +23,7 @@ class AppRouter extends $AppRouter {
       AutoRoute(page: PreprocessRoute.page),
       AutoRoute(page: LabRoute.page),
       AutoRoute(page: SettingsRoute.page),
+      AutoRoute(page: ModelPickerRoute.page, fullscreenDialog: true),
     ];
   }
 }

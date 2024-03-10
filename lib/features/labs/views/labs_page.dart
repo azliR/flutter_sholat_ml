@@ -26,25 +26,25 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
   static const _pageSize = 20;
 
-  final _mlModelsPagingController =
+  final _modelsPagingController =
       PagingController<int, MlModel>(firstPageKey: 0);
-  final _mlModelsRefreshKey = GlobalKey<RefreshIndicatorState>();
+  final _modelsRefreshKey = GlobalKey<RefreshIndicatorState>();
 
   Future<void> _fetchLocalMlModelsPage(int pageKey) async {
     final (failure, mlModelMlModels) =
         await _notifier.getLocalMlModels(pageKey, _pageSize);
 
     if (failure != null) {
-      _mlModelsPagingController.error = failure.error;
+      _modelsPagingController.error = failure.error;
       return;
     }
 
     final isLastPage = mlModelMlModels!.length < _pageSize;
     if (isLastPage) {
-      _mlModelsPagingController.appendLastPage(mlModelMlModels);
+      _modelsPagingController.appendLastPage(mlModelMlModels);
     } else {
       final nextPageKey = pageKey + mlModelMlModels.length;
-      _mlModelsPagingController.appendPage(mlModelMlModels, nextPageKey);
+      _modelsPagingController.appendPage(mlModelMlModels, nextPageKey);
     }
   }
 
@@ -52,13 +52,13 @@ class _LabsPageState extends ConsumerState<LabsPage> {
   void initState() {
     _notifier = ref.read(labsProvider.notifier);
 
-    _mlModelsPagingController.addPageRequestListener(_fetchLocalMlModelsPage);
+    _modelsPagingController.addPageRequestListener(_fetchLocalMlModelsPage);
     super.initState();
   }
 
   @override
   void dispose() {
-    _mlModelsPagingController.dispose();
+    _modelsPagingController.dispose();
     super.dispose();
   }
 
@@ -80,26 +80,21 @@ class _LabsPageState extends ConsumerState<LabsPage> {
             final currentServices =
                 ref.read(authDeviceProvider).currentServices;
 
-            if (currentBluetoothDevice == null || currentServices == null) {
-              showSnackbar(context, 'No connected device found');
-              return;
-            }
-
             await context.router.push(
               LabRoute(
                 model: presentationState.model,
                 device: currentBluetoothDevice,
                 services: currentServices,
                 onModelChanged: (model) {
-                  final index = _mlModelsPagingController.itemList!
+                  final index = _modelsPagingController.itemList!
                       .indexWhere((e) => e.id == model.id);
-                  _mlModelsPagingController.itemList![index] = model;
-                  _mlModelsPagingController.notifyListeners();
+                  _modelsPagingController.itemList![index] = model;
+                  _modelsPagingController.notifyListeners();
                 },
               ),
             );
 
-            _mlModelsPagingController.refresh();
+            _modelsPagingController.refresh();
           case PickModelFailureState():
             context.loaderOverlay.hide();
             showErrorSnackbar(context, presentationState.failure.message);
@@ -107,10 +102,10 @@ class _LabsPageState extends ConsumerState<LabsPage> {
             context.loaderOverlay.show();
           case DeleteMlModelSuccessState():
             context.loaderOverlay.hide();
-            _mlModelsPagingController.itemList?.removeWhere(
+            _modelsPagingController.itemList?.removeWhere(
               (mlModel) => presentationState.mlModels.contains(mlModel),
             );
-            _mlModelsPagingController.notifyListeners();
+            _modelsPagingController.notifyListeners();
           case DeleteMlModelFailureState():
             context.loaderOverlay.hide();
             showErrorSnackbar(context, presentationState.failure.message);
@@ -121,7 +116,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
     return NestedScrollView(
       headerSliverBuilder: (context, innerBoxIsScrolled) => [
         SliverAppBar.large(
-          title: const Text('Labs'),
+          title: const Text('Models'),
           actions: [
             _buildAppBarMenu(),
             const SizedBox(width: 8),
@@ -158,7 +153,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                           return MenuItemButton(
                             onPressed: () {
                               _notifier.setSortType(sortType);
-                              _mlModelsPagingController.refresh();
+                              _modelsPagingController.refresh();
                             },
                             leadingIcon: switch (sortType) {
                               SortType.modelName =>
@@ -197,7 +192,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                           return MenuItemButton(
                             onPressed: () {
                               _notifier.setSortDirection(sortDirection);
-                              _mlModelsPagingController.refresh();
+                              _modelsPagingController.refresh();
                             },
                             leadingIcon: switch (sortDirection) {
                               SortDirection.ascending =>
@@ -218,13 +213,13 @@ class _LabsPageState extends ConsumerState<LabsPage> {
         ),
       ],
       body: RefreshIndicator(
-        key: _mlModelsRefreshKey,
+        key: _modelsRefreshKey,
         onRefresh: () async {
-          _mlModelsPagingController.refresh();
+          _modelsPagingController.refresh();
           return Future.delayed(const Duration(seconds: 1), () => null);
         },
         child: PagedListView(
-          pagingController: _mlModelsPagingController,
+          pagingController: _modelsPagingController,
           padding: EdgeInsets.zero,
           builderDelegate: PagedChildBuilderDelegate<MlModel>(
             noItemsFoundIndicatorBuilder: (context) {
@@ -253,8 +248,8 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                       device: currentBluetoothDevice,
                       services: currentServices,
                       onModelChanged: (model) {
-                        _mlModelsPagingController.itemList![index] = model;
-                        _mlModelsPagingController.notifyListeners();
+                        _modelsPagingController.itemList![index] = model;
+                        _modelsPagingController.notifyListeners();
                       },
                     ),
                   );

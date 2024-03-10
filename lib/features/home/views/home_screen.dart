@@ -80,9 +80,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         case HomeScreenNavigationTab.labs:
           return const AdaptiveScaffoldDestination(
-            icon: Icon(Symbols.experiment_rounded),
-            selectedIcon: Icon(Symbols.experiment_rounded, fill: 1),
-            label: 'Labs',
+            icon: Icon(Symbols.model_training_rounded),
+            selectedIcon: Icon(Symbols.model_training_rounded, fill: 1),
+            label: 'Models',
           );
       }
     }).toList();

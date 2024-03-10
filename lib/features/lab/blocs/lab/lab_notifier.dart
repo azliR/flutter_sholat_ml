@@ -142,7 +142,7 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
     );
   }
 
-  void _handleAccelerometer(List<int> event) {
+  Future<void> _handleAccelerometer(List<int> event) async {
     final datasets =
         _recordRepository.handleRawSensorData(Uint8List.fromList(event));
 
@@ -166,41 +166,46 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
 
     final inputData = lastAccelData.takeLast(totalDataSize);
 
-    final success = _labRepository.predict(
+    final (failure, predictions) = await _labRepository.predict(
       path: _mlModel.path,
       data: inputData,
       config: modelConfig,
       previousLabels: modelConfig.enableTeacherForcing
           ? state.predictedCategories?.takeLast(modelConfig.batchSize)
           : null,
-      onPredict: (labels) {
+      ignoreWhenLocked: true,
+      onPredicting: () {
         state = state.copyWith(
-          predictState: PredictState.ready,
-          predictedCategory: labels.last,
-          predictedCategories: [...?state.predictedCategories, ...labels],
-          logs: [...state.logs, 'Predicted: $labels'],
-        );
-      },
-      onError: (failure) {
-        state = state.copyWith(
-          presentationState: PredictFailureState(failure),
-          logs: [...state.logs, 'Predict failed: $failure'],
+          predictState: PredictState.predicting,
+          logs: [
+            ...state.logs,
+            'Predicting (${modelConfig.batchSize}, ${modelConfig.windowSize}, ${modelConfig.numberOfFeatures})',
+          ],
         );
       },
     );
-    if (!success) {
+
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: PredictFailureState(failure),
+        logs: [...state.logs, 'Predict failed: $failure'],
+      );
+      return;
+    }
+
+    if (predictions == null) {
       state = state.copyWith(
         logs: [...state.logs, 'Skipped'],
       );
-    } else {
-      state = state.copyWith(
-        predictState: PredictState.predicting,
-        logs: [
-          ...state.logs,
-          'Predicting (${modelConfig.batchSize}, ${modelConfig.windowSize}, ${modelConfig.numberOfFeatures})',
-        ],
-      );
+      return;
     }
+
+    state = state.copyWith(
+      predictState: PredictState.ready,
+      predictedCategory: predictions.last,
+      predictedCategories: [...?state.predictedCategories, ...predictions],
+      logs: [...state.logs, 'Predicted: $predictions'],
+    );
   }
 
   Future<void> startRecording() async {
@@ -262,39 +267,6 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
       presentationState: const PredictSuccessState(),
       recordState: RecordState.ready,
       logs: [...state.logs, 'Stopped recording'],
-    );
-  }
-
-  Future<void> singlePredict(List<num> data) async {
-    final modelConfig = state.modelConfig;
-
-    state = state.copyWith(
-      predictState: PredictState.predicting,
-      logs: [
-        ...state.logs,
-        'Predicting (${modelConfig.batchSize}, ${modelConfig.windowSize}, ${modelConfig.numberOfFeatures})',
-      ],
-    );
-
-    _labRepository.predict(
-      path: _mlModel.path,
-      data: data,
-      config: modelConfig,
-      previousLabels: null,
-      onPredict: (labels) {
-        state = state.copyWith(
-          predictedCategory: labels[0],
-          predictState: PredictState.ready,
-          logs: [...state.logs, 'Predicted: $labels'],
-        );
-      },
-      onError: (failure) {
-        state = state.copyWith(
-          predictState: PredictState.ready,
-          logs: [...state.logs, 'Predict failed: $failure'],
-          presentationState: PredictFailureState(failure),
-        );
-      },
     );
   }
 

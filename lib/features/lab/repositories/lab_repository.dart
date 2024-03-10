@@ -12,12 +12,12 @@ import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:onnxruntime/onnxruntime.dart';
+import 'package:synchronized/synchronized.dart';
 
 class LabRepository {
-  OrtSession? _session;
-  Future<void> Function()? _predictFuture;
+  final _lock = Lock();
 
-  final predictionWindow = <int>[];
+  OrtSession? _session;
 
   final _labelCategories = {
     0: SholatMovementCategory.takbir,
@@ -30,27 +30,30 @@ class LabRepository {
     7: SholatMovementCategory.transisi,
   };
 
-  Future<void> initialiseOrt(String path) async {
+  void _initialiseOrt(String path) {
     OrtEnv.instance.init();
     final sessionOptions = OrtSessionOptions();
     _session = OrtSession.fromFile(File(path), sessionOptions);
   }
 
-  bool predict({
+  Future<(Failure?, List<SholatMovementCategory>?)> predict({
     required String path,
     required List<num> data,
     required List<SholatMovementCategory>? previousLabels,
     required MlModelConfig config,
-    required void Function(List<SholatMovementCategory> labelCategories)
-        onPredict,
-    required void Function(Failure failure) onError,
-  }) {
-    if (_predictFuture != null) return false;
+    required bool ignoreWhenLocked,
+    void Function()? onPredicting,
+  }) async {
+    try {
+      if (_lock.locked && ignoreWhenLocked) return (null, null);
 
-    _predictFuture = () async {
-      try {
+      onPredicting?.call();
+
+      return _lock.synchronized(() async {
+        await Future.delayed(const Duration(seconds: 5), () {});
+
         if (_session == null) {
-          await initialiseOrt(path);
+          _initialiseOrt(path);
         }
 
         final inputOrt = OrtValueTensor.createTensorWithDataList(
@@ -124,15 +127,6 @@ class LabRepository {
         }
 
         final indexes = _argmaxByAxis(postProcessedPred, 1);
-        // log(indexes.toString());
-        // log(yPred.toString());
-        // log(movingAverageSmoothing(yPred[0], windowSize).toString());
-        onPredict(indexes.map((i) => _labelCategories[i]!).toList());
-        // onPredict(
-        //   applyTransitionConstraints(yPred, 10, windowSize)
-        //       .map((i) => _labelCategories[i]!)
-        //       .toList(),
-        // );
 
         inputOrt.release();
         runOptions.release();
@@ -140,17 +134,14 @@ class LabRepository {
         for (final element in outputs) {
           element?.release();
         }
-      } catch (e, stackTrace) {
-        const message = 'Failed to predict';
-        final failure = Failure(message, error: e, stackTrace: stackTrace);
-        onError(failure);
-      } finally {
-        _predictFuture = null;
-      }
-    };
-    _predictFuture?.call();
-
-    return true;
+        final predictions = indexes.map((i) => _labelCategories[i]!).toList();
+        return (null, predictions);
+      });
+    } catch (e, stackTrace) {
+      const message = 'Failed to predict';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
   }
 
   List<num> _generateTeacherForcingLabels({

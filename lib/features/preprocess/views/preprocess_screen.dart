@@ -18,6 +18,7 @@ import 'package:flutter_sholat_ml/features/preprocess/views/preprocess_shortcuts
 import 'package:flutter_sholat_ml/features/preprocess/widgets/accelerometer_chart_widget.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/bottom_panel_widget.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/dataset_prop_tile_widget.dart';
+import 'package:flutter_sholat_ml/features/preprocess/widgets/end_drawer_widget.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/preprocess_toolbar_widget.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/menus.dart';
@@ -669,6 +670,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
               },
             ),
           ),
+          endDrawer: EndDrawer(
+            onModelSelected: (model) {},
+          ),
           body: MultiSplitView(
             controller: _mainSplitController,
             axis: shouldVertical ? Axis.vertical : Axis.horizontal,
@@ -1067,6 +1071,16 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
               ],
             ),
           ),
+        ),
+        Builder(
+          builder: (context) {
+            return IconButton(
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+              icon: const Icon(Symbols.model_training_rounded),
+            );
+          },
         ),
         _buildMenu(datasetProp),
         const SizedBox(width: 12),

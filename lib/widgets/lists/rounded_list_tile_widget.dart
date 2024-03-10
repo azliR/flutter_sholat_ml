@@ -7,6 +7,9 @@ class RoundedListTile extends StatelessWidget {
     this.leading,
     this.trailing,
     this.tileColor,
+    this.titleTextStyle,
+    this.dense,
+    this.filled = true,
     this.margin,
     this.contentPadding,
     this.selected,
@@ -20,6 +23,9 @@ class RoundedListTile extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final Color? tileColor;
+  final bool? dense;
+  final bool filled;
+  final TextStyle? titleTextStyle;
   final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry? contentPadding;
   final bool? selected;
@@ -28,27 +34,43 @@ class RoundedListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card.filled(
+    if (filled) {
+      return Card.filled(
+        margin:
+            margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        clipBehavior: Clip.antiAlias,
+        child: _buildTile(context),
+      );
+    }
+    return Card.outlined(
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        title: title,
-        subtitle: subtitle,
-        leading: leading,
-        contentPadding: contentPadding ??
-            ((trailing is Icon || trailing is IconButton)
-                ? const EdgeInsets.fromLTRB(16, 0, 8, 0)
-                : const EdgeInsets.fromLTRB(16, 0, 16, 0)),
-        trailing: trailing,
-        onTap: onTap,
-        onLongPress: onLongPress,
-        enabled: onTap != null,
-        selected: selected ?? false,
-        selectedTileColor: colorScheme.primaryContainer,
-      ),
+      child: _buildTile(context),
+    );
+  }
+
+  ListTile _buildTile(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListTile(
+      title: title,
+      subtitle: subtitle,
+      leading: leading,
+      contentPadding: contentPadding ??
+          switch (trailing) {
+            Icon() => const EdgeInsets.fromLTRB(16, 0, 12, 0),
+            IconButton() => const EdgeInsets.fromLTRB(16, 0, 0, 0),
+            MenuAnchor() => const EdgeInsets.fromLTRB(16, 0, 12, 0),
+            _ => const EdgeInsets.fromLTRB(16, 0, 16, 0),
+          },
+      trailing: trailing,
+      titleTextStyle: titleTextStyle,
+      dense: dense,
+      onTap: onTap,
+      onLongPress: onLongPress,
+      enabled: onTap != null,
+      selected: selected ?? false,
+      selectedTileColor: colorScheme.primaryContainer,
     );
   }
 }

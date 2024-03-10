@@ -17,6 +17,9 @@ class PreprocessState extends Equatable {
     required this.dataItems,
     required this.selectedDataItemIndexes,
     required this.problems,
+    required this.selectedModel,
+    required this.recordState,
+    required this.predictedCategories,
     required this.presentationState,
   });
 
@@ -35,6 +38,9 @@ class PreprocessState extends Equatable {
         dataItems: [],
         selectedDataItemIndexes: {},
         problems: [],
+        selectedModel: null,
+        recordState: RecordState.ready,
+        predictedCategories: null,
         presentationState: PreprocessInitial(),
       );
 
@@ -52,6 +58,9 @@ class PreprocessState extends Equatable {
   final List<DataItem> dataItems;
   final Set<int> selectedDataItemIndexes;
   final List<Problem> problems;
+  final MlModel? selectedModel;
+  final RecordState recordState;
+  final List<SholatMovementCategory?>? predictedCategories;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -69,6 +78,9 @@ class PreprocessState extends Equatable {
     List<DataItem>? dataItems,
     Set<int>? selectedDataItemIndexes,
     List<Problem>? problems,
+    ValueGetter<MlModel?>? selectedModel,
+    RecordState? recordState,
+    ValueGetter<List<SholatMovementCategory?>?>? predictedCategories,
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(
@@ -91,6 +103,13 @@ class PreprocessState extends Equatable {
       selectedDataItemIndexes:
           selectedDataItemIndexes ?? this.selectedDataItemIndexes,
       problems: problems ?? this.problems,
+      selectedModel:
+          selectedModel != null ? selectedModel() : this.selectedModel,
+      recordState: recordState ?? this.recordState,
+      // recordState: recordState != null ? recordState() : this.recordState,
+      predictedCategories: predictedCategories != null
+          ? predictedCategories()
+          : this.predictedCategories,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -111,6 +130,9 @@ class PreprocessState extends Equatable {
         dataItems,
         selectedDataItemIndexes,
         problems,
+        selectedModel,
+        recordState,
+        predictedCategories,
         presentationState,
       ];
 }

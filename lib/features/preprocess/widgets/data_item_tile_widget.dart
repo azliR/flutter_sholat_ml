@@ -10,6 +10,7 @@ class DataItemTile extends StatelessWidget {
   const DataItemTile({
     required this.index,
     required this.dataItem,
+    required this.predictedCategory,
     required this.onTap,
     required this.onLongPress,
     required this.isHighlighted,
@@ -20,6 +21,7 @@ class DataItemTile extends StatelessWidget {
 
   final int index;
   final DataItem dataItem;
+  final SholatMovementCategory? predictedCategory;
   final void Function() onTap;
   final void Function() onLongPress;
   final bool isHighlighted;
@@ -52,8 +54,8 @@ class DataItemTile extends StatelessWidget {
         color: colorScheme.secondary,
         weight: 300,
       );
-    } else if (dataItem.isLabeled) {
-      final category = dataItem.labelCategory!;
+    } else if (predictedCategory != null || dataItem.isLabeled) {
+      final category = predictedCategory ?? dataItem.labelCategory!;
       final iconPath = switch (category) {
         SholatMovementCategory.takbir => AssetImages.takbir,
         SholatMovementCategory.berdiri => AssetImages.berdiri,
@@ -69,7 +71,7 @@ class DataItemTile extends StatelessWidget {
         width: 24,
         height: 24,
         colorFilter: ColorFilter.mode(
-          colorScheme.primary,
+          predictedCategory != null ? colorScheme.outline : colorScheme.primary,
           BlendMode.srcIn,
         ),
       );

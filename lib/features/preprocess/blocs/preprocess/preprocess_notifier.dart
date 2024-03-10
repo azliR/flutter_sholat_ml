@@ -9,6 +9,9 @@ import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
+import 'package:flutter_sholat_ml/features/lab/repositories/lab_repository.dart';
+import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
@@ -23,9 +26,12 @@ final preprocessProvider =
 );
 
 class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
-  PreprocessNotifier() : _preprocessRepository = PreprocessRepository();
+  PreprocessNotifier()
+      : _preprocessRepository = PreprocessRepository(),
+        _labRepository = LabRepository();
 
   final PreprocessRepository _preprocessRepository;
+  final LabRepository _labRepository;
 
   @override
   PreprocessState build() {
@@ -346,6 +352,89 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       datasetProp: datasetProp,
       isEdited: false,
       presentationState: SaveDatasetSuccessState(isAutosave: isAutoSaving),
+    );
+  }
+
+  void setModel(MlModel? model) {
+    state = state.copyWith(selectedModel: () => model);
+  }
+
+  void setPredictions(List<SholatMovementCategory?>? predictions) {
+    state = state.copyWith(predictedCategories: () => predictions);
+  }
+
+  Future<void> startPrediction() async {
+    final model = state.selectedModel;
+    if (model == null) return;
+
+    state = state.copyWith(recordState: RecordState.recording);
+
+    final (computeFailure, data) =
+        await compute<(List<DataItem>,), (Failure?, List<num>?)>(
+      (message) {
+        final (dataItems,) = message;
+        final data = dataItems
+            .map((dataItem) => [dataItem.x, dataItem.y, dataItem.z])
+            .expand((e) => e)
+            .toList(growable: false);
+        return (null, data);
+      },
+      (state.dataItems,),
+    ).catchError((e) {
+      final failure = Failure('Failed to run isolate', error: e);
+      return (failure, null);
+    });
+
+    if (computeFailure != null) {
+      state = state.copyWith(recordState: RecordState.ready);
+      return;
+    }
+
+    final batchSize = state.dataItems.length ~/ model.config.windowSize;
+
+    final (failure, predictions) = await _labRepository.predict(
+      path: model.path,
+      data: data!,
+      previousLabels: null,
+      config: model.config.copyWith(
+        batchSize: batchSize,
+      ),
+      ignoreWhenLocked: false,
+    );
+
+    if (failure != null) {
+      state = state.copyWith(recordState: RecordState.ready);
+      return;
+    }
+
+    if (predictions == null) {
+      state = state.copyWith(recordState: RecordState.ready);
+      return;
+    }
+
+    var firstTakbirFound = false;
+    final expandedPredictions = predictions.expand((category) {
+      if (!firstTakbirFound && category == SholatMovementCategory.takbir) {
+        firstTakbirFound = true;
+      }
+
+      return List.filled(batchSize, firstTakbirFound ? category : null);
+    }).toList();
+
+    if (expandedPredictions.length < state.dataItems.length) {
+      expandedPredictions.addAll(
+        List.filled(state.dataItems.length - expandedPredictions.length, null),
+      );
+    } else if (expandedPredictions.length > state.dataItems.length) {
+      expandedPredictions.removeRange(
+        state.dataItems.length,
+        expandedPredictions.length,
+      );
+    }
+
+    state = state.copyWith(
+      predictedCategories: () => expandedPredictions,
+      recordState: RecordState.ready,
     );
   }
 }

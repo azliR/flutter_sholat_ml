@@ -28,7 +28,7 @@ class LabScreen extends ConsumerStatefulWidget {
   final MlModel model;
   final BluetoothDevice? device;
   final List<BluetoothService>? services;
-  final void Function(MlModel model) onModelChanged;
+  final void Function(MlModel model)? onModelChanged;
 
   @override
   ConsumerState<LabScreen> createState() => _LabScreenState();
@@ -115,7 +115,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
       ..listen(
         labProviderFamily.select((value) => value.model),
         (previous, model) {
-          widget.onModelChanged(model);
+          widget.onModelChanged?.call(model);
         },
       );
 
@@ -211,8 +211,9 @@ class _LabScreenState extends ConsumerState<LabScreen> {
             child: Consumer(
               builder: (context, ref, child) {
                 final modelName = ref.watch(
-                    labProviderFamily.select((value) => value.model.name));
-                return Text(modelName ?? 'Input model name');
+                  labProviderFamily.select((value) => value.model.name),
+                );
+                return Text(modelName);
               },
             ),
           ),
@@ -427,8 +428,10 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                     onSelected: recordState != RecordState.ready
                         ? null
                         : (filter, selected) {
-                            final modelConfig = ref.read(labProviderFamily
-                                .select((value) => value.modelConfig));
+                            final modelConfig = ref.read(
+                              labProviderFamily
+                                  .select((value) => value.modelConfig),
+                            );
 
                             _notifier.setModelConfig(
                               modelConfig.copyWith(
@@ -459,8 +462,10 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                     onSelected: recordState != RecordState.ready
                         ? null
                         : (filter, selected) {
-                            final modelConfig = ref.read(labProviderFamily
-                                .select((value) => value.modelConfig));
+                            final modelConfig = ref.read(
+                              labProviderFamily
+                                  .select((value) => value.modelConfig),
+                            );
 
                             _notifier.setModelConfig(
                               modelConfig.copyWith(
@@ -493,8 +498,10 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                     onSelected: recordState != RecordState.ready
                         ? null
                         : (filter, selected) {
-                            final modelConfig = ref.read(labProviderFamily
-                                .select((value) => value.modelConfig));
+                            final modelConfig = ref.read(
+                              labProviderFamily
+                                  .select((value) => value.modelConfig),
+                            );
 
                             _notifier.setModelConfig(
                               modelConfig.copyWith(

@@ -34,6 +34,8 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
   Widget build(BuildContext context) {
     final dataItems =
         ref.watch(preprocessProvider.select((state) => state.dataItems));
+    final predictedCategories = ref
+        .watch(preprocessProvider.select((state) => state.predictedCategories));
     // final (_, indexes, groupedDataItems) =
     //     dataItems.fold((0, <int>[], <DataItem>[]), (previousValue, element) {
     //   final index = previousValue.$1;
@@ -94,10 +96,12 @@ class _PreprocessDatasetListState extends ConsumerState<PreprocessDatasetList> {
                   );
 
                   final dataItem = dataItems[index];
+                  final predictedCategory = predictedCategories?[index];
 
                   return DataItemTile(
                     index: index,
                     dataItem: dataItem,
+                    predictedCategory: predictedCategory,
                     isHighlighted: index == currentHighlightedIndex,
                     isSelected: selected,
                     hasProblem: hasProblem,
