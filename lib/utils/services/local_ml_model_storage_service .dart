@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:dartx/dartx_io.dart';
+import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:hive/hive.dart';
 
@@ -10,16 +11,34 @@ class LocalMlModelStorageService {
 
   static int get mlModelLength => _box.length;
 
-  static Future<List<MlModel>> getMlModelRange(int start, int end) async {
+  static Future<List<MlModel>> getMlModelRange(
+    int start,
+    int end, {
+    required SortType sortType,
+    required SortDirection sortDirection,
+  }) async {
     if (_box.length == 0) {
       return [];
     }
 
     final keys = _box.keys.toList();
-    final data = _box
-        .getAll(keys)
-        .sortedByDescending((model) => model!.updatedAt)
-        .getRange(min(start, keys.length), min(end, keys.length));
+    final data = _box.getAll(keys).cast<MlModel>().sortedWith(
+      (a, b) {
+        int comparison;
+        switch (sortType) {
+          case SortType.modelName:
+            comparison = a.name.compareTo(b.name);
+          case SortType.lastUpdated:
+            comparison = a.updatedAt.compareTo(b.updatedAt);
+        }
+
+        if (sortDirection == SortDirection.descending) {
+          comparison = -comparison;
+        }
+
+        return comparison;
+      },
+    ).getRange(min(start, keys.length), min(end, keys.length));
 
     return data.toList().cast();
   }

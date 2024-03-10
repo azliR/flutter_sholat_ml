@@ -95,6 +95,17 @@ class _AppState extends State<App> {
 
     return themeData.copyWith(
       colorScheme: colorScheme,
+      menuButtonTheme: MenuButtonThemeData(
+        style: MenuItemButton.styleFrom(
+          minimumSize: const Size(160, 56),
+          padding: const EdgeInsets.fromLTRB(16, 0, 20, 0),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
       ),

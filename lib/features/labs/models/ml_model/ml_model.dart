@@ -8,7 +8,7 @@ part 'ml_model.g.dart';
 class MlModel with _$MlModel {
   const factory MlModel({
     required String id,
-    required String? name,
+    required String name,
     required String path,
     required String? description,
     required DateTime createdAt,

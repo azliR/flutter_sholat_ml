@@ -21,7 +21,7 @@ MlModel _$MlModelFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MlModel {
   String get id => throw _privateConstructorUsedError;
-  String? get name => throw _privateConstructorUsedError;
+  String get name => throw _privateConstructorUsedError;
   String get path => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
@@ -56,7 +56,7 @@ abstract class $MlModelCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String? name,
+      String name,
       String path,
       String? description,
       DateTime createdAt,
@@ -80,7 +80,7 @@ class _$MlModelCopyWithImpl<$Res, $Val extends MlModel>
   @override
   $Res call({
     Object? id = null,
-    Object? name = freezed,
+    Object? name = null,
     Object? path = null,
     Object? description = freezed,
     Object? createdAt = null,
@@ -92,10 +92,10 @@ class _$MlModelCopyWithImpl<$Res, $Val extends MlModel>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      name: freezed == name
+      name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as String,
       path: null == path
           ? _value.path
           : path // ignore: cast_nullable_to_non_nullable
@@ -137,7 +137,7 @@ abstract class _$$MlModelImplCopyWith<$Res> implements $MlModelCopyWith<$Res> {
   @useResult
   $Res call(
       {String id,
-      String? name,
+      String name,
       String path,
       String? description,
       DateTime createdAt,
@@ -160,7 +160,7 @@ class __$$MlModelImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? name = freezed,
+    Object? name = null,
     Object? path = null,
     Object? description = freezed,
     Object? createdAt = null,
@@ -172,10 +172,10 @@ class __$$MlModelImplCopyWithImpl<$Res>
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as String,
-      name: freezed == name
+      name: null == name
           ? _value.name
           : name // ignore: cast_nullable_to_non_nullable
-              as String?,
+              as String,
       path: null == path
           ? _value.path
           : path // ignore: cast_nullable_to_non_nullable
@@ -226,7 +226,7 @@ class _$MlModelImpl implements _MlModel {
   @override
   final String id;
   @override
-  final String? name;
+  final String name;
   @override
   final String path;
   @override
@@ -311,7 +311,7 @@ class _$MlModelImpl implements _MlModel {
 abstract class _MlModel implements MlModel {
   const factory _MlModel(
       {required final String id,
-      required final String? name,
+      required final String name,
       required final String path,
       required final String? description,
       required final DateTime createdAt,
@@ -323,7 +323,7 @@ abstract class _MlModel implements MlModel {
   @override
   String get id;
   @override
-  String? get name;
+  String get name;
   @override
   String get path;
   @override

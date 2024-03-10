@@ -4,9 +4,11 @@ import 'package:dartx/dartx_io.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_sholat_ml/constants/directories.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
+import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
+import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -14,13 +16,19 @@ import 'package:uuid/uuid.dart';
 class LabsRepository {
   Future<(Failure?, List<MlModel>?)> getLocalMlModels(
     int start,
-    int limit,
-  ) async {
+    int limit, {
+    required SortType sortType,
+    required SortDirection sortDirection,
+  }) async {
     try {
       final mlModelProps = await LocalMlModelStorageService.getMlModelRange(
         start,
         start + limit,
+        sortType: sortType,
+        sortDirection: sortDirection,
       );
+      LocalStorageService.setLabsSortType(sortType);
+      LocalStorageService.setLabsSortDirection(sortDirection);
 
       return (null, mlModelProps);
     } catch (e, stackTrace) {
@@ -86,7 +94,7 @@ class LabsRepository {
 
       final mlModel = MlModel(
         id: modelId,
-        name: name,
+        name: name ?? basenameWithoutExtension(tempPath),
         path: outputPath,
         description: description,
         updatedAt: now,

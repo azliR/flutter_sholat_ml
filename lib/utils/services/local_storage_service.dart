@@ -1,4 +1,5 @@
 import 'package:flutter_sholat_ml/core/auth_device/models/device/device.dart';
+import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
 import 'package:hive/hive.dart';
 
 class LocalStorageService {
@@ -18,6 +19,9 @@ class LocalStorageService {
       'preprocess_split_view_2_weights';
   static const String kPreprocessSplitView3Weights =
       'preprocess_split_view_3_weights';
+
+  static const String kLabsSortType = 'labs_sort_type';
+  static const String kLabsSortDirection = 'labs_sort_direction';
 
   static const String kLabShowBottomPanel = 'lab_show_problem_panel';
   static const String kLabSplitView1Weights = 'lab_split_view_1_weights';
@@ -107,6 +111,22 @@ class LocalStorageService {
   static List<double> getPreprocessSplitView3Weights() {
     return (_box.get(kPreprocessSplitView3Weights) as List? ?? [])
         .cast<double>();
+  }
+
+  static void setLabsSortType(SortType value) {
+    _box.put(kLabsSortType, value.index);
+  }
+
+  static SortType getLabsSortType() {
+    return SortType.values[_box.get(kLabsSortType) as int? ?? 0];
+  }
+
+  static void setLabsSortDirection(SortDirection value) {
+    _box.put(kLabsSortDirection, value.index);
+  }
+
+  static SortDirection getLabsSortDirection() {
+    return SortDirection.values[_box.get(kLabsSortDirection) as int? ?? 0];
   }
 
   static void setLabShowBottomPanel({required bool enable}) {

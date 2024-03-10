@@ -9,7 +9,6 @@ import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' hide context;
@@ -127,6 +126,95 @@ class _LabsPageState extends ConsumerState<LabsPage> {
             _buildAppBarMenu(),
             const SizedBox(width: 8),
           ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(64),
+            child: SizedBox(
+              height: 64,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final sortType = ref.watch(
+                        labsProvider.select((value) => value.sortType),
+                      );
+
+                      return MenuAnchor(
+                        builder: (context, controller, child) {
+                          return ActionChip(
+                            label: Text(sortType.name),
+                            avatar: const Icon(Symbols.sort_rounded),
+                            onPressed: () {
+                              if (controller.isOpen) {
+                                controller.close();
+                              } else {
+                                controller.open();
+                              }
+                            },
+                          );
+                        },
+                        menuChildren: SortType.values.map((sortType) {
+                          return MenuItemButton(
+                            onPressed: () {
+                              _notifier.setSortType(sortType);
+                              _mlModelsPagingController.refresh();
+                            },
+                            leadingIcon: switch (sortType) {
+                              SortType.modelName =>
+                                const Icon(Symbols.sort_by_alpha_rounded),
+                              SortType.lastUpdated =>
+                                const Icon(Symbols.calendar_today_rounded),
+                            },
+                            child: Text(sortType.name),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final sortDirection = ref.watch(
+                        labsProvider.select((value) => value.sortDirection),
+                      );
+
+                      return MenuAnchor(
+                        builder: (context, controller, child) {
+                          return ActionChip(
+                            label: Text(sortDirection.name),
+                            avatar: const Icon(Symbols.swap_vert_rounded),
+                            onPressed: () {
+                              if (controller.isOpen) {
+                                controller.close();
+                              } else {
+                                controller.open();
+                              }
+                            },
+                          );
+                        },
+                        menuChildren: SortDirection.values.map((sortDirection) {
+                          return MenuItemButton(
+                            onPressed: () {
+                              _notifier.setSortDirection(sortDirection);
+                              _mlModelsPagingController.refresh();
+                            },
+                            leadingIcon: switch (sortDirection) {
+                              SortDirection.ascending =>
+                                const Icon(Symbols.arrow_upward_rounded),
+                              SortDirection.descending =>
+                                const Icon(Symbols.arrow_downward_rounded),
+                            },
+                            child: Text(sortDirection.name),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
       body: RefreshIndicator(
@@ -151,7 +239,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
             itemBuilder: (context, model, index) {
               return RoundedListTile(
                 leading: Text(extension(model.path).substring(1).toUpperCase()),
-                title: Text(model.name ?? _formatDateTime(model.createdAt)),
+                title: Text(model.name),
                 trailing: _buildMenu(model),
                 onTap: () {
                   final currentBluetoothDevice =
@@ -206,10 +294,6 @@ class _LabsPageState extends ConsumerState<LabsPage> {
       ],
       child: const Icon(Symbols.more_vert_rounded),
     );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return DateFormat("EEEE 'at' HH:mm").format(dateTime);
   }
 
   Widget _buildAppBarMenu() {
