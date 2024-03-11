@@ -177,7 +177,14 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
           },
           child: const Text('Force download dataset'),
         ),
-        if (datasetPath != null && (dataset.downloaded ?? false))
+        if (datasetPath != null && (dataset.downloaded ?? false)) ...[
+          MenuItemButton(
+            leadingIcon: const Icon(Symbols.share_rounded),
+            onPressed: () async {
+              await _notifier.exportAndShareDatasets([datasetPath]);
+            },
+            child: const Text('Export & share'),
+          ),
           MenuItemButton(
             leadingIcon: const Icon(Symbols.delete_rounded),
             onPressed: () async {
@@ -188,6 +195,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
             },
             child: const Text('Delete from device'),
           ),
+        ],
         MenuItemButton(
           leadingIcon: const Icon(Symbols.delete_forever_rounded),
           onPressed: () => _notifier.deleteDatasetFromCloud(index, dataset),
