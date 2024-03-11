@@ -173,7 +173,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
     );
   }
 
-  Row _buildEditModelNameField() {
+  Widget _buildEditModelNameField() {
     return Row(
       children: [
         Flexible(
@@ -205,25 +205,28 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                 '';
         setState(() => _editNameMode = true);
       },
-      child: Row(
-        children: [
-          Flexible(
-            child: Consumer(
-              builder: (context, ref, child) {
-                final modelName = ref.watch(
-                  labProviderFamily.select((value) => value.model.name),
-                );
-                return Text(modelName);
-              },
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          children: [
+            Flexible(
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final modelName = ref.watch(
+                    labProviderFamily.select((value) => value.model.name),
+                  );
+                  return Text(modelName);
+                },
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(
-            Symbols.edit_rounded,
-            size: 16,
-            weight: 600,
-          ),
-        ],
+            const SizedBox(width: 8),
+            const Icon(
+              Symbols.edit_rounded,
+              size: 16,
+              weight: 600,
+            ),
+          ],
+        ),
       ),
     );
   }

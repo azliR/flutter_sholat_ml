@@ -148,16 +148,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final data = MediaQuery.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final orientation = MediaQuery.orientationOf(context);
+    final padding = MediaQuery.paddingOf(context);
 
     final NavigationType navigationType;
-    if (data.size.width < 600) {
-      if (data.orientation == Orientation.portrait) {
+    if (size.width < 600) {
+      if (orientation == Orientation.portrait) {
         navigationType = NavigationType.bottom;
       } else {
         navigationType = NavigationType.rail;
       }
-    } else if (data.size.width < 1280) {
+    } else if (size.width < 1280) {
       navigationType = NavigationType.rail;
     } else {
       navigationType = NavigationType.drawer;
@@ -183,6 +185,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       transitionBuilder: (context, child, animation) => FadeThroughTransition(
         animation: animation,
         secondaryAnimation: ReverseAnimation(animation),
+        fillColor: colorScheme.background,
         child: child,
       ),
       builder: (context, child) {
@@ -231,7 +234,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onDestinationSelected: (index) =>
                       _onNavigationChanged(tabsRouter, index),
                   children: [
-                    SizedBox(height: data.padding.top + 16),
+                    SizedBox(height: padding.top + 16),
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -302,32 +305,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildFAB(HomeScreenNavigationTab navigationTab) {
-    return switch (navigationTab) {
-      HomeScreenNavigationTab.savedDevice => FloatingActionButton(
-          key: const ValueKey('add_device'),
-          tooltip: 'Record',
-          elevation: 2,
-          onPressed: _onAddDevicePressed,
-          child: const Icon(Symbols.add_rounded),
-        ),
-      HomeScreenNavigationTab.datasets => FloatingActionButton(
-          key: const ValueKey('record'),
-          tooltip: 'Record',
-          elevation: 2,
-          onPressed: _onRecordPressed,
-          child: const Icon(Symbols.videocam_rounded),
-        ),
-      HomeScreenNavigationTab.labs => FloatingActionButton(
-          key: const ValueKey('add_model'),
-          tooltip: 'Add model',
-          elevation: 2,
-          onPressed: _onAddModelPressed,
-          child: const Icon(Symbols.add_rounded),
-        ),
-    };
-  }
-
   Widget _buildLargeFAB(HomeScreenNavigationTab navigationTab) {
     return switch (navigationTab) {
       HomeScreenNavigationTab.savedDevice => FloatingActionButton.large(
@@ -349,6 +326,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: const Icon(Symbols.add_rounded),
         ),
     };
+  }
+
+  Widget _buildFAB(HomeScreenNavigationTab navigationTab) {
+    return AnimatedSwitcher(
+      transitionBuilder: (child, animation) => FadeThroughTransition(
+        animation: animation,
+        fillColor: Colors.transparent,
+        secondaryAnimation: ReverseAnimation(animation),
+        child: child,
+      ),
+      duration: const Duration(milliseconds: 250),
+      child: switch (navigationTab) {
+        HomeScreenNavigationTab.savedDevice => FloatingActionButton(
+            key: const ValueKey('add_device'),
+            tooltip: 'Record',
+            elevation: 2,
+            onPressed: _onAddDevicePressed,
+            child: const Icon(Symbols.add_rounded),
+          ),
+        HomeScreenNavigationTab.datasets => FloatingActionButton(
+            key: const ValueKey('record'),
+            tooltip: 'Record',
+            elevation: 2,
+            onPressed: _onRecordPressed,
+            child: const Icon(Symbols.videocam_rounded),
+          ),
+        HomeScreenNavigationTab.labs => FloatingActionButton(
+            key: const ValueKey('add_model'),
+            tooltip: 'Add model',
+            elevation: 2,
+            onPressed: _onAddModelPressed,
+            child: const Icon(Symbols.add_rounded),
+          ),
+      },
+    );
   }
 
   Widget _buildExtendedFAB(HomeScreenNavigationTab navigationTab) {

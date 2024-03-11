@@ -19,8 +19,8 @@ final noiseMovementProvider =
     StateProvider.autoDispose<SholatNoiseMovement?>((ref) => null);
 final dontShowWarningProvider = StateProvider.autoDispose<bool>((ref) => false);
 
-class PreprocessToolbar extends ConsumerStatefulWidget {
-  const PreprocessToolbar({
+class Toolbar extends ConsumerStatefulWidget {
+  const Toolbar({
     required this.videoPlayerController,
     required this.onFollowHighlighted,
     super.key,
@@ -30,10 +30,10 @@ class PreprocessToolbar extends ConsumerStatefulWidget {
   final void Function() onFollowHighlighted;
 
   @override
-  ConsumerState<PreprocessToolbar> createState() => _PreprocessToolbarState();
+  ConsumerState<Toolbar> createState() => _PreprocessToolbarState();
 }
 
-class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
+class _PreprocessToolbarState extends ConsumerState<Toolbar> {
   late final PreprocessNotifier _notifier;
 
   var _showWarning = true;
@@ -255,7 +255,7 @@ class _PreprocessToolbarState extends ConsumerState<PreprocessToolbar> {
       movement,
       movementSetId: movementSetId,
     );
-    if (!context.mounted) return;
+    if (!mounted) return;
     showSnackbar(
       context,
       'Data items labeled with movement ID: \n'

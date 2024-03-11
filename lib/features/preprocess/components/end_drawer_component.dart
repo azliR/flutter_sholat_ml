@@ -8,17 +8,13 @@ import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
-import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class EndDrawer extends ConsumerStatefulWidget {
   const EndDrawer({
-    required this.onModelSelected,
     super.key,
   });
-
-  final void Function(MlModel model) onModelSelected;
 
   @override
   ConsumerState<EndDrawer> createState() => _EndDrawerState();
@@ -26,7 +22,6 @@ class EndDrawer extends ConsumerStatefulWidget {
 
 class _EndDrawerState extends ConsumerState<EndDrawer> {
   late final PreprocessNotifier _notifier;
-  LabNotifier? _labNotifier;
 
   Future<void> _onSelectModel() async {
     final model = await context.router.push<MlModel>(const ModelPickerRoute());
@@ -38,39 +33,25 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
-    final model = ref.read(preprocessProvider).selectedModel;
-    if (model != null) {
-      _labNotifier = ref.read(labProvider(LabArg(model: model)).notifier);
-    }
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    ref.listen(
-      preprocessProvider.select((value) => value.selectedModel),
-      (previous, model) {
-        if (model != null) {
-          _labNotifier = ref.read(labProvider(LabArg(model: model)).notifier);
-        } else {
-          _labNotifier = null;
-        }
-      },
-    );
-
     final selectedModel =
         ref.watch(preprocessProvider.select((value) => value.selectedModel));
 
     return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(left: Radius.circular(16)),
+      ),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
         transitionBuilder: (child, animation) {
           return FadeThroughTransition(
             animation: animation,
             secondaryAnimation: ReverseAnimation(animation),
+            fillColor: Colors.transparent,
             child: child,
           );
         },
@@ -106,7 +87,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
     return ListView(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(
             'Model',
             style: Theme.of(context).textTheme.titleSmall,
@@ -134,11 +115,6 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
                 ref.read(authDeviceProvider).currentBluetoothDevice;
             final currentServices =
                 ref.read(authDeviceProvider).currentServices;
-
-            if (currentBluetoothDevice == null || currentServices == null) {
-              showSnackbar(context, 'No connected device found');
-              return;
-            }
 
             context.router.push(
               LabRoute(

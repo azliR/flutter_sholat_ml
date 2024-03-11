@@ -25,7 +25,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final device = await _authDeviceNotifier.getPrimaryDevice();
     if (device == null) {
       if (!mounted) return;
-      await context.router.replace(const SavedDevicesPage());
+      await context.router.pushAndPopUntil(
+        const SavedDevicesPage(),
+        predicate: (_) => false,
+      );
       return;
     }
     await _authDeviceNotifier.connectToSavedDevice(device);

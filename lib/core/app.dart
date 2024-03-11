@@ -6,14 +6,14 @@ import 'package:flutter_sholat_ml/core/settings/blocs/settings/settings_notifier
 import 'package:flutter_sholat_ml/l10n/l10n.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 
-class App extends StatefulWidget {
+class App extends ConsumerStatefulWidget {
   const App({super.key});
 
   @override
-  State<App> createState() => _AppState();
+  ConsumerState<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends ConsumerState<App> {
   final _appRouter = AppRouter();
 
   @override
@@ -32,6 +32,9 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode =
+        ref.watch(settingsProvider.select((value) => value.themeMode));
+
     final colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
     final darkColorScheme = ColorScheme.fromSeed(
         seedColor: Colors.green, brightness: Brightness.dark);
@@ -65,21 +68,14 @@ class _AppState extends State<App> {
           ),
         );
       },
-      child: Consumer(
-        builder: (context, ref, child) {
-          final themeMode =
-              ref.watch(settingsProvider.select((value) => value.themeMode));
-
-          return MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            themeMode: themeMode,
-            theme: lightTheme,
-            darkTheme: darkTheme,
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            routerConfig: _appRouter.config(),
-          );
-        },
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        themeMode: themeMode,
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: _appRouter.config(),
       ),
     );
   }
@@ -95,6 +91,7 @@ class _AppState extends State<App> {
 
     return themeData.copyWith(
       colorScheme: colorScheme,
+      scaffoldBackgroundColor: colorScheme.background,
       menuButtonTheme: MenuButtonThemeData(
         style: MenuItemButton.styleFrom(
           minimumSize: const Size(160, 56),

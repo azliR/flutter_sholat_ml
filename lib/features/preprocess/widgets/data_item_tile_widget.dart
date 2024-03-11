@@ -77,23 +77,24 @@ class DataItemTile extends StatelessWidget {
       );
     }
 
-    return InkWell(
-      onTap: onTap,
-      onLongPress: onLongPress,
-      child: DefaultTextStyle(
-        style: textTheme.bodyMedium!.copyWith(
-          color: _isColorDark(backgroundColor) ? Colors.white : Colors.black,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            border: Border.all(
-              color: isHighlighted ? colorScheme.outline : Colors.transparent,
-            ),
-            borderRadius: isHighlighted
-                ? const BorderRadius.all(Radius.circular(12))
-                : BorderRadius.zero,
+    return DefaultTextStyle(
+      style: textTheme.bodyMedium!.copyWith(
+        color: _isColorDark(backgroundColor) ? Colors.white : Colors.black,
+      ),
+      child: Material(
+        color: backgroundColor,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: isHighlighted ? colorScheme.outline : Colors.transparent,
           ),
+          borderRadius: isHighlighted
+              ? const BorderRadius.all(Radius.circular(12))
+              : BorderRadius.zero,
+        ),
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
           child: SizedBox(
             height: 30,
             child: Row(

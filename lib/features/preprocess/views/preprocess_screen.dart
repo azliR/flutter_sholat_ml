@@ -8,20 +8,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
-import 'package:flutter_sholat_ml/features/preprocess/components/preprocess_dataset_list_body.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/accelerometer_chart_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/bottom_panel_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/dataset_list_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/end_drawer_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/toolbar_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/video_dataset_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/features/preprocess/views/preprocess_shortcuts.dart';
-import 'package:flutter_sholat_ml/features/preprocess/widgets/accelerometer_chart_widget.dart';
-import 'package:flutter_sholat_ml/features/preprocess/widgets/bottom_panel_widget.dart';
-import 'package:flutter_sholat_ml/features/preprocess/widgets/dataset_prop_tile_widget.dart';
-import 'package:flutter_sholat_ml/features/preprocess/widgets/end_drawer_widget.dart';
-import 'package:flutter_sholat_ml/features/preprocess/widgets/preprocess_toolbar_widget.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
-import 'package:flutter_sholat_ml/utils/ui/menus.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -40,7 +40,7 @@ class PreprocessScreen extends ConsumerStatefulWidget {
 }
 
 class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final PreprocessNotifier _notifier;
 
   late final VideoPlayerController _videoPlayerController;
@@ -85,6 +85,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
   Timer? _moveHighlightDebouncer;
   double? _lastZoomFactor;
   double? _lastZoomPosition;
+
+  bool _showEndDrawer = true;
 
   Future<void> _videoListener() async {
     if (!mounted) return;
@@ -324,67 +326,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     );
   }
 
-  Future<void> _showSpeedMenu(BuildContext context) async {
-    final position = determineMenuPosition(context);
-
-    final result = await showMenu<double>(
-      context: context,
-      position: position,
-      initialValue: _videoPlayerController.value.playbackSpeed,
-      items: [
-        const PopupMenuItem(
-          height: 40,
-          value: 0.1,
-          child: Text('0.1'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 0.25,
-          child: Text('0.25'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 0.5,
-          child: Text('0.5'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 0.75,
-          child: Text('0.75'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 1,
-          child: Text('Normal'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 1.25,
-          child: Text('1.25'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 1.5,
-          child: Text('1.5'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 1.75,
-          child: Text('1.75'),
-        ),
-        const PopupMenuItem(
-          height: 40,
-          value: 2,
-          child: Text('2'),
-        ),
-      ],
-    );
-    if (result != null) {
-      await _videoPlayerController.setPlaybackSpeed(result);
-      _notifier.setVideoPlaybackSpeed(result);
-    }
-  }
-
   Future<void> _generateDataSources(List<DataItem> dataItems) async {
     final (x, y, z) =
         await compute<List<DataItem>, (List<num>, List<num>, List<num>)>(
@@ -477,11 +418,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
 
       await _generateDataSources(state.dataItems);
 
-      final isCompressed = state.datasetProp?.isCompressed ?? false;
+      // final isCompressed = state.datasetProp?.isCompressed ?? false;
 
-      if (!isCompressed) {
-        await _showCompressDialog();
-      }
+      // if (!isCompressed) {
+      //   await _showCompressDialog();
+      // }
     });
     super.initState();
   }
@@ -503,11 +444,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
 
   @override
   Widget build(BuildContext context) {
-    final data = MediaQuery.of(context);
-    final deviceWidth = data.size.width;
+    final width = MediaQuery.sizeOf(context).width;
     final colorScheme = Theme.of(context).colorScheme;
 
-    final shouldVertical = deviceWidth < 720;
+    final shouldVerticalLayout = width < 720;
+    final shouldShowEndDrawerSeparately = width > 1280;
 
     final dataItemsLength = ref.read(preprocessProvider).dataItems.length;
 
@@ -655,6 +596,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
         },
         child: Scaffold(
           resizeToAvoidBottomInset: false,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: PreferredSize(
             preferredSize: const Size.fromHeight(kToolbarHeight),
             child: Consumer(
@@ -665,193 +607,202 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                 return AppBar(
                   title: _buildAppBarTitle(datasetProp),
                   scrolledUnderElevation: 0,
-                  actions: _buildAppBarActions(datasetProp),
+                  actions: _buildAppBarActions(
+                    datasetProp,
+                    shouldShowEndDrawerSeparately:
+                        shouldShowEndDrawerSeparately,
+                  ),
                 );
               },
             ),
           ),
-          endDrawer: EndDrawer(
-            onModelSelected: (model) {},
-          ),
-          body: MultiSplitView(
-            controller: _mainSplitController,
-            axis: shouldVertical ? Axis.vertical : Axis.horizontal,
-            dividerBuilder: _buildSplitDivider,
-            onWeightChange: () {
-              final weights = _mainSplitController.areas
-                  .map((area) => area.weight ?? 1)
-                  .toList();
-              LocalStorageService.setPreprocessSplitView1Weights(weights);
-            },
-            children: [
-              MultiSplitView(
-                controller: _videoChartSplitController,
-                axis: Axis.vertical,
-                dividerBuilder: _buildSplitDivider,
-                onWeightChange: () {
-                  final weights = _videoChartSplitController.areas
-                      .map((area) => area.weight ?? 1)
-                      .toList();
-                  LocalStorageService.setPreprocessSplitView2Weights(weights);
-                },
-                children: [
-                  Row(
-                    children: [
-                      _buildVideoPlayer(),
-                      _buildDatasetInfo(),
-                    ],
-                  ),
-                  AccelerometerChart(
-                    x: _xDataItems,
-                    y: _yDataItems,
-                    z: _zDataItems,
-                    primaryXAxis: _primaryXAxis,
-                    zoomPanBehavior: _zoomPanBehavior,
-                    trackballBehavior: _trackballBehavior,
-                    onTrackballChanged: (trackballArgs) {
-                      if (_videoPlayerController.value.isPlaying) return;
-
-                      if (_isTrackballControlled) return;
-
-                      _moveHighlightDebouncer?.cancel();
-                      _moveHighlightDebouncer =
-                          Timer(const Duration(milliseconds: 300), () {
-                        final index =
-                            trackballArgs.chartPointInfo.dataPointIndex ?? 0;
-                        _notifier.setCurrentHighlightedIndex(index);
-                      });
-                    },
-                    onActualRangeChanged: (args) {
-                      final visibleMax = args.visibleMax as num;
-                      final visibleMin = args.visibleMin as num;
-                      final actualMax = args.actualMax as num;
-                      final actualVisible = visibleMax - visibleMin;
-
-                      _lastZoomFactor = actualVisible / actualMax;
-                      _lastZoomPosition = visibleMin / actualMax;
-                    },
-                  ),
-                ],
+          drawerEdgeDragWidth: shouldVerticalLayout ? double.infinity : 64,
+          endDrawer: const EndDrawer(),
+          body: MultiSplitViewTheme(
+            data: MultiSplitViewThemeData(
+              dividerPainter: DividerPainters.grooved1(
+                color: colorScheme.outline,
+                highlightedColor: colorScheme.primary,
+                size: 32,
+                highlightedSize: 64,
+                highlightedThickness: 3,
               ),
-              Consumer(
-                builder: (context, ref, child) {
-                  final showBottomPanel = ref.watch(
-                    preprocessProvider.select((value) => value.showBottomPanel),
-                  );
-
-                  return MultiSplitView(
-                    controller: _dataItemSplitController,
-                    axis: Axis.vertical,
-                    dividerBuilder: _buildSplitDivider,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: MultiSplitView(
+                    controller: _mainSplitController,
+                    axis:
+                        shouldVerticalLayout ? Axis.vertical : Axis.horizontal,
+                    // dividerBuilder: _buildSplitDivider,
                     onWeightChange: () {
-                      final weights = _dataItemSplitController.areas
+                      final weights = _mainSplitController.areas
                           .map((area) => area.weight ?? 1)
                           .toList();
-                      LocalStorageService.setPreprocessSplitView3Weights(
-                        weights,
-                      );
+                      LocalStorageService.setPreprocessSplitView1Weights(
+                          weights);
                     },
                     children: [
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+                      MultiSplitView(
+                        controller: _videoChartSplitController,
+                        axis: Axis.vertical,
+                        // dividerBuilder: _buildSplitDivider,
+                        onWeightChange: () {
+                          final weights = _videoChartSplitController.areas
+                              .map((area) => area.weight ?? 1)
+                              .toList();
+                          LocalStorageService.setPreprocessSplitView2Weights(
+                              weights);
+                        },
                         children: [
-                          PreprocessToolbar(
+                          VideoDataset(
                             videoPlayerController: _videoPlayerController,
-                            onFollowHighlighted: () {
-                              final state = ref.read(preprocessProvider);
-                              _scrollToDataItemTile(
-                                state.currentHighlightedIndex,
-                              );
-                            },
+                            isVerticalLayout: shouldVerticalLayout,
                           ),
-                          Divider(
-                            height: 0,
-                            color: colorScheme.outline,
-                          ),
-                          _buildDataItemHeader(),
-                          Divider(
-                            height: 0,
-                            color: colorScheme.outline,
-                          ),
-                          Expanded(
-                            child: PreprocessDatasetList(
-                              scrollController: _scrollController,
-                              onDataItemPressed: (index) async {
-                                final state = ref.read(preprocessProvider);
+                          AccelerometerChart(
+                            x: _xDataItems,
+                            y: _yDataItems,
+                            z: _zDataItems,
+                            primaryXAxis: _primaryXAxis,
+                            zoomPanBehavior: _zoomPanBehavior,
+                            trackballBehavior: _trackballBehavior,
+                            isVerticalLayout: shouldVerticalLayout,
+                            onTrackballChanged: (trackballArgs) {
+                              if (_videoPlayerController.value.isPlaying) {
+                                return;
+                              }
 
-                                if (state.isJumpSelectMode) {
-                                  await _notifier.jumpSelect(index);
-                                } else if (state
-                                    .selectedDataItemIndexes.isNotEmpty) {
-                                  _notifier.setSelectedDataset(index);
-                                }
+                              if (_isTrackballControlled) return;
+
+                              _moveHighlightDebouncer?.cancel();
+                              _moveHighlightDebouncer =
+                                  Timer(const Duration(milliseconds: 300), () {
+                                final index = trackballArgs
+                                        .chartPointInfo.dataPointIndex ??
+                                    0;
                                 _notifier.setCurrentHighlightedIndex(index);
-                              },
-                            ),
+                              });
+                            },
+                            onActualRangeChanged: (args) {
+                              final visibleMax = args.visibleMax as num;
+                              final visibleMin = args.visibleMin as num;
+                              final actualMax = args.actualMax as num;
+                              final actualVisible = visibleMax - visibleMin;
+
+                              _lastZoomFactor = actualVisible / actualMax;
+                              _lastZoomPosition = visibleMin / actualMax;
+                            },
                           ),
                         ],
                       ),
-                      if (showBottomPanel)
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final problems = ref.watch(
-                              preprocessProvider.select(
-                                (value) => value.problems,
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final showBottomPanel = ref.watch(
+                            preprocessProvider
+                                .select((value) => value.showBottomPanel),
+                          );
+
+                          return MultiSplitView(
+                            controller: _dataItemSplitController,
+                            axis: Axis.vertical,
+                            // dividerBuilder: _buildSplitDivider,
+                            onWeightChange: () {
+                              final weights = _dataItemSplitController.areas
+                                  .map((area) => area.weight ?? 1)
+                                  .toList();
+                              LocalStorageService
+                                  .setPreprocessSplitView3Weights(
+                                weights,
+                              );
+                            },
+                            children: [
+                              Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Toolbar(
+                                    videoPlayerController:
+                                        _videoPlayerController,
+                                    onFollowHighlighted: () {
+                                      final state =
+                                          ref.read(preprocessProvider);
+                                      _scrollToDataItemTile(
+                                        state.currentHighlightedIndex,
+                                      );
+                                    },
+                                  ),
+                                  Expanded(
+                                    child: DatasetList(
+                                      scrollController: _scrollController,
+                                      onDataItemPressed: (index) async {
+                                        final state =
+                                            ref.read(preprocessProvider);
+
+                                        if (state.isJumpSelectMode) {
+                                          await _notifier.jumpSelect(index);
+                                        } else if (state.selectedDataItemIndexes
+                                            .isNotEmpty) {
+                                          _notifier.setSelectedDataset(index);
+                                        }
+                                        _notifier
+                                            .setCurrentHighlightedIndex(index);
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                            return BottomPanel(
-                              problems: problems,
-                              onProblemPressed: (problem) {
-                                _notifier.clearSelectedDataItems();
-                                switch (problem) {
-                                  case MissingLabelProblem():
-                                  case DeprecatedLabelProblem():
-                                  case DeprecatedLabelCategoryProblem():
-                                  case WrongMovementSequenceProblem():
-                                    _scrollController
-                                        .jumpTo(problem.startIndex * 32);
-                                    _notifier.setCurrentHighlightedIndex(
-                                      problem.startIndex,
+                              if (showBottomPanel)
+                                Consumer(
+                                  builder: (context, ref, child) {
+                                    final problems = ref.watch(
+                                      preprocessProvider.select(
+                                        (value) => value.problems,
+                                      ),
                                     );
-                                }
-                              },
-                              onClosePressed: () =>
-                                  _notifier.setShowBottomPanel(enable: false),
-                            );
-                          },
-                        ),
+                                    return BottomPanel(
+                                      problems: problems,
+                                      isVerticalLayout: shouldVerticalLayout,
+                                      onProblemPressed: (problem) {
+                                        _notifier.clearSelectedDataItems();
+                                        switch (problem) {
+                                          case MissingLabelProblem():
+                                          case DeprecatedLabelProblem():
+                                          case DeprecatedLabelCategoryProblem():
+                                          case WrongMovementSequenceProblem():
+                                            _scrollController.jumpTo(
+                                                problem.startIndex * 32);
+                                            _notifier
+                                                .setCurrentHighlightedIndex(
+                                              problem.startIndex,
+                                            );
+                                        }
+                                      },
+                                      onClosePressed: () => _notifier
+                                          .setShowBottomPanel(enable: false),
+                                    );
+                                  },
+                                ),
+                            ],
+                          );
+                        },
+                      ),
                     ],
-                  );
-                },
-              ),
-            ],
+                  ),
+                ),
+                if (!shouldVerticalLayout) const SizedBox(width: 8),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: (shouldShowEndDrawerSeparately && _showEndDrawer)
+                      ? const EndDrawer()
+                      : const SizedBox(
+                          height: double.infinity,
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSplitDivider(
-    Axis axis,
-    int index,
-    bool resizable,
-    bool dragging,
-    bool highlighted,
-    MultiSplitViewThemeData themeData,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Center(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: EdgeInsets.symmetric(
-          horizontal: axis == Axis.vertical ? 4 : 0,
-          vertical: axis == Axis.horizontal ? 4 : 0,
-        ),
-        color: highlighted ? colorScheme.outline : Colors.transparent,
-        child: axis == Axis.vertical
-            ? VerticalDivider(color: colorScheme.outline)
-            : Divider(color: colorScheme.outline),
       ),
     );
   }
@@ -1000,7 +951,10 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     );
   }
 
-  List<Widget> _buildAppBarActions(DatasetProp? datasetProp) {
+  List<Widget> _buildAppBarActions(
+    DatasetProp? datasetProp, {
+    required bool shouldShowEndDrawerSeparately,
+  }) {
     final data = MediaQuery.of(context);
     final width = data.size.width;
     final colorScheme = Theme.of(context).colorScheme;
@@ -1072,13 +1026,26 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
             ),
           ),
         ),
-        Builder(
-          builder: (context) {
+        Consumer(
+          builder: (context, ref, child) {
+            final selectedModel = ref.watch(
+              preprocessProvider.select((value) => value.selectedModel),
+            );
             return IconButton(
               onPressed: () {
-                Scaffold.of(context).openEndDrawer();
+                if (shouldShowEndDrawerSeparately) {
+                  setState(() {
+                    _showEndDrawer = !_showEndDrawer;
+                  });
+                } else {
+                  Scaffold.of(context).openEndDrawer();
+                }
               },
-              icon: const Icon(Symbols.model_training_rounded),
+              icon: Badge(
+                isLabelVisible: selectedModel != null,
+                backgroundColor: colorScheme.primary,
+                child: const Icon(Symbols.model_training_rounded),
+              ),
             );
           },
         ),
@@ -1086,168 +1053,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
         const SizedBox(width: 12),
       ],
     ];
-  }
-
-  Widget _buildDatasetInfo() {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Consumer(
-      builder: (context, ref, child) {
-        final datasetProp =
-            ref.watch(preprocessProvider.select((state) => state.datasetProp));
-
-        return Expanded(
-          child: Column(
-            children: [
-              Expanded(
-                child: Scrollbar(
-                  child: ListView(
-                    children: [
-                      if (datasetProp != null) ...[
-                        DatasetPropTile(
-                          label: 'Dataset ID',
-                          content: datasetProp.id,
-                          icon: Symbols.key_rounded,
-                        ),
-                        DatasetPropTile(
-                          label: 'Device Location',
-                          content: datasetProp.deviceLocation.name,
-                          icon: Symbols.watch_rounded,
-                        ),
-                        DatasetPropTile(
-                          label: 'Dataset prop version',
-                          content:
-                              datasetProp.datasetPropVersion.nameWithIsLatest(
-                            latestText: ' (latest)',
-                          ),
-                          icon: Symbols.manufacturing_rounded,
-                        ),
-                        DatasetPropTile(
-                          label: 'Dataset version',
-                          content: datasetProp.datasetVersion.nameWithIsLatest(
-                            latestText: ' (latest)',
-                          ),
-                          icon: Symbols.dataset_rounded,
-                        ),
-                        const Divider(),
-                        DatasetPropTile(
-                          label: 'Duration',
-                          content:
-                              _videoPlayerController.value.duration.toString(),
-                          icon: Symbols.timer_rounded,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const Divider(height: 0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Builder(
-                    builder: (context) {
-                      return IconButton(
-                        tooltip: 'Speed\n'
-                            'z (decrease)\n'
-                            'x (increase)',
-                        visualDensity: VisualDensity.compact,
-                        style: IconButton.styleFrom(
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        icon: Row(
-                          children: [
-                            const Icon(
-                              Symbols.speed_rounded,
-                              weight: 300,
-                            ),
-                            const SizedBox(width: 2),
-                            Consumer(
-                              builder: (context, ref, child) {
-                                final playbackSpeed = ref.watch(
-                                  preprocessProvider.select(
-                                    (value) => value.videoPlaybackSpeed,
-                                  ),
-                                );
-                                return Text(
-                                  playbackSpeed
-                                      .toStringAsFixed(2)
-                                      .removeSuffix('0'),
-                                  style: textTheme.bodyMedium,
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        onPressed: () => _showSpeedMenu(context),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildVideoPlayer() {
-    final isInitialised = _videoPlayerController.value.isInitialized;
-
-    return AspectRatio(
-      aspectRatio:
-          isInitialised ? _videoPlayerController.value.aspectRatio : 2 / 3,
-      child: isInitialised
-          ? VideoPlayer(_videoPlayerController)
-          : const Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget _buildDataItemHeader() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return DefaultTextStyle(
-      style: textTheme.bodyMedium!.copyWith(
-        color: colorScheme.onSurface.withOpacity(0.6),
-      ),
-      child: const Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Center(child: Text('i')),
-          ),
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: Text('timestamp'),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(child: Text('x')),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(child: Text('y')),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(child: Text('z')),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: Text('noise'),
-            ),
-          ),
-          Expanded(
-            child: SizedBox(),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildMenu(DatasetProp datasetProp) {
@@ -1301,6 +1106,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                 hasEvaluated: !datasetProp.hasEvaluated,
               ),
               child: const Text('Has evaluated'),
+            ),
+            MenuItemButton(
+              leadingIcon: const Icon(Symbols.settings_rounded),
+              onPressed: () => context.router.push(const SettingsRoute()),
+              child: const Text('Settings'),
             ),
           ],
           child: const Text('File'),
