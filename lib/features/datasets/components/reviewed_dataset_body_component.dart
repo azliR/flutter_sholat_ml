@@ -84,7 +84,11 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                 },
                 firstPageErrorIndicatorBuilder: (context) {
                   return IllustrationWidget(
-                    type: IllustrationWidgetType.error,
+                    icon: const Icon(Symbols.cloud_off_rounded),
+                    title: const Text('Oops!'),
+                    description: const Text(
+                      'We had trouble loading the datasets. Could you please give it another try?',
+                    ),
                     actions: [
                       FilledButton.tonalIcon(
                         onPressed: () => widget.refreshKey.currentState?.show(),

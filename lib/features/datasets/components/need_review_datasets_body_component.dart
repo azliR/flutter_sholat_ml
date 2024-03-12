@@ -91,7 +91,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
       builderDelegate: PagedChildBuilderDelegate<Dataset>(
         noItemsFoundIndicatorBuilder: (context) {
           return IllustrationWidget(
-            icon: const Icon(Symbols.folder_off_rounded),
+            icon: const Icon(Symbols.dataset_rounded),
             title: const Text('Oops, no datasets found!'),
             description: const Text(
               "Let's import some datasets and or start recording! 📹",

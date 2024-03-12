@@ -330,12 +330,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildFAB(HomeScreenNavigationTab navigationTab) {
     return AnimatedSwitcher(
-      transitionBuilder: (child, animation) => FadeThroughTransition(
-        animation: animation,
-        fillColor: Colors.transparent,
-        secondaryAnimation: ReverseAnimation(animation),
-        child: child,
-      ),
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+        );
+      },
       duration: const Duration(milliseconds: 250),
       child: switch (navigationTab) {
         HomeScreenNavigationTab.savedDevice => FloatingActionButton(

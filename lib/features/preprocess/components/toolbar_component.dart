@@ -669,7 +669,7 @@ class _PreprocessToolbarState extends ConsumerState<Toolbar> {
             icon: isPlaying
                 ? const Icon(Symbols.pause_rounded, weight: 300)
                 : const Icon(
-                    Symbols.play_arrow,
+                    Symbols.play_arrow_rounded,
                     weight: 300,
                   ),
           ),

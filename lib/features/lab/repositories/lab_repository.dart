@@ -50,8 +50,6 @@ class LabRepository {
       onPredicting?.call();
 
       return _lock.synchronized(() async {
-        await Future.delayed(const Duration(seconds: 5), () {});
-
         if (_session == null) {
           _initialiseOrt(path);
         }
