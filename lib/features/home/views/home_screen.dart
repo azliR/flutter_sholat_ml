@@ -367,31 +367,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildExtendedFAB(HomeScreenNavigationTab navigationTab) {
-    return switch (navigationTab) {
-      HomeScreenNavigationTab.savedDevice => FloatingActionButton.extended(
-          key: const ValueKey('add_device'),
-          tooltip: 'Record',
-          elevation: 2,
-          onPressed: _onAddDevicePressed,
-          icon: const Icon(Symbols.add_rounded),
-          label: const Text('Add device'),
-        ),
-      HomeScreenNavigationTab.datasets => FloatingActionButton.extended(
-          key: const ValueKey('record'),
-          tooltip: 'Record',
-          elevation: 2,
-          onPressed: _onRecordPressed,
-          icon: const Icon(Symbols.videocam_rounded),
-          label: const Text('Record'),
-        ),
-      HomeScreenNavigationTab.labs => FloatingActionButton.extended(
-          key: const ValueKey('add_model'),
-          tooltip: 'Add model',
-          elevation: 2,
-          onPressed: _onAddModelPressed,
-          icon: const Icon(Symbols.add_rounded),
-          label: const Text('Add model'),
-        ),
-    };
+    return AnimatedSwitcher(
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: animation,
+            child: child,
+          ),
+        );
+      },
+      duration: const Duration(milliseconds: 250),
+      child: switch (navigationTab) {
+        HomeScreenNavigationTab.savedDevice => FloatingActionButton.extended(
+            key: const ValueKey('add_device'),
+            tooltip: 'Record',
+            elevation: 2,
+            onPressed: _onAddDevicePressed,
+            icon: const Icon(Symbols.add_rounded),
+            label: const Text('Add device'),
+          ),
+        HomeScreenNavigationTab.datasets => FloatingActionButton.extended(
+            key: const ValueKey('record'),
+            tooltip: 'Record',
+            elevation: 2,
+            onPressed: _onRecordPressed,
+            icon: const Icon(Symbols.videocam_rounded),
+            label: const Text('Record'),
+          ),
+        HomeScreenNavigationTab.labs => FloatingActionButton.extended(
+            key: const ValueKey('add_model'),
+            tooltip: 'Add model',
+            elevation: 2,
+            onPressed: _onAddModelPressed,
+            icon: const Icon(Symbols.add_rounded),
+            label: const Text('Add model'),
+          ),
+      },
+    );
   }
 }
