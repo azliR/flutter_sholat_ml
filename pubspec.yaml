@@ -50,6 +50,7 @@ dependencies:
   permission_handler: ^11.0.0
   riverpod: ^2.4.0
   share_plus: ^7.2.1
+  sliver_tools: ^0.2.12
   stack_trace: ^1.11.1
   syncfusion_flutter_charts: ^24.2.4+3
   syncfusion_flutter_core: ^24.2.4

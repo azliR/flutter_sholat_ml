@@ -635,25 +635,25 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                     controller: _mainSplitController,
                     axis:
                         shouldVerticalLayout ? Axis.vertical : Axis.horizontal,
-                    // dividerBuilder: _buildSplitDivider,
                     onWeightChange: () {
                       final weights = _mainSplitController.areas
                           .map((area) => area.weight ?? 1)
                           .toList();
                       LocalStorageService.setPreprocessSplitView1Weights(
-                          weights);
+                        weights,
+                      );
                     },
                     children: [
                       MultiSplitView(
                         controller: _videoChartSplitController,
                         axis: Axis.vertical,
-                        // dividerBuilder: _buildSplitDivider,
                         onWeightChange: () {
                           final weights = _videoChartSplitController.areas
                               .map((area) => area.weight ?? 1)
                               .toList();
                           LocalStorageService.setPreprocessSplitView2Weights(
-                              weights);
+                            weights,
+                          );
                         },
                         children: [
                           VideoDataset(
@@ -706,7 +706,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                           return MultiSplitView(
                             controller: _dataItemSplitController,
                             axis: Axis.vertical,
-                            // dividerBuilder: _buildSplitDivider,
                             onWeightChange: () {
                               final weights = _dataItemSplitController.areas
                                   .map((area) => area.weight ?? 1)
@@ -770,7 +769,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                                           case DeprecatedLabelCategoryProblem():
                                           case WrongMovementSequenceProblem():
                                             _scrollController.jumpTo(
-                                                problem.startIndex * 32);
+                                              problem.startIndex * 32,
+                                            );
                                             _notifier
                                                 .setCurrentHighlightedIndex(
                                               problem.startIndex,
@@ -789,7 +789,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                     ],
                   ),
                 ),
-                if (!shouldVerticalLayout) const SizedBox(width: 8),
+                if (shouldShowEndDrawerSeparately) const SizedBox(width: 8),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,

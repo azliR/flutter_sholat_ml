@@ -399,7 +399,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       config: model.config.copyWith(
         batchSize: batchSize,
       ),
-      ignoreWhenLocked: false,
+      skipWhenLocked: false,
     );
 
     if (failure != null) {

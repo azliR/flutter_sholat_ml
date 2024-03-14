@@ -339,6 +339,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         );
       },
+      layoutBuilder: (currentChild, previousChildren) {
+        return Stack(
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
+        );
+      },
       duration: const Duration(milliseconds: 250),
       child: switch (navigationTab) {
         HomeScreenNavigationTab.savedDevice => FloatingActionButton(
@@ -375,6 +383,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             scale: animation,
             child: child,
           ),
+        );
+      },
+      layoutBuilder: (currentChild, previousChildren) {
+        return Stack(
+          children: <Widget>[
+            ...previousChildren,
+            if (currentChild != null) currentChild,
+          ],
         );
       },
       duration: const Duration(milliseconds: 250),

@@ -173,7 +173,7 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
       previousLabels: modelConfig.enableTeacherForcing
           ? state.predictedCategories?.takeLast(modelConfig.batchSize)
           : null,
-      ignoreWhenLocked: true,
+      skipWhenLocked: true,
       onPredicting: () {
         state = state.copyWith(
           predictState: PredictState.predicting,

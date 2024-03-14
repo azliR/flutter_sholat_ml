@@ -30,10 +30,10 @@ class Toolbar extends ConsumerStatefulWidget {
   final void Function() onFollowHighlighted;
 
   @override
-  ConsumerState<Toolbar> createState() => _PreprocessToolbarState();
+  ConsumerState<Toolbar> createState() => _ToolbarState();
 }
 
-class _PreprocessToolbarState extends ConsumerState<Toolbar> {
+class _ToolbarState extends ConsumerState<Toolbar> {
   late final PreprocessNotifier _notifier;
 
   var _showWarning = true;

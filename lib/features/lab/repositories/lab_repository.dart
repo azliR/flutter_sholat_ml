@@ -41,11 +41,11 @@ class LabRepository {
     required List<num> data,
     required List<SholatMovementCategory>? previousLabels,
     required MlModelConfig config,
-    required bool ignoreWhenLocked,
+    required bool skipWhenLocked,
     void Function()? onPredicting,
   }) async {
     try {
-      if (_lock.locked && ignoreWhenLocked) return (null, null);
+      if (_lock.locked && skipWhenLocked) return (null, null);
 
       onPredicting?.call();
 
@@ -59,7 +59,6 @@ class LabRepository {
           [config.batchSize, config.windowSize, config.numberOfFeatures],
         );
 
-        OrtValueTensor? teacherInputOrt;
         final Map<String, OrtValueTensor> inputs;
 
         if (config.enableTeacherForcing) {
@@ -69,7 +68,7 @@ class LabRepository {
             batchSize: config.batchSize,
           );
 
-          teacherInputOrt = OrtValueTensor.createTensorWithDataList(
+          final teacherInputOrt = OrtValueTensor.createTensorWithDataList(
             _convertInputDType(
               data: teacherInput,
               inputDType: config.inputDataType,
