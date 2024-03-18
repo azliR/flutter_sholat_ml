@@ -7,7 +7,6 @@ class PreprocessState extends Equatable {
     required this.datasetProp,
     required this.lastSelectedIndex,
     required this.currentHighlightedIndex,
-    required this.videoPlaybackSpeed,
     required this.isJumpSelectMode,
     required this.isFollowHighlightedMode,
     required this.isPlaying,
@@ -17,15 +16,11 @@ class PreprocessState extends Equatable {
     required this.dataItems,
     required this.selectedDataItemIndexes,
     required this.problems,
-    required this.selectedModel,
-    required this.recordState,
-    required this.predictedCategories,
     required this.presentationState,
   });
 
   factory PreprocessState.initial() => const PreprocessState(
         path: '',
-        videoPlaybackSpeed: 1,
         datasetProp: null,
         lastSelectedIndex: null,
         currentHighlightedIndex: 0,
@@ -38,9 +33,6 @@ class PreprocessState extends Equatable {
         dataItems: [],
         selectedDataItemIndexes: {},
         problems: [],
-        selectedModel: null,
-        recordState: RecordState.ready,
-        predictedCategories: null,
         presentationState: PreprocessInitial(),
       );
 
@@ -48,7 +40,6 @@ class PreprocessState extends Equatable {
   final DatasetProp? datasetProp;
   final int currentHighlightedIndex;
   final int? lastSelectedIndex;
-  final double videoPlaybackSpeed;
   final bool isJumpSelectMode;
   final bool isFollowHighlightedMode;
   final bool isPlaying;
@@ -58,9 +49,6 @@ class PreprocessState extends Equatable {
   final List<DataItem> dataItems;
   final Set<int> selectedDataItemIndexes;
   final List<Problem> problems;
-  final MlModel? selectedModel;
-  final RecordState recordState;
-  final List<SholatMovementCategory?>? predictedCategories;
   final PreprocessPresentationState presentationState;
 
   PreprocessState copyWith({
@@ -68,7 +56,6 @@ class PreprocessState extends Equatable {
     DatasetProp? datasetProp,
     int? currentHighlightedIndex,
     ValueGetter<int?>? lastSelectedIndex,
-    double? videoPlaybackSpeed,
     bool? isJumpSelectMode,
     bool? isFollowHighlightedMode,
     bool? isPlaying,
@@ -78,9 +65,6 @@ class PreprocessState extends Equatable {
     List<DataItem>? dataItems,
     Set<int>? selectedDataItemIndexes,
     List<Problem>? problems,
-    ValueGetter<MlModel?>? selectedModel,
-    RecordState? recordState,
-    ValueGetter<List<SholatMovementCategory?>?>? predictedCategories,
     PreprocessPresentationState? presentationState,
   }) {
     return PreprocessState(
@@ -91,7 +75,6 @@ class PreprocessState extends Equatable {
       lastSelectedIndex: lastSelectedIndex != null
           ? lastSelectedIndex()
           : this.lastSelectedIndex,
-      videoPlaybackSpeed: videoPlaybackSpeed ?? this.videoPlaybackSpeed,
       isJumpSelectMode: isJumpSelectMode ?? this.isJumpSelectMode,
       isFollowHighlightedMode:
           isFollowHighlightedMode ?? this.isFollowHighlightedMode,
@@ -103,13 +86,6 @@ class PreprocessState extends Equatable {
       selectedDataItemIndexes:
           selectedDataItemIndexes ?? this.selectedDataItemIndexes,
       problems: problems ?? this.problems,
-      selectedModel:
-          selectedModel != null ? selectedModel() : this.selectedModel,
-      recordState: recordState ?? this.recordState,
-      // recordState: recordState != null ? recordState() : this.recordState,
-      predictedCategories: predictedCategories != null
-          ? predictedCategories()
-          : this.predictedCategories,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -117,7 +93,6 @@ class PreprocessState extends Equatable {
   @override
   List<Object?> get props => [
         path,
-        videoPlaybackSpeed,
         datasetProp,
         lastSelectedIndex,
         currentHighlightedIndex,
@@ -130,9 +105,6 @@ class PreprocessState extends Equatable {
         dataItems,
         selectedDataItemIndexes,
         problems,
-        selectedModel,
-        recordState,
-        predictedCategories,
         presentationState,
       ];
 }

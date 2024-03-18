@@ -536,6 +536,29 @@ class PreprocessRepository {
     }
   }
 
+  Future<(Failure?, List<num>?)> extractFeatureFromDatItems(
+    List<DataItem> dataItems,
+  ) async {
+    try {
+      final data = await compute(
+        (message) {
+          final (dataItems,) = message;
+          final data = dataItems
+              .map((dataItem) => [dataItem.x, dataItem.y, dataItem.z])
+              .expand((e) => e)
+              .toList(growable: false);
+          return data;
+        },
+        (dataItems,),
+      );
+      return (null, data);
+    } catch (e, stackTrace) {
+      const message = 'Failed to generate data';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
   void setAutoSave({required bool enable}) {
     LocalStorageService.setPreprocessAutoSave(enable: enable);
   }

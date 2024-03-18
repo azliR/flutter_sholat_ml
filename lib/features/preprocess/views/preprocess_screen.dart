@@ -12,7 +12,6 @@ import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
-import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/accelerometer_chart_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/bottom_panel_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/dataset_list_component.dart';
@@ -20,6 +19,8 @@ import 'package:flutter_sholat_ml/features/preprocess/components/end_drawer_comp
 import 'package:flutter_sholat_ml/features/preprocess/components/toolbar_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/video_dataset_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/views/preprocess_shortcuts.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -616,7 +617,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
               },
             ),
           ),
-          drawerEdgeDragWidth: shouldVerticalLayout ? double.infinity : 64,
           endDrawer: const EndDrawer(),
           body: MultiSplitViewTheme(
             data: MultiSplitViewThemeData(
@@ -1028,9 +1028,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
         ),
         Consumer(
           builder: (context, ref, child) {
-            final selectedModel = ref.watch(
-              preprocessProvider.select((value) => value.selectedModel),
-            );
+            final selectedModel = ref.watch(selectedMlModelProvider);
+
             return IconButton(
               onPressed: () {
                 if (shouldShowEndDrawerSeparately) {

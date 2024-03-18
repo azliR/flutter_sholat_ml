@@ -1,7 +1,8 @@
 import 'package:dartx/dartx_io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/video_player/video_player_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/dataset_prop_tile_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/menus.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -81,7 +82,7 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
     );
     if (result != null) {
       await widget.videoPlayerController.setPlaybackSpeed(result);
-      _notifier.setVideoPlaybackSpeed(result);
+      ref.read(videoPlaybackSpeedProvider.notifier).setSpeed(result);
     }
   }
 
@@ -195,11 +196,8 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
                             const SizedBox(width: 2),
                             Consumer(
                               builder: (context, ref, child) {
-                                final playbackSpeed = ref.watch(
-                                  preprocessProvider.select(
-                                    (value) => value.videoPlaybackSpeed,
-                                  ),
-                                );
+                                final playbackSpeed =
+                                    ref.watch(videoPlaybackSpeedProvider);
                                 return Text(
                                   playbackSpeed
                                       .toStringAsFixed(2)

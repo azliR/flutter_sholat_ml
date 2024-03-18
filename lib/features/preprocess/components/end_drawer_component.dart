@@ -5,9 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
-import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
 import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
-import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -27,7 +27,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
     final model = await context.router.push<MlModel>(const ModelPickerRoute());
     if (model == null) return;
 
-    _notifier.setModel(model);
+    ref.read(selectedMlModelProvider.notifier).setModel(model);
   }
 
   @override
@@ -38,8 +38,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedModel =
-        ref.watch(preprocessProvider.select((value) => value.selectedModel));
+    final selectedModel = ref.watch(selectedMlModelProvider);
 
     return Drawer(
       shape: const RoundedRectangleBorder(
@@ -77,12 +76,9 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
   }
 
   Widget _buildModelPage() {
-    final selectedModel =
-        ref.watch(preprocessProvider.select((value) => value.selectedModel!));
-    final predictedCategories = ref
-        .watch(preprocessProvider.select((value) => value.predictedCategories));
-    final recordState =
-        ref.watch(preprocessProvider.select((value) => value.recordState));
+    final selectedModel = ref.watch(selectedMlModelProvider)!;
+    final predictedCategories = ref.watch(predictedCategoriesProvider);
+    final predictState = ref.watch(predictionProvider);
 
     return ListView(
       children: [
@@ -98,9 +94,8 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           dense: true,
           trailing: IconButton(
             icon: const Icon(Symbols.close_rounded),
-            onPressed: () {
-              _notifier.setModel(null);
-            },
+            onPressed: () =>
+                ref.read(selectedMlModelProvider.notifier).setModel(null),
           ),
           onTap: _onSelectModel,
         ),
@@ -132,25 +127,24 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           children: [
             Center(
               child: FilledButton.tonal(
-                onPressed: switch (recordState) {
-                  RecordState.ready => _notifier.startPrediction,
-                  RecordState.preparing => null,
-                  RecordState.recording => null,
-                  RecordState.stopping => null,
+                onPressed: switch (predictState) {
+                  PredictState.ready =>
+                    ref.read(predictionProvider.notifier).startPrediction,
+                  PredictState.predicting => null,
                 },
                 child: Text(
-                  switch (recordState) {
-                    RecordState.ready => 'Start Predicting',
-                    RecordState.preparing => 'Preparing...',
-                    RecordState.recording => 'Predicting...',
-                    RecordState.stopping => 'Stopping...',
+                  switch (predictState) {
+                    PredictState.ready => 'Start Predicting',
+                    PredictState.predicting => 'Predicting...',
                   },
                 ),
               ),
             ),
             if (predictedCategories != null && predictedCategories.isNotEmpty)
               OutlinedButton.icon(
-                onPressed: () => _notifier.setPredictions(null),
+                onPressed: () => ref
+                    .read(predictedCategoriesProvider.notifier)
+                    .setPredictions(null),
                 label: const Text('Clear Predictions'),
                 icon: const Icon(Symbols.delete_rounded),
               ),

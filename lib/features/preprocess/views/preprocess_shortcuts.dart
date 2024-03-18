@@ -3,7 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/video_player/video_player_provider.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:video_player/video_player.dart';
 
@@ -99,18 +100,20 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
   }
 
   void _increasePlaybackSpeed() {
-    final currentPlaybackSpeed =
-        ref.read(preprocessProvider).videoPlaybackSpeed;
+    final currentPlaybackSpeed = ref.read(videoPlaybackSpeedProvider);
     final updatedPlaybackSpeed = min<double>(currentPlaybackSpeed + 0.1, 5);
-    _notifier.setVideoPlaybackSpeed(updatedPlaybackSpeed);
+    ref
+        .read(videoPlaybackSpeedProvider.notifier)
+        .setSpeed(updatedPlaybackSpeed);
     widget.videoPlayerController.setPlaybackSpeed(updatedPlaybackSpeed);
   }
 
   void _decreasePlaybackSpeed() {
-    final currentPlaybackSpeed =
-        ref.read(preprocessProvider).videoPlaybackSpeed;
+    final currentPlaybackSpeed = ref.read(videoPlaybackSpeedProvider);
     final updatedPlaybackSpeed = max<double>(currentPlaybackSpeed - 0.1, 0.1);
-    _notifier.setVideoPlaybackSpeed(updatedPlaybackSpeed);
+    ref
+        .read(videoPlaybackSpeedProvider.notifier)
+        .setSpeed(updatedPlaybackSpeed);
     widget.videoPlayerController.setPlaybackSpeed(updatedPlaybackSpeed);
   }
 

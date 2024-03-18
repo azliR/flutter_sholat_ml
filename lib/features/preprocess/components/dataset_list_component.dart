@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
-import 'package:flutter_sholat_ml/features/preprocess/blocs/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/data_item_tile_widget.dart';
-import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:sliver_tools/sliver_tools.dart';
@@ -87,8 +87,7 @@ class _DatasetListState extends ConsumerState<DatasetList> {
 
     final dataItems =
         ref.watch(preprocessProvider.select((state) => state.dataItems));
-    final predictedCategories = ref
-        .watch(preprocessProvider.select((state) => state.predictedCategories));
+    final predictedCategories = ref.watch(predictedCategoriesProvider);
 
     return Column(
       children: [
@@ -148,112 +147,6 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                   ),
               ],
             ),
-          ),
-        ),
-      ],
-    );
-
-    return Column(
-      children: [
-        _buildDataItemHeader(),
-        Expanded(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Scrollbar(
-                child: ListView.builder(
-                  controller: widget.scrollController,
-                  cacheExtent: 32,
-                  itemExtent: 32,
-                  itemCount: dataItems.length,
-                  itemBuilder: (context, index) {
-                    return Consumer(
-                      builder: (context, ref, child) {
-                        final currentHighlightedIndex = ref.watch(
-                          preprocessProvider
-                              .select((value) => value.currentHighlightedIndex),
-                        );
-                        final selected = ref.watch(
-                          preprocessProvider.select(
-                            (state) =>
-                                state.selectedDataItemIndexes.contains(index),
-                          ),
-                        );
-                        final hasProblem = ref.watch(
-                          preprocessProvider.select(
-                            (state) => state.problems.any(
-                              (problem) => switch (problem) {
-                                MissingLabelProblem() => Iterable.generate(
-                                    problem.endIndex - problem.startIndex + 1,
-                                    (index) => problem.startIndex + index,
-                                  ).contains(index),
-                                DeprecatedLabelProblem() => Iterable.generate(
-                                    problem.endIndex - problem.startIndex + 1,
-                                    (index) => problem.startIndex + index,
-                                  ).contains(index),
-                                DeprecatedLabelCategoryProblem() =>
-                                  Iterable.generate(
-                                    problem.endIndex - problem.startIndex + 1,
-                                    (index) => problem.startIndex + index,
-                                  ).contains(index),
-                                WrongMovementSequenceProblem() =>
-                                  Iterable.generate(
-                                    problem.endIndex - problem.startIndex + 1,
-                                    (index) => problem.startIndex + index,
-                                  ).contains(index),
-                              },
-                            ),
-                          ),
-                        );
-
-                        final dataItem = dataItems[index];
-                        final predictedCategory = predictedCategories?[index];
-
-                        return DataItemTile(
-                          index: index,
-                          dataItem: dataItem,
-                          predictedCategory: predictedCategory,
-                          isHighlighted: index == currentHighlightedIndex,
-                          isSelected: selected,
-                          hasProblem: hasProblem,
-                          onTap: () => widget.onDataItemPressed(index),
-                          onLongPress: () async {
-                            _notifier
-                              ..setSelectedDataset(index)
-                              ..setCurrentHighlightedIndex(index);
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: FloatingActionButton.small(
-                    tooltip: 'Last labeled data item',
-                    onPressed: () {
-                      final lastLabeledIndex = dataItems
-                          .lastIndexWhere((dataItem) => dataItem.isLabeled);
-
-                      if (lastLabeledIndex < 0) {
-                        showSnackbar(
-                          context,
-                          'No labeled data items were found.',
-                        );
-                        return;
-                      }
-
-                      widget.scrollController.jumpTo(lastLabeledIndex * 32);
-                      _notifier.setCurrentHighlightedIndex(lastLabeledIndex);
-                    },
-                    child: const Icon(Symbols.arrow_downward_rounded),
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ],
