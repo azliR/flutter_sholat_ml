@@ -60,13 +60,13 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     markerSettings: const TrackballMarkerSettings(
       markerVisibility: TrackballVisibilityMode.visible,
     ),
-    activationMode: ActivationMode.doubleTap,
   );
   final _zoomPanBehavior = ZoomPanBehavior(
     enablePanning: true,
     enablePinching: true,
     enableMouseWheelZooming: true,
     enableSelectionZooming: true,
+    zoomMode: ZoomMode.x,
   );
   final _primaryXAxis = const NumericAxis(
     initialVisibleMaximum: 200,
@@ -214,7 +214,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                 Navigator.of(context).pop();
                 Navigator.of(context).pop();
               },
-              child: const Text("Don't save"),
+              child: const Text('Discard'),
             ),
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),

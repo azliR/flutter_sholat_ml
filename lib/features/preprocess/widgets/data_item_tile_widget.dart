@@ -40,11 +40,11 @@ class DataItemTile extends StatelessWidget {
     var backgroundColor = colorScheme.background;
     if (isSelected) {
       backgroundColor = colorScheme.primaryContainer;
-    } else if (dataItem.isLabeled) {
-      final splittedId = dataItem.movementSetId!.substring(0, 6);
-      final hexColor = int.parse('ff$splittedId', radix: 16);
-      final generatedColor = Color(hexColor);
-      backgroundColor = Color.lerp(backgroundColor, generatedColor, 0.5)!;
+      // } else if (dataItem.isLabeled) {
+      //   final splittedId = dataItem.movementSetId!.substring(0, 6);
+      //   final hexColor = int.parse('ff$splittedId', radix: 16);
+      //   final generatedColor = Color(hexColor);
+      //   backgroundColor = Color.lerp(backgroundColor, generatedColor, 0.5)!;
     }
 
     Widget? icon;
