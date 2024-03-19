@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:dartx/dartx_io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,7 +45,7 @@ class _DatasetListState extends ConsumerState<DatasetList> {
   Widget build(BuildContext context) {
     final predictedCategories =
         ref.watch(predictedCategoriesProvider).valueOrNull;
-    final sectionsAsync = ref.watch(generateSectionProvider);
+    final sectionsAsync = ref.watch(generateDataItemSectionProvider);
 
     return Column(
       children: [
@@ -85,13 +84,11 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                                   headerKey.currentContext!,
                                 );
                               }
-                              setState(() {
-                                sections[sectionIndex] =
-                                    sections[sectionIndex].copyWith(
-                                  expanded: !sections[sectionIndex].expanded,
-                                );
-                              });
 
+                              ref
+                                  .read(
+                                      generateDataItemSectionProvider.notifier)
+                                  .toggleSectionAt(sectionIndex);
                               ref
                                   .read(selectedSectionIndexProvider.notifier)
                                   .setSectionIndex(sectionIndex);
@@ -111,7 +108,7 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                                     predictedCategories?[index];
 
                                 return _buildDataItemTile(
-                                  index: section.lastIndex + index,
+                                  index: section.startIndex + index,
                                   sectionIndex: sectionIndex,
                                   dataItem: dataItem,
                                   predictedCategory: predictedCategory,
@@ -353,14 +350,14 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
 
 class DataItemSection {
   DataItemSection({
-    required this.lastIndex,
+    required this.startIndex,
     required this.labelCategory,
     required this.dataItems,
     this.movementSetId,
     this.expanded = false,
   });
 
-  final int lastIndex;
+  final int startIndex;
   final String? movementSetId;
   final SholatMovementCategory? labelCategory;
   final List<DataItem> dataItems;
@@ -376,7 +373,7 @@ class DataItemSection {
     bool? expanded,
   }) {
     return DataItemSection(
-      lastIndex: lastIndex ?? this.lastIndex,
+      startIndex: lastIndex ?? this.startIndex,
       movementSetId: movementSetId ?? this.movementSetId,
       labelCategory: labelCategory ?? this.labelCategory,
       dataItems: dataItems ?? this.dataItems,

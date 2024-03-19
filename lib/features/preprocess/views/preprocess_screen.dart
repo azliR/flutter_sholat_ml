@@ -20,6 +20,7 @@ import 'package:flutter_sholat_ml/features/preprocess/components/preprocess_shor
 import 'package:flutter_sholat_ml/features/preprocess/components/toolbar_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/video_dataset_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/data_item/data_item_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
@@ -59,6 +60,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     enable: true,
     shouldAlwaysShow: true,
     tooltipDisplayMode: TrackballDisplayMode.none,
+    activationMode: ActivationMode.doubleTap,
     markerSettings: const TrackballMarkerSettings(
       markerVisibility: TrackballVisibilityMode.visible,
     ),
@@ -185,11 +187,44 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     final currentPosition = _scrollController.position;
     final maxTopOffset = currentPosition.extentBefore;
     final maxBottomOffset = maxTopOffset + currentPosition.extentInside;
-    final currentOffset = index * 32.0;
+
+    const dataItemTileHeight = 32;
+    const sectionTileHeight = 48;
+
+    final sections = ref.read(generateDataItemSectionProvider).requireValue;
+    final sectionIndex =
+        sections.lastIndexWhere((section) => section.startIndex <= index);
+
+    final currentOffset = sections
+        .take(sectionIndex + 1)
+        .indexed
+        .fold<double>(0, (previousValue, element) {
+      final (foldIndex, section) = element;
+
+      if (foldIndex == sectionIndex) {
+        if (!section.expanded) {
+          ref
+              .read(generateDataItemSectionProvider.notifier)
+              .toggleSectionAt(sectionIndex);
+        }
+        ref
+            .read(selectedSectionIndexProvider.notifier)
+            .setSectionIndex(sectionIndex);
+
+        return previousValue +
+            sectionTileHeight +
+            ((index - section.startIndex) * dataItemTileHeight);
+      } else if (section.expanded) {
+        return previousValue +
+            sectionTileHeight +
+            (section.dataItems.length * dataItemTileHeight);
+      }
+      return previousValue + sectionTileHeight;
+    });
 
     if (currentOffset >= maxBottomOffset || currentOffset <= maxTopOffset) {
       _scrollController.animateTo(
-        index * 32,
+        currentOffset,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
       );

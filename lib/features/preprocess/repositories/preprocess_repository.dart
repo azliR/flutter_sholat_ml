@@ -666,7 +666,7 @@ class PreprocessRepository {
               return [
                 ...previousValue,
                 DataItemSection(
-                  lastIndex: lastIndex,
+                  startIndex: lastIndex,
                   movementSetId: dataItem.movementSetId,
                   labelCategory: dataItem.labelCategory,
                   dataItems: [dataItem],

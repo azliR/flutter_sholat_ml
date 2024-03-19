@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/data_item/data_item_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/video_player/video_player_provider.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -166,7 +167,42 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
 
     final currentPosition = widget.scrollController.position;
     final maxTopOffset = currentPosition.extentBefore;
-    final currentOffset = updatedHighlightedIndex * 32.0;
+
+    const dataItemTileHeight = 32;
+    const sectionTileHeight = 48;
+
+    final sections = ref.read(generateDataItemSectionProvider).requireValue;
+    final sectionIndex = sections.lastIndexWhere(
+        (section) => section.startIndex <= updatedHighlightedIndex);
+
+    final currentOffset = sections
+        .take(sectionIndex + 1)
+        .indexed
+        .fold<double>(0, (previousValue, element) {
+      final (foldIndex, section) = element;
+
+      if (foldIndex == sectionIndex) {
+        if (!section.expanded) {
+          ref
+              .read(generateDataItemSectionProvider.notifier)
+              .toggleSectionAt(sectionIndex);
+        }
+        ref
+            .read(selectedSectionIndexProvider.notifier)
+            .setSectionIndex(sectionIndex);
+
+        return previousValue +
+            sectionTileHeight +
+            ((updatedHighlightedIndex - section.startIndex) *
+                dataItemTileHeight);
+      } else if (section.expanded) {
+        return previousValue +
+            sectionTileHeight +
+            (section.dataItems.length * dataItemTileHeight);
+      }
+      return previousValue + sectionTileHeight;
+    });
+
     if (currentOffset <= maxTopOffset) {
       widget.scrollController.jumpTo(currentOffset);
     }
@@ -223,7 +259,41 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
     final currentPosition = widget.scrollController.position;
     final maxTopOffset = currentPosition.extentBefore;
     final maxBottomOffset = maxTopOffset + currentPosition.extentInside;
-    final currentOffset = updatedHighlightedIndex * 32.0;
+    const dataItemTileHeight = 32;
+    const sectionTileHeight = 48;
+
+    final sections = ref.read(generateDataItemSectionProvider).requireValue;
+    final sectionIndex = sections.lastIndexWhere(
+        (section) => section.startIndex <= updatedHighlightedIndex);
+
+    final currentOffset = sections
+        .take(sectionIndex + 1)
+        .indexed
+        .fold<double>(0, (previousValue, element) {
+      final (foldIndex, section) = element;
+
+      if (foldIndex == sectionIndex) {
+        if (!section.expanded) {
+          ref
+              .read(generateDataItemSectionProvider.notifier)
+              .toggleSectionAt(sectionIndex);
+        }
+        ref
+            .read(selectedSectionIndexProvider.notifier)
+            .setSectionIndex(sectionIndex);
+
+        return previousValue +
+            sectionTileHeight +
+            ((updatedHighlightedIndex - section.startIndex) *
+                dataItemTileHeight);
+      } else if (section.expanded) {
+        return previousValue +
+            sectionTileHeight +
+            (section.dataItems.length * dataItemTileHeight);
+      }
+      return previousValue + sectionTileHeight;
+    });
+
     if (currentOffset >= maxBottomOffset) {
       widget.scrollController.jumpTo(
         currentOffset - maxBottomOffset + maxTopOffset + 32.0,

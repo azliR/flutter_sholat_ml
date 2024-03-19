@@ -8,17 +8,33 @@ part 'data_item_provider.g.dart';
 final _preprocessRepository = PreprocessRepository();
 
 @riverpod
-Future<List<DataItemSection>> generateSection(GenerateSectionRef ref) async {
-  final dataItems =
-      ref.watch(preprocessProvider.select((value) => value.dataItems));
+class GenerateDataItemSection extends _$GenerateDataItemSection {
+  @override
+  Future<List<DataItemSection>> build() async {
+    final dataItems =
+        ref.watch(preprocessProvider.select((value) => value.dataItems));
 
-  final (failure, sections) =
-      await _preprocessRepository.generateSections(dataItems);
-  if (failure != null) {
-    throw Exception(failure.message);
+    final (failure, sections) =
+        await _preprocessRepository.generateSections(dataItems);
+    if (failure != null) {
+      state = AsyncError(
+        failure.error ?? failure.message,
+        failure.stackTrace ?? StackTrace.current,
+      );
+    }
+
+    return sections!;
   }
 
-  return sections!;
+  void toggleSectionAt(int index) {
+    final sections = state.valueOrNull;
+    if (sections == null) return;
+
+    final section = sections[index];
+    sections[index] = section.copyWith(expanded: !section.expanded);
+
+    state = AsyncData(sections);
+  }
 }
 
 @riverpod
