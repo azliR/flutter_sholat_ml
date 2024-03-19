@@ -131,6 +131,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void initState() {
+    _currentPage = widget.initialNavigation.index;
+
     _tabsRouterCompleter.future.then((tabsController) {
       tabsController
         ..setActiveIndex(widget.initialNavigation.index)

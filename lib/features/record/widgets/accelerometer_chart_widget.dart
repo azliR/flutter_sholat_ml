@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/features/record/blocs/record/record_notifier.dart';
@@ -16,12 +18,21 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
   final List<num> yDatasets = [];
   final List<num> zDatasets = [];
 
+  late ChartSeriesController<num, num> _xChartController;
+  late ChartSeriesController<num, num> _yChartController;
+  late ChartSeriesController<num, num> _zChartController;
+
   @override
   Widget build(BuildContext context) {
-    ref.listen(recordProvider, (previous, next) {
-      if (previous?.lastDatasets != next.lastDatasets &&
-          next.lastDatasets != null) {
-        final datasets = next.lastDatasets!;
+    const maxVisible = 100;
+
+    ref.listen(
+      recordProvider.select((value) => value.lastDatasets),
+      (previous, datasets) {
+        if (datasets == null) return;
+
+        final previousLength = xDatasets.length;
+
         for (var i = 0; i < datasets.length; i++) {
           final dataset = datasets[i];
 
@@ -31,17 +42,36 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
           yDatasets.add(dataset.y);
           zDatasets.add(dataset.z);
 
-          if (xDatasets.length == 100) {
+          if (xDatasets.length == maxVisible + 1) {
             indexes.removeAt(0);
             xDatasets.removeAt(0);
             yDatasets.removeAt(0);
             zDatasets.removeAt(0);
           }
         }
+        final addedDataIndexes = List.generate(
+          datasets.length,
+          (index) => xDatasets.length - index - 1,
+        ).reversed.toList();
+        final removedDataIndexes = List.generate(
+          math.max(0, datasets.length + previousLength - maxVisible),
+          (index) => index,
+        );
 
-        setState(() {});
-      }
-    });
+        _xChartController.updateDataSource(
+          addedDataIndexes: addedDataIndexes,
+          removedDataIndexes: removedDataIndexes,
+        );
+        _yChartController.updateDataSource(
+          addedDataIndexes: addedDataIndexes,
+          removedDataIndexes: removedDataIndexes,
+        );
+        _zChartController.updateDataSource(
+          addedDataIndexes: addedDataIndexes,
+          removedDataIndexes: removedDataIndexes,
+        );
+      },
+    );
 
     return ColoredBox(
       color: Colors.black26,
@@ -75,6 +105,9 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
             yValueMapper: (data, index) => data,
             color: Colors.red,
             legendItemText: 'x',
+            onRendererCreated: (controller) {
+              _xChartController = controller;
+            },
           ),
           SplineSeries<num, num>(
             width: 1.4,
@@ -84,6 +117,9 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
             yValueMapper: (data, index) => data,
             color: Colors.green,
             legendItemText: 'y',
+            onRendererCreated: (controller) {
+              _yChartController = controller;
+            },
           ),
           SplineSeries<num, num>(
             width: 1.4,
@@ -93,6 +129,9 @@ class _AccelerometerChartState extends ConsumerState<AccelerometerChart> {
             yValueMapper: (data, index) => data,
             color: Colors.blue,
             legendItemText: 'z',
+            onRendererCreated: (controller) {
+              _zChartController = controller;
+            },
           ),
         ],
       ),

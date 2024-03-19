@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/features/record/blocs/record/record_notifier.dart';
@@ -14,12 +16,19 @@ class _HeartRateChartState extends ConsumerState<HeartRateChart> {
   final List<int> indexes = [];
   final List<int> heartRateDatasets = [];
 
+  late ChartSeriesController<num, num> _heartChartController;
+
   @override
   Widget build(BuildContext context) {
-    ref.listen(recordProvider, (previous, next) {
-      if (previous?.lastDatasets != next.lastDatasets &&
-          next.lastDatasets != null) {
-        final datasets = next.lastDatasets!;
+    const maxVisible = 100;
+
+    ref.listen(
+      recordProvider.select((value) => value.lastDatasets),
+      (previous, datasets) {
+        if (datasets == null) return;
+
+        final previousLength = heartRateDatasets.length;
+
         for (var i = 0; i < datasets.length; i++) {
           final dataset = datasets[i];
 
@@ -30,15 +39,27 @@ class _HeartRateChartState extends ConsumerState<HeartRateChart> {
             heartRateDatasets.add(dataset.heartRate!);
           }
 
-          if (heartRateDatasets.length == 100) {
+          if (heartRateDatasets.length == maxVisible + 1) {
             indexes.removeAt(0);
             heartRateDatasets.removeAt(0);
           }
         }
 
-        setState(() {});
-      }
-    });
+        final addedDataIndexes = List.generate(
+          datasets.length,
+          (index) => heartRateDatasets.length - index - 1,
+        ).reversed.toList();
+        final removedDataIndexes = List.generate(
+          math.max(0, datasets.length + previousLength - maxVisible),
+          (index) => index,
+        );
+
+        _heartChartController.updateDataSource(
+          addedDataIndexes: addedDataIndexes,
+          removedDataIndexes: removedDataIndexes,
+        );
+      },
+    );
 
     return ColoredBox(
       color: Colors.black26,
@@ -65,7 +86,7 @@ class _HeartRateChartState extends ConsumerState<HeartRateChart> {
           ),
         ),
         series: [
-          SplineSeries<num, num>(
+          LineSeries<num, num>(
             width: 1.4,
             animationDuration: 0,
             dataSource: heartRateDatasets,
@@ -73,6 +94,9 @@ class _HeartRateChartState extends ConsumerState<HeartRateChart> {
             yValueMapper: (data, index) => data,
             color: Colors.red,
             legendItemText: 'Heart Rate',
+            onRendererCreated: (controller) {
+              _heartChartController = controller;
+            },
           ),
         ],
       ),

@@ -70,7 +70,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     enablePinching: true,
     enableMouseWheelZooming: true,
     enableSelectionZooming: true,
-    zoomMode: ZoomMode.x,
+    zoomMode: ZoomMode.xy,
   );
   final _primaryXAxis = const NumericAxis(
     initialVisibleMaximum: 200,

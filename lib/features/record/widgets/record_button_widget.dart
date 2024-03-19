@@ -113,6 +113,7 @@ class __RecordButtonState extends State<RecordButton> {
                         height: 72,
                         width: 72,
                         child: CircularProgressIndicator(
+                          color: Colors.blue,
                           strokeWidth: 6,
                           strokeAlign: -1,
                           strokeCap: StrokeCap.round,
