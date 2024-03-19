@@ -53,8 +53,8 @@ dependencies:
   share_plus: ^7.2.1
   sliver_tools: ^0.2.12
   stack_trace: ^1.11.1
-  syncfusion_flutter_charts: ^24.2.4+3
-  syncfusion_flutter_core: ^24.2.4
+  syncfusion_flutter_charts: ^25.1.35
+  syncfusion_flutter_core: ^25.1.35
   synchronized: ^3.1.0+1
   tar: ^1.0.2
   uuid: ^4.1.0
