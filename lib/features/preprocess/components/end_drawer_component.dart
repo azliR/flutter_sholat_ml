@@ -78,7 +78,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
   Widget _buildModelPage() {
     final selectedModel = ref.watch(selectedMlModelProvider)!;
     final predictedCategories = ref.watch(predictedCategoriesProvider);
-    final predictState = ref.watch(predictionProvider);
+    final evaluationAsync = ref.watch(modelEvaluationProvider);
 
     return ListView(
       children: [
@@ -122,29 +122,46 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           },
         ),
         const SizedBox(height: 16),
+        evaluationAsync.when(
+          data: (data) {
+            if (data == null) return const SizedBox();
+
+            final accuracy = (data * 100).toStringAsFixed(2);
+            return Center(
+              child: Text(
+                '$accuracy% Accuracy',
+                textAlign: TextAlign.center,
+              ),
+            );
+          },
+          error: (error, stackTrace) => Text(error.toString()),
+          loading: () => const SizedBox(),
+        ),
+        const SizedBox(height: 16),
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Center(
               child: FilledButton.tonal(
-                onPressed: switch (predictState) {
-                  PredictState.ready =>
-                    ref.read(predictionProvider.notifier).startPrediction,
-                  PredictState.predicting => null,
-                },
+                onPressed: predictedCategories.maybeWhen(
+                  loading: () => null,
+                  orElse: () => () => ref
+                      .read(predictedCategoriesProvider.notifier)
+                      .startPrediction(),
+                ),
                 child: Text(
-                  switch (predictState) {
-                    PredictState.ready => 'Start Predicting',
-                    PredictState.predicting => 'Predicting...',
-                  },
+                  predictedCategories.maybeWhen(
+                    loading: () => 'Predicting...',
+                    orElse: () => 'Start Prediction',
+                  ),
                 ),
               ),
             ),
-            if (predictedCategories != null && predictedCategories.isNotEmpty)
+            if (predictedCategories.valueOrNull != null)
               OutlinedButton.icon(
                 onPressed: () => ref
                     .read(predictedCategoriesProvider.notifier)
-                    .setPredictions(null),
+                    .clearPrediction(),
                 label: const Text('Clear Predictions'),
                 icon: const Icon(Symbols.delete_rounded),
               ),

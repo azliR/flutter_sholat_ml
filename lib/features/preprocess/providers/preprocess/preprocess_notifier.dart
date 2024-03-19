@@ -9,7 +9,6 @@ import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
-import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:path/path.dart';
@@ -44,31 +43,10 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       showBottomPanel: isShowBottomPanel,
     );
     await readDataItems();
-    await analyseDataset();
   }
 
   void setDatasetProp(DatasetProp datasetProp) {
     state = state.copyWith(datasetProp: datasetProp);
-  }
-
-  Future<void> analyseDataset() async {
-    state = state.copyWith(
-      presentationState: const AnalyseDatasetLoadingState(),
-    );
-
-    final (failure, problems) =
-        await _preprocessRepository.analyseDataset(state.dataItems);
-    if (failure != null) {
-      state = state.copyWith(
-        presentationState: AnalyseDatasetFailureState(failure),
-      );
-      return;
-    }
-
-    state = state.copyWith(
-      problems: problems,
-      presentationState: const AnalyseDatasetSuccessState(),
-    );
   }
 
   void setShowBottomPanel({required bool enable}) {

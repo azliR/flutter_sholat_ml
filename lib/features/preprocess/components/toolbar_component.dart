@@ -9,6 +9,7 @@ import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/prepr
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:vector_graphics/vector_graphics_compat.dart';
 import 'package:video_player/video_player.dart';
 
 final categoryProvider =
@@ -72,25 +73,27 @@ class _ToolbarState extends ConsumerState<Toolbar> {
                           return ChoiceChip(
                             avatar: selectedCategory == category
                                 ? null
-                                : SvgPicture.asset(
-                                    switch (category) {
-                                      SholatMovementCategory.takbir =>
-                                        AssetImages.takbir,
-                                      SholatMovementCategory.berdiri =>
-                                        AssetImages.berdiri,
-                                      SholatMovementCategory.ruku =>
-                                        AssetImages.ruku,
-                                      SholatMovementCategory.iktidal =>
-                                        AssetImages.iktidal,
-                                      SholatMovementCategory.qunut =>
-                                        AssetImages.qunut,
-                                      SholatMovementCategory.sujud =>
-                                        AssetImages.sujud,
-                                      SholatMovementCategory.duduk =>
-                                        AssetImages.duduk,
-                                      SholatMovementCategory.transisi =>
-                                        AssetImages.transisi,
-                                    },
+                                : SvgPicture(
+                                    AssetBytesLoader(
+                                      switch (category) {
+                                        SholatMovementCategory.takbir =>
+                                          AssetImages.takbir,
+                                        SholatMovementCategory.berdiri =>
+                                          AssetImages.berdiri,
+                                        SholatMovementCategory.ruku =>
+                                          AssetImages.ruku,
+                                        SholatMovementCategory.iktidal =>
+                                          AssetImages.iktidal,
+                                        SholatMovementCategory.qunut =>
+                                          AssetImages.qunut,
+                                        SholatMovementCategory.sujud =>
+                                          AssetImages.sujud,
+                                        SholatMovementCategory.duduk =>
+                                          AssetImages.duduk,
+                                        SholatMovementCategory.transisi =>
+                                          AssetImages.transisi,
+                                      },
+                                    ),
                                     width: 24,
                                     height: 24,
                                     colorFilter: ColorFilter.mode(

@@ -10,11 +10,6 @@ part 'ml_model_provider.g.dart';
 final _preprocessRepository = PreprocessRepository();
 final _labRepository = LabRepository();
 
-enum PredictState {
-  ready,
-  predicting,
-}
-
 @riverpod
 class SelectedMlModel extends _$SelectedMlModel {
   @override
@@ -26,42 +21,46 @@ class SelectedMlModel extends _$SelectedMlModel {
 @riverpod
 class PredictedCategories extends _$PredictedCategories {
   @override
-  List<SholatMovementCategory?>? build() => null;
+  Future<List<SholatMovementCategory?>?> build() async => null;
 
-  void setPredictions(List<SholatMovementCategory?>? categories) =>
-      state = categories;
-}
-
-@riverpod
-class Prediction extends _$Prediction {
-  @override
-  PredictState build() => PredictState.ready;
+  void clearPrediction() => state = const AsyncData(null);
 
   Future<void> startPrediction() async {
+    state = const AsyncData(null);
+    state = const AsyncLoading();
+
     final model = ref.read(selectedMlModelProvider);
     if (model == null) {
-      state = PredictState.ready;
+      state = const AsyncData(null);
       return;
     }
 
-    state = PredictState.predicting;
-
     final dataItems =
         ref.read(preprocessProvider.select((value) => value.dataItems));
+    const windowStep = 10;
 
-    final (computeFailure, data) =
-        await _preprocessRepository.extractFeatureFromDatItems(dataItems);
+    final (extractingFailure, X, y) =
+        await _preprocessRepository.createSegmentsAndLabels(
+      dataItems: dataItems,
+      windowSize: model.config.windowSize,
+      windowStep: windowStep,
+    );
 
-    if (computeFailure != null) {
-      state = PredictState.ready;
-      throw Exception(computeFailure.message);
+    if (extractingFailure != null) {
+      state = AsyncError(
+        extractingFailure.error ?? extractingFailure.message,
+        extractingFailure.stackTrace ?? StackTrace.current,
+      );
+      return;
     }
 
-    final batchSize = dataItems.length ~/ model.config.windowSize;
+    final data = X!.expand((e) => e).expand((e) => e).toList();
+    final batchSize =
+        data.length / model.config.windowSize ~/ model.config.numberOfFeatures;
 
     final (failure, predictions) = await _labRepository.predict(
       path: model.path,
-      data: data!,
+      data: data,
       previousLabels: null,
       config: model.config.copyWith(
         batchSize: batchSize,
@@ -70,12 +69,14 @@ class Prediction extends _$Prediction {
     );
 
     if (failure != null) {
-      state = PredictState.ready;
-      throw Exception(failure.message);
+      state = AsyncError(
+        failure.error ?? failure.message,
+        failure.stackTrace ?? StackTrace.current,
+      );
     }
 
     if (predictions == null) {
-      state = PredictState.ready;
+      state = const AsyncData(null);
       return;
     }
 
@@ -85,8 +86,11 @@ class Prediction extends _$Prediction {
         firstTakbirFound = true;
       }
 
-      return List.filled(batchSize, firstTakbirFound ? category : null);
+      return List.filled(windowStep, firstTakbirFound ? category : null);
     }).toList();
+
+    print('predictions:' + predictions.length.toString());
+    print('expandedPredictions:' + expandedPredictions.length.toString());
 
     if (expandedPredictions.length < dataItems.length) {
       expandedPredictions.addAll(
@@ -99,10 +103,38 @@ class Prediction extends _$Prediction {
       );
     }
 
-    ref
-        .read(predictedCategoriesProvider.notifier)
-        .setPredictions(expandedPredictions);
-
-    state = PredictState.ready;
+    state = AsyncData(expandedPredictions);
   }
+}
+
+@riverpod
+Future<double?> modelEvaluation(ModelEvaluationRef ref) async {
+  // final predictedCategoriesAsync = AsyncData(<SholatMovementCategory>[]);
+  final predictedCategoriesAsync = ref.watch(predictedCategoriesProvider);
+
+  return predictedCategoriesAsync.when(
+    data: (predictedCategories) async {
+      if (predictedCategories == null) {
+        return null;
+      }
+
+      final dataItems =
+          ref.read(preprocessProvider.select((value) => value.dataItems));
+
+      final (failure, evaluation) = await _preprocessRepository.evaluateModel(
+        categories: dataItems.map((e) => e.labelCategory).toList(),
+        predictedCategories: predictedCategories,
+      );
+
+      if (failure != null) {
+        throw Exception(failure.message);
+      }
+
+      return evaluation;
+    },
+    loading: () => null,
+    error: (error, stackTrace) {
+      throw Exception(error.toString());
+    },
+  );
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:vector_graphics/vector_graphics_compat.dart';
 
 enum IllustrationWidgetType {
   noData,
@@ -69,8 +70,8 @@ class IllustrationWidget extends StatelessWidget {
                 child: icon!,
               )
             else
-              SvgPicture.asset(
-                illustrationPath!,
+              SvgPicture(
+                AssetBytesLoader(illustrationPath!),
                 width: 300,
               ),
             const SizedBox(height: 8),

@@ -31,7 +31,9 @@ class LabRepository {
   };
 
   void _initialiseOrt(String path) {
-    OrtEnv.instance.init();
+    OrtEnv.instance.init(
+      level: OrtLoggingLevel.verbose,
+    );
     final sessionOptions = OrtSessionOptions();
     _session = OrtSession.fromFile(File(path), sessionOptions);
   }
@@ -49,10 +51,10 @@ class LabRepository {
 
       onPredicting?.call();
 
-      return _lock.synchronized(() async {
-        if (_session == null) {
-          _initialiseOrt(path);
-        }
+      return await _lock.synchronized(() async {
+        // if (_session == null) {
+        _initialiseOrt(path);
+        // }
 
         final inputOrt = OrtValueTensor.createTensorWithDataList(
           _convertInputDType(data: data, inputDType: config.inputDataType),
@@ -131,6 +133,7 @@ class LabRepository {
         for (final element in outputs) {
           element?.release();
         }
+        dispose();
         final predictions = indexes.map((i) => _labelCategories[i]!).toList();
         return (null, predictions);
       });

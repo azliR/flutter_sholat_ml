@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class DataItemTile extends StatelessWidget {
@@ -54,27 +52,27 @@ class DataItemTile extends StatelessWidget {
         color: colorScheme.secondary,
         weight: 300,
       );
-    } else if (predictedCategory != null || dataItem.isLabeled) {
-      final category = predictedCategory ?? dataItem.labelCategory!;
-      final iconPath = switch (category) {
-        SholatMovementCategory.takbir => AssetImages.takbir,
-        SholatMovementCategory.berdiri => AssetImages.berdiri,
-        SholatMovementCategory.ruku => AssetImages.ruku,
-        SholatMovementCategory.iktidal => AssetImages.iktidal,
-        SholatMovementCategory.qunut => AssetImages.qunut,
-        SholatMovementCategory.sujud => AssetImages.sujud,
-        SholatMovementCategory.duduk => AssetImages.duduk,
-        SholatMovementCategory.transisi => AssetImages.transisi,
-      };
-      icon = SvgPicture.asset(
-        iconPath,
-        width: 24,
-        height: 24,
-        colorFilter: ColorFilter.mode(
-          predictedCategory != null ? colorScheme.outline : colorScheme.primary,
-          BlendMode.srcIn,
-        ),
-      );
+      // } else if (predictedCategory != null || dataItem.isLabeled) {
+      //   final category = predictedCategory ?? dataItem.labelCategory!;
+      //   final iconPath = switch (category) {
+      //     SholatMovementCategory.takbir => AssetImages.takbir,
+      //     SholatMovementCategory.berdiri => AssetImages.berdiri,
+      //     SholatMovementCategory.ruku => AssetImages.ruku,
+      //     SholatMovementCategory.iktidal => AssetImages.iktidal,
+      //     SholatMovementCategory.qunut => AssetImages.qunut,
+      //     SholatMovementCategory.sujud => AssetImages.sujud,
+      //     SholatMovementCategory.duduk => AssetImages.duduk,
+      //     SholatMovementCategory.transisi => AssetImages.transisi,
+      //   };
+      //   icon = SvgPicture.asset(
+      //     iconPath,
+      //     width: 24,
+      //     height: 24,
+      //     colorFilter: ColorFilter.mode(
+      //       predictedCategory != null ? colorScheme.outline : colorScheme.primary,
+      //       BlendMode.srcIn,
+      //     ),
+      //   );
     }
 
     return DefaultTextStyle(

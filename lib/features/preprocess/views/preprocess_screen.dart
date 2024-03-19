@@ -16,12 +16,13 @@ import 'package:flutter_sholat_ml/features/preprocess/components/accelerometer_c
 import 'package:flutter_sholat_ml/features/preprocess/components/bottom_panel_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/dataset_list_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/end_drawer_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/preprocess_shortcuts.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/toolbar_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/video_dataset_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
-import 'package:flutter_sholat_ml/features/preprocess/views/preprocess_shortcuts.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -463,12 +464,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
             showErrorSnackbar(context, 'Failed getting dataset info');
           case ReadDatasetsFailureState():
             showErrorSnackbar(context, 'Failed reading datasets');
-          case AnalyseDatasetLoadingState():
-            break;
-          case AnalyseDatasetSuccessState():
-            break;
-          case AnalyseDatasetFailureState():
-            showErrorSnackbar(context, 'Failed analysing dataset');
           case CompressVideoLoadingState():
             context.loaderOverlay.show();
           case CompressVideoSuccessState():
@@ -533,16 +528,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
         },
       )
       ..listen(
-        preprocessProvider.select((value) => value.dataItems),
-        (previous, dataItems) {
-          _notifier.analyseDataset();
-        },
-      )
-      ..listen(
           preprocessProvider.select(
             (value) =>
-                value.presentationState == const SaveDatasetAutoSavingState() ||
-                value.presentationState == const AnalyseDatasetLoadingState(),
+                value.presentationState == const SaveDatasetAutoSavingState(),
           ), (previous, rotate) {
         if (rotate) {
           _animationController
@@ -550,6 +538,24 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
             ..forward();
         } else {
           _animationController.reset();
+        }
+      })
+      ..listen(analyseDatasetProvider, (previous, next) {
+        if (next.hasError) {
+          showErrorSnackbar(context, next.error.toString());
+        }
+
+        if (next.isLoading) {
+          _animationController
+            ..repeat()
+            ..forward();
+        } else {
+          _animationController.reset();
+        }
+      })
+      ..listen(predictedCategoriesProvider, (previous, next) {
+        if (next.hasError) {
+          showErrorSnackbar(context, next.error.toString());
         }
       });
 
@@ -733,19 +739,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                                   Expanded(
                                     child: DatasetList(
                                       scrollController: _scrollController,
-                                      onDataItemPressed: (index) async {
-                                        final state =
-                                            ref.read(preprocessProvider);
-
-                                        if (state.isJumpSelectMode) {
-                                          await _notifier.jumpSelect(index);
-                                        } else if (state.selectedDataItemIndexes
-                                            .isNotEmpty) {
-                                          _notifier.setSelectedDataset(index);
-                                        }
-                                        _notifier
-                                            .setCurrentHighlightedIndex(index);
-                                      },
                                     ),
                                   ),
                                 ],
@@ -753,13 +746,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                               if (showBottomPanel)
                                 Consumer(
                                   builder: (context, ref, child) {
-                                    final problems = ref.watch(
-                                      preprocessProvider.select(
-                                        (value) => value.problems,
-                                      ),
-                                    );
+                                    final problems =
+                                        ref.watch(analyseDatasetProvider);
+
                                     return BottomPanel(
-                                      problems: problems,
+                                      problems: problems.valueOrNull ?? [],
                                       isVerticalLayout: shouldVerticalLayout,
                                       onProblemPressed: (problem) {
                                         _notifier.clearSelectedDataItems();
@@ -768,9 +759,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                                           case DeprecatedLabelProblem():
                                           case DeprecatedLabelCategoryProblem():
                                           case WrongMovementSequenceProblem():
-                                            _scrollController.jumpTo(
-                                              problem.startIndex * 32,
-                                            );
+                                            // _scrollController.jumpTo(
+                                            //   problem.startIndex * 32,
+                                            // );
                                             _notifier
                                                 .setCurrentHighlightedIndex(
                                               problem.startIndex,
@@ -829,13 +820,8 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                     const SaveDatasetAutoSavingState(),
               ),
             );
-            final isAnalysing = ref.watch(
-              preprocessProvider.select(
-                (value) =>
-                    value.presentationState ==
-                    const AnalyseDatasetLoadingState(),
-              ),
-            );
+            final isAnalysing = ref.watch(analyseDatasetProvider).isLoading;
+
             return Row(
               children: [
                 Flexible(
@@ -1118,7 +1104,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
           menuChildren: [
             MenuItemButton(
               leadingIcon: const Icon(Symbols.rule_rounded),
-              onPressed: () => _notifier.analyseDataset(),
+              onPressed: () => ref.invalidate(analyseDatasetProvider),
               child: const Text('Analyse dataset'),
             ),
             MenuItemButton(

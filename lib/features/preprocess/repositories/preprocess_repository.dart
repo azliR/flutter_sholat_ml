@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
@@ -15,6 +16,7 @@ import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/preprocess/components/dataset_list_component.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
@@ -536,24 +538,179 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, List<num>?)> extractFeatureFromDatItems(
+  Future<(Failure?, List<List<List<num>>>?, List<String?>?)>
+      createSegmentsAndLabels({
+    required List<DataItem> dataItems,
+    required int windowSize,
+    required int windowStep,
+  }) async {
+    try {
+      final (X, y) = await compute(
+        (message) {
+          final (dataItems, windowSize, windowStep) = message;
+          final (data, labels) = dataItems.fold(
+            (<List<num>>[], <String?>[]),
+            (previousValue, dataItem) {
+              final (data, labels) = previousValue;
+              return (
+                [
+                  ...data,
+                  [dataItem.x, dataItem.y, dataItem.z],
+                ],
+                [...labels, dataItem.labelCategory?.name],
+              );
+            },
+          );
+
+          final result = _segmentAndEncodeData(
+            data,
+            labels,
+            windowSize,
+            windowStep,
+          );
+          return result;
+        },
+        (dataItems, windowSize, windowStep),
+      );
+      return (null, X, y);
+    } catch (e, stackTrace) {
+      const message = 'Failed to extracting features';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null, null);
+    }
+  }
+
+  List<List<List<num>>> _segmentData(
+    List<List<num>> data,
+    int windowSize,
+    int windowStep,
+  ) {
+    final numSamples = (data.length - windowSize) ~/ windowStep + 1;
+    final segments = List.generate(
+      numSamples,
+      (_) => List.filled(windowSize, <num>[0, 0, 0]),
+      growable: false,
+    );
+
+    for (var i = 0; i < numSamples; i++) {
+      final start = i * windowStep;
+      final end = start + windowSize;
+      segments[i] = data.sublist(start, end);
+    }
+
+    return segments;
+  }
+
+  String? _mode(List<String?> values) {
+    final counts = <String?, int>{};
+    for (final value in values) {
+      counts[value] = (counts[value] ?? 0) + 1;
+    }
+    final maxCount = counts.values.reduce(math.max);
+    return counts.keys.firstWhere((key) => counts[key] == maxCount);
+  }
+
+  List<num> _oneHotEncode(List<String?> labels, Map<String, int> encoder) {
+    final encodedLabels = List<num>.filled(labels.length * encoder.length, 0);
+    for (var i = 0; i < labels.length; i++) {
+      final index = encoder[labels[i]];
+      if (index != null) {
+        encodedLabels[i * encoder.length + index] = 1.0;
+      }
+    }
+    return encodedLabels;
+  }
+
+  (List<List<List<num>>>, List<String?>) _segmentAndEncodeData(
+    List<List<num>> data,
+    List<String?> labels,
+    int windowSize,
+    int windowStep,
+  ) {
+    final segments = _segmentData(data, windowSize, windowStep);
+    final numSamples = segments.length;
+    final labels = List<String?>.filled(numSamples, null);
+
+    for (var i = 0; i < numSamples; i++) {
+      final mode =
+          _mode(segments[i].mapIndexed((index, _) => labels[index]).toList());
+      labels[i] = mode;
+    }
+
+    // final oneHotLabels = _oneHotEncode(labels, oneHotEncoder);
+    return (segments, labels);
+  }
+
+  Future<(Failure?, List<DataItemSection>?)> generateSections(
     List<DataItem> dataItems,
   ) async {
     try {
-      final data = await compute(
+      final sections = await compute(
         (message) {
           final (dataItems,) = message;
-          final data = dataItems
-              .map((dataItem) => [dataItem.x, dataItem.y, dataItem.z])
-              .expand((e) => e)
-              .toList(growable: false);
-          return data;
+
+          var currentIndex = 0;
+          var lastIndex = 0;
+          String? lastMovementSetId = '-1';
+
+          return dataItems.fold(const <DataItemSection>[],
+              (previousValue, dataItem) {
+            if (lastMovementSetId != dataItem.movementSetId) {
+              if (currentIndex != 0) {
+                lastIndex += previousValue.last.dataItems.length;
+              }
+
+              currentIndex++;
+              lastMovementSetId = dataItem.movementSetId;
+
+              return [
+                ...previousValue,
+                DataItemSection(
+                  lastIndex: lastIndex,
+                  movementSetId: dataItem.movementSetId,
+                  labelCategory: dataItem.labelCategory,
+                  dataItems: [dataItem],
+                ),
+              ];
+            }
+            currentIndex++;
+            lastMovementSetId = dataItem.movementSetId;
+
+            final lastSection = previousValue.last;
+            return [
+              ...previousValue
+                ..[previousValue.lastIndex] = lastSection.copyWith(
+                  dataItems: [...lastSection.dataItems, dataItem],
+                ),
+            ];
+          });
         },
         (dataItems,),
       );
-      return (null, data);
+      return (null, sections);
     } catch (e, stackTrace) {
-      const message = 'Failed to generate data';
+      const message = 'Failed to generating sections';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, double?)> evaluateModel({
+    required List<SholatMovementCategory?> categories,
+    required List<SholatMovementCategory?> predictedCategories,
+  }) async {
+    try {
+      final accuracy = categories
+              .zip<SholatMovementCategory?, bool>(
+                predictedCategories,
+                (a, b) => a == b,
+              )
+              .where((positive) => positive)
+              .length /
+          categories.length;
+      return (null, accuracy);
+    } catch (e, stackTrace) {
+      const message = 'Failed to generating sections';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }
