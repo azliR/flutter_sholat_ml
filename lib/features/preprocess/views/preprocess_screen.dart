@@ -136,34 +136,14 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
   void _scrollChartAndShowTrackball(int index, int dataItemsLength) {
     if (_lastZoomFactor == null || _lastZoomPosition == null) return;
 
-    final maxVisible = dataItemsLength * _lastZoomFactor!;
-    final minIndex = dataItemsLength * _lastZoomPosition!;
-    final maxIndex = minIndex + maxVisible;
-
-    // final multiplier = ((index - minIndex) / maxVisible).floor();
-    // _lastZoomPosition = _lastZoomPosition! + (_lastZoomFactor! * multiplier);
-
-    // _lastZoomPosition =
-    //     ((index + 1) / dataItemsLength) - (maxVisible / dataItemsLength);
-
-    // final multiplier = ((maxIndex - index) / maxVisible).floor();
-    // _lastZoomPosition = _lastZoomPosition! - (_lastZoomFactor! * multiplier);
-
-    // _lastZoomPosition = (index - 1) / dataItemsLength;
-
     _isTrackballControlled = true;
-    if (index >= maxIndex || index <= minIndex) {
-      _lastZoomPosition = (index / dataItemsLength) - (_lastZoomFactor! / 3);
 
-      _zoomPanBehavior.zoomToSingleAxis(
-        _primaryXAxis,
-        _lastZoomPosition!,
-        _lastZoomFactor!,
-      );
-    } else {
-      _showTrackballAt(index);
-      return;
-    }
+    final position = (index / dataItemsLength) - (_lastZoomFactor! / 2);
+    _zoomPanBehavior.zoomToSingleAxis(
+      _primaryXAxis,
+      position,
+      _lastZoomFactor!,
+    );
 
     _showTrackballDebouncer?.cancel();
     _showTrackballDebouncer =
