@@ -173,7 +173,8 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
 
     final sections = ref.read(generateDataItemSectionProvider).requireValue;
     final sectionIndex = sections.lastIndexWhere(
-        (section) => section.startIndex <= updatedHighlightedIndex);
+      (section) => section.startIndex <= updatedHighlightedIndex,
+    );
 
     final currentOffset = sections
         .take(sectionIndex + 1)
@@ -264,7 +265,8 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
 
     final sections = ref.read(generateDataItemSectionProvider).requireValue;
     final sectionIndex = sections.lastIndexWhere(
-        (section) => section.startIndex <= updatedHighlightedIndex);
+      (section) => section.startIndex <= updatedHighlightedIndex,
+    );
 
     final currentOffset = sections
         .take(sectionIndex + 1)

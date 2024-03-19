@@ -794,9 +794,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                                           case DeprecatedLabelProblem():
                                           case DeprecatedLabelCategoryProblem():
                                           case WrongMovementSequenceProblem():
-                                            // _scrollController.jumpTo(
-                                            //   problem.startIndex * 32,
-                                            // );
+                                            _scrollToDataItemTile(
+                                              problem.startIndex,
+                                            );
                                             _notifier
                                                 .setCurrentHighlightedIndex(
                                               problem.startIndex,

@@ -49,6 +49,7 @@ class _DatasetListState extends ConsumerState<DatasetList> {
 
     return Column(
       children: [
+        if (sectionsAsync.isLoading) const LinearProgressIndicator(),
         const Divider(height: 0),
         _buildDataItemHeader(),
         const Divider(height: 0),
@@ -313,15 +314,29 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
             ),
             const SizedBox(width: 8),
             Text(section.labelCategory?.name ?? 'Unlabelled'),
+            const SizedBox(width: 8),
             Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
                 color: colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(section.dataItems.length.toString()),
             ),
+            const SizedBox(width: 8),
+            if (section.movementSetId != null)
+              Tooltip(
+                message: 'Movement Set ID',
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(section.movementSetId!.substring(0, 6)),
+                ),
+              ),
           ],
         ),
         leading: Text(index.toString()),
@@ -332,6 +347,9 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         dense: true,
         onTap: () => onTap(overlapsContent),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(16)),
+        ),
       ),
     );
   }
@@ -366,14 +384,14 @@ class DataItemSection {
   bool get isLabeled => labelCategory != null;
 
   DataItemSection copyWith({
-    int? lastIndex,
+    int? startIndex,
     String? movementSetId,
     SholatMovementCategory? labelCategory,
     List<DataItem>? dataItems,
     bool? expanded,
   }) {
     return DataItemSection(
-      startIndex: lastIndex ?? this.startIndex,
+      startIndex: startIndex ?? this.startIndex,
       movementSetId: movementSetId ?? this.movementSetId,
       labelCategory: labelCategory ?? this.labelCategory,
       dataItems: dataItems ?? this.dataItems,
