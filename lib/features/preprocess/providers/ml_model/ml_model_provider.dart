@@ -1,6 +1,6 @@
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
-import 'package:flutter_sholat_ml/features/lab/repositories/lab_repository.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_model/repositories/ml_model_repository.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -8,7 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'ml_model_provider.g.dart';
 
 final _preprocessRepository = PreprocessRepository();
-final _labRepository = LabRepository();
+final _mlModelRepository = MlModelRepository();
 
 @riverpod
 class SelectedMlModel extends _$SelectedMlModel {
@@ -58,7 +58,7 @@ class PredictedCategories extends _$PredictedCategories {
     final batchSize =
         data.length / model.config.windowSize ~/ model.config.numberOfFeatures;
 
-    final (failure, predictions) = await _labRepository.predict(
+    final (failure, predictions) = await _mlModelRepository.predict(
       path: model.path,
       data: data,
       previousLabels: null,

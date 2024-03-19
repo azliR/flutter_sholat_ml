@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:dartx/dartx_io.dart';
-import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/blocs/ml_models/ml_models_notifer.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:hive/hive.dart';
 
 class LocalMlModelStorageService {

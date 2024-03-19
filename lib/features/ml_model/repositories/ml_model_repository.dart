@@ -6,15 +6,15 @@ import 'dart:typed_data';
 
 import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 import 'package:synchronized/synchronized.dart';
 
-class LabRepository {
+class MlModelRepository {
   final _lock = Lock();
 
   OrtSession? _session;
@@ -394,13 +394,13 @@ class LabRepository {
   }
 
   void setShowBottomPanel({required bool showBottomPanel}) {
-    LocalStorageService.setLabShowBottomPanel(
+    LocalStorageService.setMlModelShowBottomPanel(
       enable: showBottomPanel,
     );
   }
 
   bool? getShowBottomPanel() {
-    return LocalStorageService.getLabShowBottomPanel();
+    return LocalStorageService.getMlModelShowBottomPanel();
   }
 
   void saveModel(MlModel model) {

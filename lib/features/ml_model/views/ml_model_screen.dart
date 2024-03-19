@@ -4,11 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/dimens.dart';
-import 'package:flutter_sholat_ml/features/lab/blocs/lab/lab_notifier.dart';
-import 'package:flutter_sholat_ml/features/lab/widgets/bottom_panel_widget.dart';
-import 'package:flutter_sholat_ml/features/lab/widgets/filter_list_widget.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_model/blocs/ml_model/ml_model_notifier.dart';
+import 'package:flutter_sholat_ml/features/ml_model/widgets/bottom_panel_widget.dart';
+import 'package:flutter_sholat_ml/features/ml_model/widgets/filter_list_widget.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -16,8 +16,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 
 @RoutePage()
-class LabScreen extends ConsumerStatefulWidget {
-  const LabScreen({
+class MlModelScreen extends ConsumerStatefulWidget {
+  const MlModelScreen({
     required this.model,
     required this.device,
     required this.services,
@@ -31,12 +31,12 @@ class LabScreen extends ConsumerStatefulWidget {
   final void Function(MlModel model)? onModelChanged;
 
   @override
-  ConsumerState<LabScreen> createState() => _LabScreenState();
+  ConsumerState<MlModelScreen> createState() => _MlModelScreenState();
 }
 
-class _LabScreenState extends ConsumerState<LabScreen> {
-  late final LabNotifier _notifier;
-  late final ProviderListenable<LabState> labProviderFamily;
+class _MlModelScreenState extends ConsumerState<MlModelScreen> {
+  late final MlModelNotifier _notifier;
+  late final ProviderListenable<MlModelState> mlModelProviderFamily;
 
   late final MultiSplitViewController _mainSplitController;
 
@@ -47,7 +47,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
   void _onEditModelNameDone() {
     if (_modelNameController.text.isEmpty) return;
 
-    final model = ref.read(labProviderFamily).model;
+    final model = ref.read(mlModelProviderFamily).model;
     _notifier.setModel(
       model.copyWith(name: _modelNameController.text),
     );
@@ -69,10 +69,11 @@ class _LabScreenState extends ConsumerState<LabScreen> {
 
   @override
   void initState() {
-    _notifier = ref.read(labProvider(LabArg(model: widget.model)).notifier);
-    labProviderFamily = labProvider(LabArg(model: widget.model));
+    _notifier =
+        ref.read(mlModelProvider(MlModelArg(model: widget.model)).notifier);
+    mlModelProviderFamily = mlModelProvider(MlModelArg(model: widget.model));
 
-    final mainWeights = LocalStorageService.getLabSplitView1Weights();
+    final mainWeights = LocalStorageService.getMlModelSplitView1Weights();
     _mainSplitController = MultiSplitViewController(
       areas: [
         Area(minimalWeight: 0.6, weight: mainWeights.elementAtOrNull(0)),
@@ -100,10 +101,10 @@ class _LabScreenState extends ConsumerState<LabScreen> {
   Widget build(BuildContext context) {
     ref
       ..listen(
-        labProviderFamily.select((value) => value.presentationState),
+        mlModelProviderFamily.select((value) => value.presentationState),
         (previous, presentationState) async {
           switch (presentationState) {
-            case LabInitialState():
+            case MlModelInitialState():
               break;
             case PredictFailureState():
               showErrorSnackbar(context, presentationState.failure.message);
@@ -113,14 +114,14 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         },
       )
       ..listen(
-        labProviderFamily.select((value) => value.model),
+        mlModelProviderFamily.select((value) => value.model),
         (previous, model) {
           widget.onModelChanged?.call(model);
         },
       );
 
-    final showBottomPanel =
-        ref.watch(labProviderFamily.select((value) => value.showBottomPanel));
+    final showBottomPanel = ref
+        .watch(mlModelProviderFamily.select((value) => value.showBottomPanel));
 
     return PopScope(
       canPop: false,
@@ -152,7 +153,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
             final weights = _mainSplitController.areas
                 .map((area) => area.weight ?? 1)
                 .toList();
-            LocalStorageService.setLabSplitView1Weights(weights);
+            LocalStorageService.setMlModelSplitView1Weights(weights);
           },
           children: [
             _buildMain(),
@@ -160,8 +161,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   return BottomPanel(
-                    logs: ref
-                        .watch(labProviderFamily.select((value) => value.logs)),
+                    logs: ref.watch(
+                        mlModelProviderFamily.select((value) => value.logs)),
                     onClosePressed: () =>
                         _notifier.setShowBottomPanel(enable: false),
                   );
@@ -200,9 +201,9 @@ class _LabScreenState extends ConsumerState<LabScreen> {
   InkWell _buildAppBar() {
     return InkWell(
       onTap: () {
-        _modelNameController.text =
-            ref.read(labProviderFamily.select((value) => value.model.name)) ??
-                '';
+        _modelNameController.text = ref.read(
+                mlModelProviderFamily.select((value) => value.model.name)) ??
+            '';
         setState(() => _editNameMode = true);
       },
       child: SizedBox(
@@ -213,7 +214,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               child: Consumer(
                 builder: (context, ref, child) {
                   final modelName = ref.watch(
-                    labProviderFamily.select((value) => value.model.name),
+                    mlModelProviderFamily.select((value) => value.model.name),
                   );
                   return Text(modelName);
                 },
@@ -236,14 +237,14 @@ class _LabScreenState extends ConsumerState<LabScreen> {
     final textTheme = Theme.of(context).textTheme;
 
     final isInitialised =
-        ref.watch(labProviderFamily.select((value) => value.isInitialised));
+        ref.watch(mlModelProviderFamily.select((value) => value.isInitialised));
     final recordState =
-        ref.watch(labProviderFamily.select((value) => value.recordState));
-    final predictedCategory =
-        ref.watch(labProviderFamily.select((value) => value.predictedCategory));
+        ref.watch(mlModelProviderFamily.select((value) => value.recordState));
+    final predictedCategory = ref.watch(
+        mlModelProviderFamily.select((value) => value.predictedCategory));
 
     final modelConfig =
-        ref.read(labProviderFamily.select((value) => value.modelConfig));
+        ref.read(mlModelProviderFamily.select((value) => value.modelConfig));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, Dimens.bottomListPadding),
@@ -346,7 +347,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
         Consumer(
           builder: (context, ref, child) {
             final enableTeacherForcing = ref.watch(
-              labProviderFamily
+              mlModelProviderFamily
                   .select((value) => value.modelConfig.enableTeacherForcing),
             );
 
@@ -376,7 +377,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
             title: Consumer(
               builder: (context, ref, child) {
                 final selectedFilterLength = ref.watch(
-                  labProviderFamily.select(
+                  mlModelProviderFamily.select(
                     (value) =>
                         value.modelConfig.smoothings.length +
                         value.modelConfig.filterings.length +
@@ -419,7 +420,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   final selectedFilters = ref.watch(
-                    labProviderFamily
+                    mlModelProviderFamily
                         .select((value) => value.modelConfig.smoothings),
                   );
 
@@ -432,7 +433,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                         ? null
                         : (filter, selected) {
                             final modelConfig = ref.read(
-                              labProviderFamily
+                              mlModelProviderFamily
                                   .select((value) => value.modelConfig),
                             );
 
@@ -453,7 +454,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   final selectedFilters = ref.watch(
-                    labProviderFamily
+                    mlModelProviderFamily
                         .select((value) => value.modelConfig.filterings),
                   );
 
@@ -466,7 +467,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                         ? null
                         : (filter, selected) {
                             final modelConfig = ref.read(
-                              labProviderFamily
+                              mlModelProviderFamily
                                   .select((value) => value.modelConfig),
                             );
 
@@ -487,7 +488,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
               Consumer(
                 builder: (context, ref, child) {
                   final selectedFilters = ref.watch(
-                    labProviderFamily.select(
+                    mlModelProviderFamily.select(
                       (value) =>
                           value.modelConfig.temporalConsistencyEnforcements,
                     ),
@@ -502,7 +503,7 @@ class _LabScreenState extends ConsumerState<LabScreen> {
                         ? null
                         : (filter, selected) {
                             final modelConfig = ref.read(
-                              labProviderFamily
+                              mlModelProviderFamily
                                   .select((value) => value.modelConfig),
                             );
 
@@ -598,7 +599,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
     if (numberOfFeatures == null) {
       return 'Please enter a valid number';
     }
-    if (numberOfFeatures > ref.read(labProviderFamily).modelConfig.windowSize) {
+    if (numberOfFeatures >
+        ref.read(mlModelProviderFamily).modelConfig.windowSize) {
       return 'Window step must be less than window size';
     }
     return null;
@@ -654,7 +656,8 @@ class _LabScreenState extends ConsumerState<LabScreen> {
             Consumer(
               builder: (context, ref, child) {
                 final isShowBottomPanel = ref.watch(
-                  labProviderFamily.select((value) => value.showBottomPanel),
+                  mlModelProviderFamily
+                      .select((value) => value.showBottomPanel),
                 );
                 return MenuItemButton(
                   leadingIcon: isShowBottomPanel

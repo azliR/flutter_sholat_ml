@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
@@ -112,7 +112,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
                 ref.read(authDeviceProvider).currentServices;
 
             context.router.push(
-              LabRoute(
+              MlModelRoute(
                 device: currentBluetoothDevice,
                 services: currentServices,
                 onModelChanged: null,

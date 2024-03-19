@@ -1,4 +1,4 @@
-part of 'labs_notifer.dart';
+part of 'ml_models_notifer.dart';
 
 enum SortType {
   modelName,
@@ -20,33 +20,33 @@ enum SortDirection {
       };
 }
 
-class LabsState extends Equatable {
-  const LabsState({
+class MlModelsState extends Equatable {
+  const MlModelsState({
     required this.sortType,
     required this.sortDirection,
     required this.presentationState,
   });
 
-  factory LabsState.initial({
+  factory MlModelsState.initial({
     required SortType sortType,
     required SortDirection sortDirection,
   }) =>
-      LabsState(
+      MlModelsState(
         sortType: sortType,
         sortDirection: sortDirection,
-        presentationState: const LabsInitialState(),
+        presentationState: const MlModelsInitialState(),
       );
 
   final SortType sortType;
   final SortDirection sortDirection;
-  final LabsPresentationState presentationState;
+  final MlModelsPresentationState presentationState;
 
-  LabsState copyWith({
+  MlModelsState copyWith({
     SortType? sortType,
     SortDirection? sortDirection,
-    LabsPresentationState? presentationState,
+    MlModelsPresentationState? presentationState,
   }) {
-    return LabsState(
+    return MlModelsState(
       sortType: sortType ?? this.sortType,
       sortDirection: sortDirection ?? this.sortDirection,
       presentationState: presentationState ?? this.presentationState,
@@ -58,41 +58,41 @@ class LabsState extends Equatable {
 }
 
 @immutable
-sealed class LabsPresentationState {
-  const LabsPresentationState();
+sealed class MlModelsPresentationState {
+  const MlModelsPresentationState();
 }
 
-final class LabsInitialState extends LabsPresentationState {
-  const LabsInitialState();
+final class MlModelsInitialState extends MlModelsPresentationState {
+  const MlModelsInitialState();
 }
 
-final class PickModelLoadingState extends LabsPresentationState {
+final class PickModelLoadingState extends MlModelsPresentationState {
   const PickModelLoadingState();
 }
 
-final class PickModelSuccessState extends LabsPresentationState {
+final class PickModelSuccessState extends MlModelsPresentationState {
   const PickModelSuccessState(this.model);
 
   final MlModel model;
 }
 
-final class PickModelFailureState extends LabsPresentationState {
+final class PickModelFailureState extends MlModelsPresentationState {
   const PickModelFailureState(this.failure);
 
   final Failure failure;
 }
 
-final class DeleteMlModelLoadingState extends LabsPresentationState {
+final class DeleteMlModelLoadingState extends MlModelsPresentationState {
   const DeleteMlModelLoadingState();
 }
 
-final class DeleteMlModelSuccessState extends LabsPresentationState {
+final class DeleteMlModelSuccessState extends MlModelsPresentationState {
   const DeleteMlModelSuccessState(this.mlModels);
 
   final List<MlModel> mlModels;
 }
 
-final class DeleteMlModelFailureState extends LabsPresentationState {
+final class DeleteMlModelFailureState extends MlModelsPresentationState {
   const DeleteMlModelFailureState(this.failure);
 
   final Failure failure;

@@ -8,17 +8,17 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
-import 'package:flutter_sholat_ml/features/lab/repositories/lab_repository.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_model/repositories/ml_model_repository.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
-part 'lab_state.dart';
+part 'ml_model_state.dart';
 
-class LabArg extends Equatable {
-  const LabArg({required this.model});
+class MlModelArg extends Equatable {
+  const MlModelArg({required this.model});
 
   final MlModel model;
 
@@ -26,17 +26,18 @@ class LabArg extends Equatable {
   List<Object?> get props => [model];
 }
 
-final labProvider =
-    NotifierProvider.autoDispose.family<LabNotifier, LabState, LabArg>(
-  LabNotifier.new,
+final mlModelProvider = NotifierProvider.autoDispose
+    .family<MlModelNotifier, MlModelState, MlModelArg>(
+  MlModelNotifier.new,
 );
 
-class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
-  LabNotifier()
-      : _labRepository = LabRepository(),
+class MlModelNotifier
+    extends AutoDisposeFamilyNotifier<MlModelState, MlModelArg> {
+  MlModelNotifier()
+      : _mlModelRepository = MlModelRepository(),
         _recordRepository = RecordRepository();
 
-  final LabRepository _labRepository;
+  final MlModelRepository _mlModelRepository;
   final RecordRepository _recordRepository;
 
   late final MlModel _mlModel;
@@ -55,17 +56,17 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
   int? _lastHeartRate;
 
   @override
-  LabState build(LabArg arg) {
+  MlModelState build(MlModelArg arg) {
     ref.onDispose(() {
       _heartRateMeasureSubscription?.cancel();
       _sensorSubscription?.cancel();
       _hzSubscription?.cancel();
       _recordRepository.dispose();
-      _labRepository.dispose();
+      _mlModelRepository.dispose();
     });
 
-    return LabState.initial(
-      showBottomPanel: LocalStorageService.getLabShowBottomPanel(),
+    return MlModelState.initial(
+      showBottomPanel: LocalStorageService.getMlModelShowBottomPanel(),
       model: arg.model,
     );
   }
@@ -166,7 +167,7 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
 
     final inputData = lastAccelData.takeLast(totalDataSize);
 
-    final (failure, predictions) = await _labRepository.predict(
+    final (failure, predictions) = await _mlModelRepository.predict(
       path: _mlModel.path,
       data: inputData,
       config: modelConfig,
@@ -271,7 +272,7 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
   }
 
   void setShowBottomPanel({required bool enable}) {
-    _labRepository.setShowBottomPanel(showBottomPanel: enable);
+    _mlModelRepository.setShowBottomPanel(showBottomPanel: enable);
     state = state.copyWith(showBottomPanel: enable);
   }
 
@@ -279,7 +280,7 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
     final updatedModel = model.copyWith(
       updatedAt: DateTime.now(),
     );
-    _labRepository.saveModel(updatedModel);
+    _mlModelRepository.saveModel(updatedModel);
     state = state.copyWith(model: updatedModel);
   }
 
@@ -288,7 +289,7 @@ class LabNotifier extends AutoDisposeFamilyNotifier<LabState, LabArg> {
     final updatedModel = model.copyWith(
       updatedAt: DateTime.now(),
     );
-    _labRepository.saveModel(updatedModel);
+    _mlModelRepository.saveModel(updatedModel);
     state = state.copyWith(model: updatedModel);
   }
 }

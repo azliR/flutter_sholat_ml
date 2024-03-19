@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
-import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
+import 'package:flutter_sholat_ml/features/ml_models/blocs/ml_models/ml_models_notifer.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -59,7 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _needReviewRefreshKeyCompleter.complete(reviewedRefreshKey);
               },
             ),
-          HomeScreenNavigationTab.labs => const LabsPage(),
+          HomeScreenNavigationTab.labs => const MlModelsPage(),
         } as PageRouteInfo<dynamic>;
       }).toList();
 
@@ -126,7 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _onAddModelPressed() async {
-    await ref.read(labsProvider.notifier).pickModel();
+    await ref.read(mlModelsProvider.notifier).pickModel();
   }
 
   @override

@@ -1,4 +1,4 @@
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'ml_model.freezed.dart';

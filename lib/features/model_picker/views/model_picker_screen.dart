@@ -2,8 +2,8 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
-import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/blocs/ml_models/ml_models_notifer.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -18,7 +18,7 @@ class ModelPickerScreen extends ConsumerStatefulWidget {
 }
 
 class _ModelPickerScreenState extends ConsumerState<ModelPickerScreen> {
-  late final LabsNotifier _notifier;
+  late final MlModelsNotifier _notifier;
 
   static const _pageSize = 20;
 
@@ -45,7 +45,7 @@ class _ModelPickerScreenState extends ConsumerState<ModelPickerScreen> {
 
   @override
   void initState() {
-    _notifier = ref.read(labsProvider.notifier);
+    _notifier = ref.read(mlModelsProvider.notifier);
 
     _modelsPagingController.addPageRequestListener(_fetchLocalMlModelsPage);
     super.initState();
@@ -67,7 +67,7 @@ class _ModelPickerScreenState extends ConsumerState<ModelPickerScreen> {
                 Consumer(
                   builder: (context, ref, child) {
                     final sortType = ref.watch(
-                      labsProvider.select((value) => value.sortType),
+                      mlModelsProvider.select((value) => value.sortType),
                     );
 
                     return MenuAnchor(
@@ -106,7 +106,7 @@ class _ModelPickerScreenState extends ConsumerState<ModelPickerScreen> {
                 Consumer(
                   builder: (context, ref, child) {
                     final sortDirection = ref.watch(
-                      labsProvider.select((value) => value.sortDirection),
+                      mlModelsProvider.select((value) => value.sortDirection),
                     );
 
                     return MenuAnchor(

@@ -24,11 +24,13 @@ import 'package:flutter_sholat_ml/features/datasets/views/datasets_page.dart'
 import 'package:flutter_sholat_ml/features/discover_devices/views/discover_device_screen.dart'
     as _i4;
 import 'package:flutter_sholat_ml/features/home/views/home_screen.dart' as _i5;
-import 'package:flutter_sholat_ml/features/lab/views/lab_screen.dart' as _i6;
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart'
-    as _i16;
-import 'package:flutter_sholat_ml/features/labs/views/labs_page.dart' as _i7;
 import 'package:flutter_sholat_ml/features/manual_device_connect/views/manual_device_connect_screen.dart'
+    as _i6;
+import 'package:flutter_sholat_ml/features/ml_model/views/ml_model_screen.dart'
+    as _i7;
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart'
+    as _i16;
+import 'package:flutter_sholat_ml/features/ml_models/views/ml_models_page.dart'
     as _i8;
 import 'package:flutter_sholat_ml/features/model_picker/views/model_picker_screen.dart'
     as _i9;
@@ -94,11 +96,17 @@ abstract class $AppRouter extends _i15.RootStackRouter {
         ),
       );
     },
-    LabRoute.name: (routeData) {
-      final args = routeData.argsAs<LabRouteArgs>();
+    ManualDeviceConnectRoute.name: (routeData) {
       return _i15.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: _i6.LabScreen(
+        child: const _i6.ManualDeviceConnectScreen(),
+      );
+    },
+    MlModelRoute.name: (routeData) {
+      final args = routeData.argsAs<MlModelRouteArgs>();
+      return _i15.AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: _i7.MlModelScreen(
           model: args.model,
           device: args.device,
           services: args.services,
@@ -107,16 +115,10 @@ abstract class $AppRouter extends _i15.RootStackRouter {
         ),
       );
     },
-    LabsPage.name: (routeData) {
+    MlModelsPage.name: (routeData) {
       return _i15.AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const _i7.LabsPage(),
-      );
-    },
-    ManualDeviceConnectRoute.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i8.ManualDeviceConnectScreen(),
+        child: const _i8.MlModelsPage(),
       );
     },
     ModelPickerRoute.name: (routeData) {
@@ -353,9 +355,23 @@ class HomeRouteArgs {
 }
 
 /// generated route for
-/// [_i6.LabScreen]
-class LabRoute extends _i15.PageRouteInfo<LabRouteArgs> {
-  LabRoute({
+/// [_i6.ManualDeviceConnectScreen]
+class ManualDeviceConnectRoute extends _i15.PageRouteInfo<void> {
+  const ManualDeviceConnectRoute({List<_i15.PageRouteInfo>? children})
+      : super(
+          ManualDeviceConnectRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ManualDeviceConnectRoute';
+
+  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+}
+
+/// generated route for
+/// [_i7.MlModelScreen]
+class MlModelRoute extends _i15.PageRouteInfo<MlModelRouteArgs> {
+  MlModelRoute({
     required _i16.MlModel model,
     required _i17.BluetoothDevice? device,
     required List<_i17.BluetoothService>? services,
@@ -363,8 +379,8 @@ class LabRoute extends _i15.PageRouteInfo<LabRouteArgs> {
     _i18.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
-          LabRoute.name,
-          args: LabRouteArgs(
+          MlModelRoute.name,
+          args: MlModelRouteArgs(
             model: model,
             device: device,
             services: services,
@@ -374,14 +390,14 @@ class LabRoute extends _i15.PageRouteInfo<LabRouteArgs> {
           initialChildren: children,
         );
 
-  static const String name = 'LabRoute';
+  static const String name = 'MlModelRoute';
 
-  static const _i15.PageInfo<LabRouteArgs> page =
-      _i15.PageInfo<LabRouteArgs>(name);
+  static const _i15.PageInfo<MlModelRouteArgs> page =
+      _i15.PageInfo<MlModelRouteArgs>(name);
 }
 
-class LabRouteArgs {
-  const LabRouteArgs({
+class MlModelRouteArgs {
+  const MlModelRouteArgs({
     required this.model,
     required this.device,
     required this.services,
@@ -401,34 +417,20 @@ class LabRouteArgs {
 
   @override
   String toString() {
-    return 'LabRouteArgs{model: $model, device: $device, services: $services, onModelChanged: $onModelChanged, key: $key}';
+    return 'MlModelRouteArgs{model: $model, device: $device, services: $services, onModelChanged: $onModelChanged, key: $key}';
   }
 }
 
 /// generated route for
-/// [_i7.LabsPage]
-class LabsPage extends _i15.PageRouteInfo<void> {
-  const LabsPage({List<_i15.PageRouteInfo>? children})
+/// [_i8.MlModelsPage]
+class MlModelsPage extends _i15.PageRouteInfo<void> {
+  const MlModelsPage({List<_i15.PageRouteInfo>? children})
       : super(
-          LabsPage.name,
+          MlModelsPage.name,
           initialChildren: children,
         );
 
-  static const String name = 'LabsPage';
-
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
-}
-
-/// generated route for
-/// [_i8.ManualDeviceConnectScreen]
-class ManualDeviceConnectRoute extends _i15.PageRouteInfo<void> {
-  const ManualDeviceConnectRoute({List<_i15.PageRouteInfo>? children})
-      : super(
-          ManualDeviceConnectRoute.name,
-          initialChildren: children,
-        );
-
-  static const String name = 'ManualDeviceConnectRoute';
+  static const String name = 'MlModelsPage';
 
   static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
 }

@@ -1,8 +1,8 @@
-part of 'lab_notifier.dart';
+part of 'ml_model_notifier.dart';
 
 @immutable
-class LabState extends Equatable {
-  const LabState({
+class MlModelState extends Equatable {
+  const MlModelState({
     required this.isInitialised,
     required this.showBottomPanel,
     required this.model,
@@ -15,11 +15,11 @@ class LabState extends Equatable {
     required this.presentationState,
   });
 
-  factory LabState.initial({
+  factory MlModelState.initial({
     required bool showBottomPanel,
     required MlModel model,
   }) =>
-      LabState(
+      MlModelState(
         isInitialised: false,
         showBottomPanel: showBottomPanel,
         model: model,
@@ -29,7 +29,7 @@ class LabState extends Equatable {
         lastAccelData: null,
         predictedCategory: null,
         predictedCategories: null,
-        presentationState: const LabInitialState(),
+        presentationState: const MlModelInitialState(),
       );
 
   final bool isInitialised;
@@ -41,11 +41,11 @@ class LabState extends Equatable {
   final List<num>? lastAccelData;
   final SholatMovementCategory? predictedCategory;
   final List<SholatMovementCategory>? predictedCategories;
-  final LabPresentationState presentationState;
+  final MlModelPresentationState presentationState;
 
   MlModelConfig get modelConfig => model.config;
 
-  LabState copyWith({
+  MlModelState copyWith({
     bool? isInitialised,
     bool? showBottomPanel,
     MlModel? model,
@@ -55,9 +55,9 @@ class LabState extends Equatable {
     ValueGetter<List<num>?>? lastAccelData,
     SholatMovementCategory? predictedCategory,
     List<SholatMovementCategory>? predictedCategories,
-    LabPresentationState? presentationState,
+    MlModelPresentationState? presentationState,
   }) {
-    return LabState(
+    return MlModelState(
       isInitialised: isInitialised ?? this.isInitialised,
       showBottomPanel: showBottomPanel ?? this.showBottomPanel,
       model: model ?? this.model,
@@ -100,19 +100,19 @@ enum RecordState {
 }
 
 @immutable
-sealed class LabPresentationState {
-  const LabPresentationState();
+sealed class MlModelPresentationState {
+  const MlModelPresentationState();
 }
 
-final class LabInitialState extends LabPresentationState {
-  const LabInitialState();
+final class MlModelInitialState extends MlModelPresentationState {
+  const MlModelInitialState();
 }
 
-final class PredictSuccessState extends LabPresentationState {
+final class PredictSuccessState extends MlModelPresentationState {
   const PredictSuccessState();
 }
 
-final class PredictFailureState extends LabPresentationState {
+final class PredictFailureState extends MlModelPresentationState {
   const PredictFailureState(this.failure);
 
   final Failure failure;

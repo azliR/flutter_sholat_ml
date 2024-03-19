@@ -1,26 +1,27 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
-import 'package:flutter_sholat_ml/features/labs/repositories/labs_repository.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/repositories/ml_models_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 
-part 'labs_state.dart';
+part 'ml_models_state.dart';
 
-final labsProvider =
-    NotifierProvider.autoDispose<LabsNotifier, LabsState>(LabsNotifier.new);
+final mlModelsProvider =
+    NotifierProvider.autoDispose<MlModelsNotifier, MlModelsState>(
+        MlModelsNotifier.new);
 
-class LabsNotifier extends AutoDisposeNotifier<LabsState> {
-  LabsNotifier() : _labsRepository = LabsRepository();
+class MlModelsNotifier extends AutoDisposeNotifier<MlModelsState> {
+  MlModelsNotifier() : _mlModelsRepository = MlModelsRepository();
 
-  final LabsRepository _labsRepository;
+  final MlModelsRepository _mlModelsRepository;
 
   @override
-  LabsState build() {
-    return LabsState.initial(
-      sortType: LocalStorageService.getLabsSortType(),
-      sortDirection: LocalStorageService.getLabsSortDirection(),
+  MlModelsState build() {
+    return MlModelsState.initial(
+      sortType: LocalStorageService.getMlModelsSortType(),
+      sortDirection: LocalStorageService.getMlModelsSortDirection(),
     );
   }
 
@@ -28,7 +29,7 @@ class LabsNotifier extends AutoDisposeNotifier<LabsState> {
     int start,
     int limit,
   ) async =>
-      _labsRepository.getLocalMlModels(
+      _mlModelsRepository.getLocalMlModels(
         start,
         limit,
         sortType: state.sortType,
@@ -37,7 +38,7 @@ class LabsNotifier extends AutoDisposeNotifier<LabsState> {
 
   Future<void> pickModel() async {
     state = state.copyWith(presentationState: const PickModelLoadingState());
-    final (failure, mlModel) = await _labsRepository.pickModel();
+    final (failure, mlModel) = await _mlModelsRepository.pickModel();
     if (failure != null) {
       state = state.copyWith(
         presentationState: PickModelFailureState(failure),
@@ -53,7 +54,7 @@ class LabsNotifier extends AutoDisposeNotifier<LabsState> {
     state =
         state.copyWith(presentationState: const DeleteMlModelLoadingState());
 
-    final (failure, _) = await _labsRepository.deleteMlModels(mlModels);
+    final (failure, _) = await _mlModelsRepository.deleteMlModels(mlModels);
     if (failure != null) {
       state = state.copyWith(
         presentationState: DeleteMlModelFailureState(failure),

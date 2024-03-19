@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
-import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
-import 'package:flutter_sholat_ml/features/labs/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/ml_models/blocs/ml_models/ml_models_notifer.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
@@ -14,15 +14,15 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart' hide context;
 
 @RoutePage()
-class LabsPage extends ConsumerStatefulWidget {
-  const LabsPage({super.key});
+class MlModelsPage extends ConsumerStatefulWidget {
+  const MlModelsPage({super.key});
 
   @override
-  ConsumerState<LabsPage> createState() => _LabsPageState();
+  ConsumerState<MlModelsPage> createState() => _MlModelsPageState();
 }
 
-class _LabsPageState extends ConsumerState<LabsPage> {
-  late final LabsNotifier _notifier;
+class _MlModelsPageState extends ConsumerState<MlModelsPage> {
+  late final MlModelsNotifier _notifier;
 
   static const _pageSize = 20;
 
@@ -50,7 +50,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
 
   @override
   void initState() {
-    _notifier = ref.read(labsProvider.notifier);
+    _notifier = ref.read(mlModelsProvider.notifier);
 
     _modelsPagingController.addPageRequestListener(_fetchLocalMlModelsPage);
     super.initState();
@@ -65,10 +65,10 @@ class _LabsPageState extends ConsumerState<LabsPage> {
   @override
   Widget build(BuildContext context) {
     ref.listen(
-      labsProvider.select((value) => value.presentationState),
+      mlModelsProvider.select((value) => value.presentationState),
       (previous, presentationState) async {
         switch (presentationState) {
-          case LabsInitialState():
+          case MlModelsInitialState():
             break;
           case PickModelLoadingState():
             context.loaderOverlay.show();
@@ -81,7 +81,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                 ref.read(authDeviceProvider).currentServices;
 
             await context.router.push(
-              LabRoute(
+              MlModelRoute(
                 model: presentationState.model,
                 device: currentBluetoothDevice,
                 services: currentServices,
@@ -132,7 +132,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                   Consumer(
                     builder: (context, ref, child) {
                       final sortType = ref.watch(
-                        labsProvider.select((value) => value.sortType),
+                        mlModelsProvider.select((value) => value.sortType),
                       );
 
                       return MenuAnchor(
@@ -171,7 +171,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                   Consumer(
                     builder: (context, ref, child) {
                       final sortDirection = ref.watch(
-                        labsProvider.select((value) => value.sortDirection),
+                        mlModelsProvider.select((value) => value.sortDirection),
                       );
 
                       return MenuAnchor(
@@ -243,7 +243,7 @@ class _LabsPageState extends ConsumerState<LabsPage> {
                       ref.read(authDeviceProvider).currentServices;
 
                   context.router.push(
-                    LabRoute(
+                    MlModelRoute(
                       model: model,
                       device: currentBluetoothDevice,
                       services: currentServices,

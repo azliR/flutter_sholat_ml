@@ -16,12 +16,12 @@ class AppRouter extends $AppRouter {
         children: [
           AutoRoute(page: SavedDevicesPage.page),
           AutoRoute(page: DatasetsPage.page),
-          AutoRoute(page: LabsPage.page),
+          AutoRoute(page: MlModelsPage.page),
         ],
       ),
       AutoRoute(page: RecordRoute.page),
       AutoRoute(page: PreprocessRoute.page),
-      AutoRoute(page: LabRoute.page),
+      AutoRoute(page: MlModelRoute.page),
       AutoRoute(page: SettingsRoute.page),
       AutoRoute(page: ModelPickerRoute.page, fullscreenDialog: true),
     ];

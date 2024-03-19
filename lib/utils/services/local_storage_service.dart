@@ -1,5 +1,5 @@
 import 'package:flutter_sholat_ml/core/auth_device/models/device/device.dart';
-import 'package:flutter_sholat_ml/features/labs/blocs/labs/labs_notifer.dart';
+import 'package:flutter_sholat_ml/features/ml_models/blocs/ml_models/ml_models_notifer.dart';
 import 'package:hive/hive.dart';
 
 class LocalStorageService {
@@ -20,16 +20,18 @@ class LocalStorageService {
   static const String kPreprocessSplitView3Weights =
       'preprocess_split_view_3_weights';
 
-  static const String kLabsSortType = 'labs_sort_type';
-  static const String kLabsSortDirection = 'labs_sort_direction';
+  static const String kMlModelsSortType = 'ml_models_sort_type';
+  static const String kMlModelsSortDirection = 'ml_models_sort_direction';
 
-  static const String kLabShowBottomPanel = 'lab_show_problem_panel';
-  static const String kLabSplitView1Weights = 'lab_split_view_1_weights';
-  static const String kLabEnableTeacherForcing = 'lab_enable_teacher_forcing';
-  static const String kLabInputDataType = 'lab_input_data_type';
-  static const String kLabWindowSize = 'lab_window_size';
-  static const String kLabBatchSize = 'lab_batch_size';
-  static const String kLabNumberOfFeatures = 'lab_number_of_features';
+  static const String kMlModelShowBottomPanel = 'ml_model_show_problem_panel';
+  static const String kMlModelSplitView1Weights =
+      'ml_model_split_view_1_weights';
+  static const String kMlModelEnableTeacherForcing =
+      'ml_model_enable_teacher_forcing';
+  static const String kMlModelInputDataType = 'ml_model_input_data_type';
+  static const String kMlModelWindowSize = 'ml_model_window_size';
+  static const String kMlModelBatchSize = 'ml_model_batch_size';
+  static const String kMlModelNumberOfFeatures = 'ml_model_number_of_features';
 
   static final _box = Hive.box<dynamic>(name: kBox);
 
@@ -113,35 +115,35 @@ class LocalStorageService {
         .cast<double>();
   }
 
-  static void setLabsSortType(SortType value) {
-    _box.put(kLabsSortType, value.index);
+  static void setMlModelsSortType(SortType value) {
+    _box.put(kMlModelsSortType, value.index);
   }
 
-  static SortType getLabsSortType() {
-    return SortType.values[_box.get(kLabsSortType) as int? ?? 0];
+  static SortType getMlModelsSortType() {
+    return SortType.values[_box.get(kMlModelsSortType) as int? ?? 0];
   }
 
-  static void setLabsSortDirection(SortDirection value) {
-    _box.put(kLabsSortDirection, value.index);
+  static void setMlModelsSortDirection(SortDirection value) {
+    _box.put(kMlModelsSortDirection, value.index);
   }
 
-  static SortDirection getLabsSortDirection() {
-    return SortDirection.values[_box.get(kLabsSortDirection) as int? ?? 0];
+  static SortDirection getMlModelsSortDirection() {
+    return SortDirection.values[_box.get(kMlModelsSortDirection) as int? ?? 0];
   }
 
-  static void setLabShowBottomPanel({required bool enable}) {
-    _box.put(kLabShowBottomPanel, enable);
+  static void setMlModelShowBottomPanel({required bool enable}) {
+    _box.put(kMlModelShowBottomPanel, enable);
   }
 
-  static bool getLabShowBottomPanel() {
-    return _box.get(kLabShowBottomPanel) as bool? ?? true;
+  static bool getMlModelShowBottomPanel() {
+    return _box.get(kMlModelShowBottomPanel) as bool? ?? true;
   }
 
-  static void setLabSplitView1Weights(List<double> weights) {
-    _box.put(kLabSplitView1Weights, weights);
+  static void setMlModelSplitView1Weights(List<double> weights) {
+    _box.put(kMlModelSplitView1Weights, weights);
   }
 
-  static List<double> getLabSplitView1Weights() {
-    return (_box.get(kLabSplitView1Weights) as List? ?? []).cast<double>();
+  static List<double> getMlModelSplitView1Weights() {
+    return (_box.get(kMlModelSplitView1Weights) as List? ?? []).cast<double>();
   }
 }
