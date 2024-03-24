@@ -18,6 +18,7 @@ class MlModelRepository {
   final _lock = Lock();
 
   OrtSession? _session;
+  OrtSessionOptions? _sessionOptions;
 
   final _labelCategories = {
     0: SholatMovementCategory.takbir,
@@ -34,8 +35,8 @@ class MlModelRepository {
     OrtEnv.instance.init(
       level: OrtLoggingLevel.verbose,
     );
-    final sessionOptions = OrtSessionOptions();
-    _session = OrtSession.fromFile(File(path), sessionOptions);
+    _sessionOptions = OrtSessionOptions();
+    _session = OrtSession.fromFile(File(path), _sessionOptions!);
   }
 
   Future<(Failure?, List<SholatMovementCategory>?)> predict({
@@ -52,9 +53,9 @@ class MlModelRepository {
       onPredicting?.call();
 
       return await _lock.synchronized(() async {
-        // if (_session == null) {
-        _initialiseOrt(path);
-        // }
+        if (_session == null) {
+          _initialiseOrt(path);
+        }
 
         final inputOrt = OrtValueTensor.createTensorWithDataList(
           _convertInputDType(data: data, inputDType: config.inputDataType),
@@ -133,7 +134,7 @@ class MlModelRepository {
         for (final element in outputs) {
           element?.release();
         }
-        dispose();
+
         final predictions = indexes.map((i) => _labelCategories[i]!).toList();
         return (null, predictions);
       });
@@ -409,6 +410,7 @@ class MlModelRepository {
 
   void dispose() {
     _session?.release();
+    _sessionOptions?.release();
     OrtEnv.instance.release();
   }
 }

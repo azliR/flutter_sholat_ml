@@ -115,3 +115,4 @@ app.*.map.json
 .fvm
 
 *.g.dart
+*.freezed.dart

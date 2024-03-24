@@ -7,9 +7,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'ml_model_provider.g.dart';
 
-final _preprocessRepository = PreprocessRepository();
-final _mlModelRepository = MlModelRepository();
-
 @riverpod
 class SelectedMlModel extends _$SelectedMlModel {
   @override
@@ -20,8 +17,14 @@ class SelectedMlModel extends _$SelectedMlModel {
 
 @riverpod
 class PredictedCategories extends _$PredictedCategories {
+  final _preprocessRepository = PreprocessRepository();
+  final _mlModelRepository = MlModelRepository();
+
   @override
-  Future<List<SholatMovementCategory?>?> build() async => null;
+  Future<List<SholatMovementCategory?>?> build() async {
+    ref.onDispose(_mlModelRepository.dispose);
+    return null;
+  }
 
   void clearPrediction() => state = const AsyncData(null);
 
@@ -109,7 +112,8 @@ class PredictedCategories extends _$PredictedCategories {
 
 @riverpod
 Future<double?> modelEvaluation(ModelEvaluationRef ref) async {
-  // final predictedCategoriesAsync = AsyncData(<SholatMovementCategory>[]);
+  final preprocessRepository = PreprocessRepository();
+
   final predictedCategoriesAsync = ref.watch(predictedCategoriesProvider);
 
   return predictedCategoriesAsync.when(
@@ -121,7 +125,7 @@ Future<double?> modelEvaluation(ModelEvaluationRef ref) async {
       final dataItems =
           ref.read(preprocessProvider.select((value) => value.dataItems));
 
-      final (failure, evaluation) = await _preprocessRepository.evaluateModel(
+      final (failure, evaluation) = await preprocessRepository.evaluateModel(
         categories: dataItems.map((e) => e.labelCategory).toList(),
         predictedCategories: predictedCategories,
       );

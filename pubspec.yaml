@@ -1,6 +1,6 @@
 name: flutter_sholat_ml
 description: A Very Good Project created by Very Good CLI.
-version: 1.0.0-beta3+1
+version: 1.1.0-beta1+1
 publish_to: none
 
 environment:
@@ -19,7 +19,7 @@ dependencies:
   easy_debounce: ^2.0.3
   encrypt: ^5.0.2
   equatable: ^2.0.5
-  file_picker: ^6.1.1
+  file_picker: ^8.0.0+1
   file_saver: ^0.2.8
   firebase_app_check: ^0.2.0+1
   firebase_core: ^2.16.0

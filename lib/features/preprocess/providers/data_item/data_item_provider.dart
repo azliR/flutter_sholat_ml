@@ -5,10 +5,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'data_item_provider.g.dart';
 
-final _preprocessRepository = PreprocessRepository();
-
 @riverpod
 class GenerateDataItemSection extends _$GenerateDataItemSection {
+  final _preprocessRepository = PreprocessRepository();
+
   @override
   Future<List<DataItemSection>> build() async {
     final dataItems =

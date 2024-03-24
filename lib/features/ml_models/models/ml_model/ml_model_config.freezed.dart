@@ -29,6 +29,7 @@ mixin _$MlModelConfig {
   Set<Filtering> get filterings => throw _privateConstructorUsedError;
   Set<TemporalConsistencyEnforcement> get temporalConsistencyEnforcements =>
       throw _privateConstructorUsedError;
+  int get stepSize => throw _privateConstructorUsedError;
 
   @optionalTypeArgs
   TResult map<TResult extends Object?>(
@@ -66,7 +67,8 @@ abstract class $MlModelConfigCopyWith<$Res> {
       InputDataType inputDataType,
       Set<Smoothing> smoothings,
       Set<Filtering> filterings,
-      Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements});
+      Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements,
+      int stepSize});
 }
 
 /// @nodoc
@@ -90,6 +92,7 @@ class _$MlModelConfigCopyWithImpl<$Res, $Val extends MlModelConfig>
     Object? smoothings = null,
     Object? filterings = null,
     Object? temporalConsistencyEnforcements = null,
+    Object? stepSize = null,
   }) {
     return _then(_value.copyWith(
       enableTeacherForcing: null == enableTeacherForcing
@@ -124,6 +127,10 @@ class _$MlModelConfigCopyWithImpl<$Res, $Val extends MlModelConfig>
           ? _value.temporalConsistencyEnforcements
           : temporalConsistencyEnforcements // ignore: cast_nullable_to_non_nullable
               as Set<TemporalConsistencyEnforcement>,
+      stepSize: null == stepSize
+          ? _value.stepSize
+          : stepSize // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -144,7 +151,8 @@ abstract class _$$MlModelConfigImplCopyWith<$Res>
       InputDataType inputDataType,
       Set<Smoothing> smoothings,
       Set<Filtering> filterings,
-      Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements});
+      Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements,
+      int stepSize});
 }
 
 /// @nodoc
@@ -166,6 +174,7 @@ class __$$MlModelConfigImplCopyWithImpl<$Res>
     Object? smoothings = null,
     Object? filterings = null,
     Object? temporalConsistencyEnforcements = null,
+    Object? stepSize = null,
   }) {
     return _then(_$MlModelConfigImpl(
       enableTeacherForcing: null == enableTeacherForcing
@@ -200,6 +209,10 @@ class __$$MlModelConfigImplCopyWithImpl<$Res>
           ? _value._temporalConsistencyEnforcements
           : temporalConsistencyEnforcements // ignore: cast_nullable_to_non_nullable
               as Set<TemporalConsistencyEnforcement>,
+      stepSize: null == stepSize
+          ? _value.stepSize
+          : stepSize // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -216,7 +229,8 @@ class _$MlModelConfigImpl implements _MlModelConfig {
       required final Set<Smoothing> smoothings,
       required final Set<Filtering> filterings,
       required final Set<TemporalConsistencyEnforcement>
-          temporalConsistencyEnforcements})
+          temporalConsistencyEnforcements,
+      this.stepSize = 10})
       : _smoothings = smoothings,
         _filterings = filterings,
         _temporalConsistencyEnforcements = temporalConsistencyEnforcements;
@@ -260,8 +274,12 @@ class _$MlModelConfigImpl implements _MlModelConfig {
   }
 
   @override
+  @JsonKey()
+  final int stepSize;
+
+  @override
   String toString() {
-    return 'MlModelConfig(enableTeacherForcing: $enableTeacherForcing, batchSize: $batchSize, windowSize: $windowSize, numberOfFeatures: $numberOfFeatures, inputDataType: $inputDataType, smoothings: $smoothings, filterings: $filterings, temporalConsistencyEnforcements: $temporalConsistencyEnforcements)';
+    return 'MlModelConfig(enableTeacherForcing: $enableTeacherForcing, batchSize: $batchSize, windowSize: $windowSize, numberOfFeatures: $numberOfFeatures, inputDataType: $inputDataType, smoothings: $smoothings, filterings: $filterings, temporalConsistencyEnforcements: $temporalConsistencyEnforcements, stepSize: $stepSize)';
   }
 
   @override
@@ -285,7 +303,9 @@ class _$MlModelConfigImpl implements _MlModelConfig {
                 .equals(other._filterings, _filterings) &&
             const DeepCollectionEquality().equals(
                 other._temporalConsistencyEnforcements,
-                _temporalConsistencyEnforcements));
+                _temporalConsistencyEnforcements) &&
+            (identical(other.stepSize, stepSize) ||
+                other.stepSize == stepSize));
   }
 
   @JsonKey(ignore: true)
@@ -299,7 +319,8 @@ class _$MlModelConfigImpl implements _MlModelConfig {
       inputDataType,
       const DeepCollectionEquality().hash(_smoothings),
       const DeepCollectionEquality().hash(_filterings),
-      const DeepCollectionEquality().hash(_temporalConsistencyEnforcements));
+      const DeepCollectionEquality().hash(_temporalConsistencyEnforcements),
+      stepSize);
 
   @JsonKey(ignore: true)
   @override
@@ -353,7 +374,8 @@ abstract class _MlModelConfig implements MlModelConfig {
       required final Set<Smoothing> smoothings,
       required final Set<Filtering> filterings,
       required final Set<TemporalConsistencyEnforcement>
-          temporalConsistencyEnforcements}) = _$MlModelConfigImpl;
+          temporalConsistencyEnforcements,
+      final int stepSize}) = _$MlModelConfigImpl;
 
   factory _MlModelConfig.fromJson(Map<String, dynamic> json) =
       _$MlModelConfigImpl.fromJson;
@@ -374,6 +396,8 @@ abstract class _MlModelConfig implements MlModelConfig {
   Set<Filtering> get filterings;
   @override
   Set<TemporalConsistencyEnforcement> get temporalConsistencyEnforcements;
+  @override
+  int get stepSize;
   @override
   @JsonKey(ignore: true)
   _$$MlModelConfigImplCopyWith<_$MlModelConfigImpl> get copyWith =>

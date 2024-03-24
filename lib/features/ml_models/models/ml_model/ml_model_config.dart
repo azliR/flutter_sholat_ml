@@ -51,6 +51,7 @@ class MlModelConfig with _$MlModelConfig {
     required Set<Filtering> filterings,
     required Set<TemporalConsistencyEnforcement>
         temporalConsistencyEnforcements,
+    @Default(10) int stepSize,
   }) = _MlModelConfig;
 
   factory MlModelConfig.fromJson(Map<String, dynamic> json) =>

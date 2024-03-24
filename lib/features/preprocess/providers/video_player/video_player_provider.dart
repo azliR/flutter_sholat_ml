@@ -6,8 +6,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'video_player_provider.g.dart';
 
-final _preprocessRepository = PreprocessRepository();
-
 @riverpod
 class VideoPlaybackSpeed extends _$VideoPlaybackSpeed {
   @override
@@ -18,6 +16,8 @@ class VideoPlaybackSpeed extends _$VideoPlaybackSpeed {
 
 @riverpod
 class CompressVideo extends _$CompressVideo {
+  final _preprocessRepository = PreprocessRepository();
+
   @override
   bool build() => false;
 
