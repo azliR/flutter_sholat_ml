@@ -26,10 +26,6 @@ class DataItemTile extends StatelessWidget {
   final bool isSelected;
   final bool hasProblem;
 
-  bool _isColorDark(Color color) {
-    return color.computeLuminance() < 0.5;
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -76,9 +72,7 @@ class DataItemTile extends StatelessWidget {
     }
 
     return DefaultTextStyle(
-      style: textTheme.bodyMedium!.copyWith(
-        color: _isColorDark(backgroundColor) ? Colors.white : Colors.black,
-      ),
+      style: textTheme.bodyMedium!,
       child: Material(
         color: backgroundColor,
         shape: RoundedRectangleBorder(

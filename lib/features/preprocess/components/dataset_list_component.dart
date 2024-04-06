@@ -10,6 +10,7 @@ import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/data_item_tile_widget.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:sliver_tools/sliver_tools.dart';
@@ -266,6 +267,10 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
   final DataItemSection section;
   final void Function(bool overlapsContent) onTap;
 
+  bool _isColorDark(Color color) {
+    return color.computeLuminance() < 0.5;
+  }
+
   @override
   Widget build(
     BuildContext context,
@@ -273,6 +278,7 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     Widget? icon;
     if (section.isLabeled) {
@@ -325,18 +331,42 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
             ),
             const SizedBox(width: 8),
             if (section.movementSetId != null)
-              Tooltip(
-                message: 'Movement Set ID',
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: colorScheme.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+              () {
+                final color = Color(
+                  int.parse(
+                    'ff${section.movementSetId!.substring(0, 6)}',
+                    radix: 16,
                   ),
-                  child: Text(section.movementSetId!.substring(0, 6)),
-                ),
-              ),
+                );
+
+                return Tooltip(
+                  message: 'Movement Set ID',
+                  waitDuration: const Duration(seconds: 1),
+                  child: InkWell(
+                    onTap: () {
+                      showSnackbar(
+                        context,
+                        'Movement Set ID: ${section.movementSetId}',
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        section.movementSetId!.substring(0, 6),
+                        style: textTheme.bodySmall?.copyWith(
+                          color:
+                              _isColorDark(color) ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }(),
           ],
         ),
         leading: Text(index.toString()),

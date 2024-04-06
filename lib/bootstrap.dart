@@ -27,8 +27,6 @@ Future<void> preloadSVGs(List<String> assetPaths) async {
 }
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   FlutterError.onError = (details) {
     log(
       details.exceptionAsString(),
@@ -37,6 +35,8 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
           details.stack != null ? Trace.from(details.stack!) : details.stack,
     );
   };
+
+  WidgetsFlutterBinding.ensureInitialized();
 
   await preloadSVGs(AssetImages.all);
 
