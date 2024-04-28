@@ -77,16 +77,13 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
   }
 
   Widget _buildGrid(BoxConstraints constraints) {
-    final crossAxisCount = constraints.maxWidth ~/ 180;
-    final aspectRatio = constraints.maxWidth / (crossAxisCount * 200) - 0.1;
-
     return PagedSliverGrid(
       pagingController: widget.pagingController,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 720,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: aspectRatio,
+        mainAxisExtent: 108,
       ),
       builderDelegate: PagedChildBuilderDelegate<Dataset>(
         noItemsFoundIndicatorBuilder: (context) {
@@ -142,15 +139,15 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                 labeled: false,
                 dataset: dataset,
                 selected: selected,
-                onInitialise: () async {
-                  if (dataset.thumbnail == null && dataset.path != null) {
-                    await _notifier.getThumbnailAt(
-                      index,
-                      dataset: dataset,
-                      isReviewedDatasets: false,
-                    );
-                  }
-                },
+                // onInitialise: () async {
+                // if (dataset.thumbnail == null && dataset.path != null) {
+                //   await _notifier.getThumbnailAt(
+                //     index,
+                //     dataset: dataset,
+                //     isReviewedDatasets: false,
+                //   );
+                // }
+                // },
                 onTap: () async {
                   final isSelectMode = ref.read(
                     datasetsProvider.select(

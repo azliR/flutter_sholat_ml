@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +9,7 @@ class DatasetGridTile extends StatefulWidget {
     required this.selected,
     required this.labeled,
     required this.action,
-    required this.onInitialise,
+    // required this.onInitialise,
     required this.onTap,
     this.onLongPress,
     super.key,
@@ -21,7 +19,7 @@ class DatasetGridTile extends StatefulWidget {
   final bool selected;
   final bool labeled;
   final Widget? action;
-  final void Function() onInitialise;
+  // final void Function() onInitialise;
   final void Function() onTap;
   final void Function()? onLongPress;
 
@@ -29,30 +27,29 @@ class DatasetGridTile extends StatefulWidget {
   State<DatasetGridTile> createState() => _DatasetGridTileState();
 }
 
-class _DatasetGridTileState extends State<DatasetGridTile>
-    with WidgetsBindingObserver {
+class _DatasetGridTileState extends State<DatasetGridTile> {
   @override
   void initState() {
-    WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.onInitialise();
-    });
+    // WidgetsBinding.instance.addObserver(this);
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   widget.onInitialise();
+    // });
     super.initState();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    // WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      widget.onInitialise();
-    }
-    super.didChangeAppLifecycleState(state);
-  }
+  // @override
+  // void didChangeAppLifecycleState(AppLifecycleState state) {
+  //   if (state == AppLifecycleState.resumed) {
+  //     widget.onInitialise();
+  //   }
+  //   super.didChangeAppLifecycleState(state);
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -67,15 +64,14 @@ class _DatasetGridTileState extends State<DatasetGridTile>
     final downloaded = dataset.downloaded;
     final hasEvaluated = datasetProp.hasEvaluated;
     final isSyncedWithCloud = datasetProp.isSyncedWithCloud;
-    final csvOnly = datasetProp.csvOnly;
+    final includeVideo = datasetProp.includeVideo;
 
     return Card.filled(
       margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
       elevation: widget.selected ? 0 : null,
       color: widget.selected ? colorScheme.secondaryContainer : null,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(24),
         side: widget.selected
             ? BorderSide(
                 color: colorScheme.primary,
@@ -83,188 +79,158 @@ class _DatasetGridTileState extends State<DatasetGridTile>
               )
             : BorderSide.none,
       ),
-      child: InkWell(
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListTile(
+        isThreeLine: true,
+        contentPadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        title: Row(
           children: [
-            SizedBox(
-              height: 100,
-              child: ColoredBox(
-                color: colorScheme.outlineVariant,
-                child: Stack(
-                  children: [
-                    if (dataset.thumbnail == null)
-                      const Center(
-                        child: CircularProgressIndicator(),
-                      )
-                    else if (dataset.thumbnail!.error != null)
-                      const Center(
-                        child: Icon(Symbols.broken_image_rounded),
-                      )
-                    else
-                      Image.file(
-                        File(dataset.thumbnail!.thumbnailPath!),
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Center(
-                            child: Icon(Symbols.broken_image_rounded),
-                          );
-                        },
-                        width: double.infinity,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      ),
-                    if (widget.selected)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Symbols.check_rounded,
-                            color: colorScheme.onPrimary,
-                            size: 18,
-                            weight: 600,
-                          ),
-                        ),
-                      )
-                    else if (widget.labeled &&
-                        downloaded != null &&
-                        !downloaded)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: colorScheme.secondary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Symbols.download_rounded,
-                            color: colorScheme.onSecondary,
-                            size: 18,
-                            weight: 600,
-                          ),
-                        ),
-                      ),
-                    if (csvOnly)
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(4)),
-                          ),
-                          child: Text(
-                            'CSV ONLY',
-                            style: textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+            Expanded(
+              child: Text(
+                formattedDatasetName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      formattedDatasetName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodyMedium,
+            SizedBox(
+              height: 42,
+              width: 42,
+              child: Center(
+                child: switch (widget.selected) {
+                  _ when widget.labeled && downloaded != null && !downloaded =>
+                    const Icon(
+                      Symbols.download_rounded,
+                      size: 18,
+                      weight: 600,
                     ),
-                  ),
-                ),
-                if (widget.action != null) widget.action!,
-              ],
+                  false when widget.action != null => widget.action!,
+                  true => Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Symbols.check_rounded,
+                        color: colorScheme.onPrimary,
+                        size: 18,
+                        weight: 600,
+                      ),
+                    ),
+                  false => null,
+                },
+              ),
             ),
-            const SizedBox(height: 8),
-            if (widget.labeled) ...[
-              if (downloaded != null && downloaded) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSyncedWithCloud
-                            ? Symbols.cloud_done_rounded
-                            : Symbols.sync_saved_locally_rounded,
-                        size: 16,
-                        opticalSize: 20,
-                        color: isSyncedWithCloud
-                            ? colorScheme.primary
-                            : colorScheme.onBackground,
-                        weight: isSyncedWithCloud ? 500 : 400,
-                        fill: isSyncedWithCloud ? 1 : 0,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          isSyncedWithCloud
-                              ? 'Synced with cloud'
-                              : 'Saved locally',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: isSyncedWithCloud
-                                ? colorScheme.primary
-                                : colorScheme.onBackground,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+          ],
+        ),
+        subtitle: SizedBox(
+          height: 48,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _InfoChip(
+                icon: Icon(
+                  hasEvaluated
+                      ? Symbols.check_circle_rounded
+                      : Symbols.pending_rounded,
+                  weight: hasEvaluated ? 500 : null,
+                  color: hasEvaluated ? colorScheme.primary : null,
+                  fill: hasEvaluated ? 1 : null,
                 ),
-                const SizedBox(height: 6),
-              ],
-            ],
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    hasEvaluated
-                        ? Symbols.check_circle_rounded
-                        : Symbols.pending_rounded,
-                    size: 16,
-                    opticalSize: 20,
-                    weight: hasEvaluated ? 500 : 400,
+                title: Text(
+                  hasEvaluated ? 'Evaluated' : 'Not evaluated',
+                  style: textTheme.bodySmall?.copyWith(
+                    fontWeight:
+                        hasEvaluated ? FontWeight.bold : FontWeight.normal,
                     color: hasEvaluated
                         ? colorScheme.primary
-                        : colorScheme.outline,
-                    fill: hasEvaluated ? 1 : 0,
+                        : colorScheme.onBackground,
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      hasEvaluated ? 'Evaluated' : 'Not evaluated',
-                      style: textTheme.bodySmall?.copyWith(
-                        fontWeight:
-                            hasEvaluated ? FontWeight.bold : FontWeight.normal,
-                        color: hasEvaluated
-                            ? colorScheme.primary
-                            : colorScheme.onBackground,
-                      ),
+                ),
+              ),
+              _InfoChip(
+                icon: Icon(
+                  isSyncedWithCloud
+                      ? Symbols.cloud_done_rounded
+                      : Symbols.sync_saved_locally_rounded,
+                  weight: isSyncedWithCloud ? 500 : null,
+                  color: isSyncedWithCloud ? colorScheme.primary : null,
+                  fill: isSyncedWithCloud ? 1 : null,
+                ),
+                title: Text(
+                  isSyncedWithCloud ? 'Synced with cloud' : 'Saved locally',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: isSyncedWithCloud
+                        ? colorScheme.primary
+                        : colorScheme.onBackground,
+                  ),
+                ),
+              ),
+              if (includeVideo)
+                _InfoChip(
+                  icon: const Icon(Symbols.movie_rounded),
+                  title: Text(
+                    'Video',
+                    style: textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
+                ),
+            ],
+          ),
+        ),
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({
+    required this.icon,
+    required this.title,
+    super.key,
+  });
+
+  final Widget? icon;
+  final Widget title;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.fromLTRB(4, 4, 8, 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            strokeAlign: BorderSide.strokeAlignOutside,
+            color: colorScheme.outline,
+          ),
+        ),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Padding(
+                padding: const EdgeInsets.all(3),
+                child: IconTheme(
+                  data: IconThemeData(
+                    size: 18,
+                    weight: 400,
+                    color: colorScheme.onBackground,
+                    fill: 0,
+                  ),
+                  child: icon!,
+                ),
               ),
-            ),
+              const SizedBox(width: 4),
+            ],
+            title,
           ],
         ),
       ),

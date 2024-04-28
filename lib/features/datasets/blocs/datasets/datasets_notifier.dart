@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
-import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_thumbnail.dart';
 import 'package:flutter_sholat_ml/features/datasets/repositories/datasets_repository.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
@@ -195,43 +194,43 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
     );
   }
 
-  Future<void> getThumbnailAt(
-    int index, {
-    required Dataset dataset,
-    required bool isReviewedDatasets,
-  }) async {
-    if (dataset.path == null) return;
+  // Future<void> getThumbnailAt(
+  //   int index, {
+  //   required Dataset dataset,
+  //   required bool isReviewedDatasets,
+  // }) async {
+  //   if (dataset.path == null) return;
 
-    final (failure, thumbnailPath) =
-        await _homeRepository.getDatasetThumbnail(dataset: dataset);
+  //   final (failure, thumbnailPath) =
+  //       await _homeRepository.getDatasetThumbnail(dataset: dataset);
 
-    final thumbnail = failure == null
-        ? DatasetThumbnail(
-            dirName: dataset.property.id,
-            thumbnailPath: thumbnailPath,
-            error: null,
-          )
-        : DatasetThumbnail(
-            dirName: dataset.property.id,
-            thumbnailPath: null,
-            error: failure.message,
-          );
+  //   final thumbnail = failure == null
+  //       ? DatasetThumbnail(
+  //           dirName: dataset.property.id,
+  //           thumbnailPath: thumbnailPath,
+  //           error: null,
+  //         )
+  //       : DatasetThumbnail(
+  //           dirName: dataset.property.id,
+  //           thumbnailPath: null,
+  //           error: failure.message,
+  //         );
 
-    final datasets = [
-      ...(isReviewedDatasets
-          ? state.reviewedDatasets
-          : state.needReviewDatasets),
-    ];
+  //   final datasets = [
+  //     ...(isReviewedDatasets
+  //         ? state.reviewedDatasets
+  //         : state.needReviewDatasets),
+  //   ];
 
-    datasets[index] = dataset.copyWith(
-      thumbnail: thumbnail,
-    );
+  //   datasets[index] = dataset.copyWith(
+  //     thumbnail: thumbnail,
+  //   );
 
-    state = state.copyWith(
-      needReviewDatasets: !isReviewedDatasets ? datasets : null,
-      reviewedDatasets: isReviewedDatasets ? datasets : null,
-    );
-  }
+  //   state = state.copyWith(
+  //     needReviewDatasets: !isReviewedDatasets ? datasets : null,
+  //     reviewedDatasets: isReviewedDatasets ? datasets : null,
+  //   );
+  // }
 
   void onSelectedDataset(int index) {
     final selectedDatasetIndexes = state.selectedDatasetIndexes;

@@ -46,10 +46,6 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final crossAxisCount = constraints.maxWidth ~/ 180;
-          final aspectRatio =
-              constraints.maxWidth / (crossAxisCount * 200) - 0.16;
-
           return Scrollbar(
             child: PagedGridView(
               pagingController: widget.pagingController,
@@ -59,11 +55,11 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                 16,
                 Dimens.bottomListPadding,
               ),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 720,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: aspectRatio,
+                mainAxisExtent: 108,
               ),
               builderDelegate: PagedChildBuilderDelegate<Dataset>(
                 noItemsFoundIndicatorBuilder: (context) {
@@ -115,16 +111,16 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                         dataset: dataset,
                         selected: false,
                         labeled: true,
-                        onInitialise: () async {
-                          if (dataset.thumbnail == null &&
-                              dataset.path != null) {
-                            await _notifier.getThumbnailAt(
-                              index,
-                              dataset: dataset,
-                              isReviewedDatasets: true,
-                            );
-                          }
-                        },
+                        // onInitialise: () async {
+                        // if (dataset.thumbnail == null &&
+                        //     dataset.path != null) {
+                        //   await _notifier.getThumbnailAt(
+                        //     index,
+                        //     dataset: dataset,
+                        //     isReviewedDatasets: true,
+                        //   );
+                        // }
+                        // },
                         onTap: () async {
                           if (dataset.downloaded ?? false) {
                             await context.router

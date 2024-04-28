@@ -14,8 +14,6 @@ import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart'
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_dataset_storage_service.dart';
-import 'package:get_thumbnail_video/index.dart';
-import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -151,39 +149,39 @@ class DatasetsRepository {
     }
   }
 
-  Future<(Failure?, String?)> getDatasetThumbnail({
-    required Dataset dataset,
-  }) async {
-    try {
-      final path = dataset.path;
-      if (path == null) return (null, null);
+  // Future<(Failure?, String?)> getDatasetThumbnail({
+  //   required Dataset dataset,
+  // }) async {
+  //   try {
+  //     final path = dataset.path;
+  //     if (path == null) return (null, null);
 
-      final thumbnailFile = Directory(path).file(Paths.datasetThumbnail);
-      if (thumbnailFile.existsSync()) {
-        return (null, thumbnailFile.path);
-      }
-      final videoFile = Directory(path).file(Paths.datasetVideo);
-      if (videoFile.existsSync()) {
-        await VideoThumbnail.thumbnailFile(
-          video: videoFile.path,
-          thumbnailPath: thumbnailFile.path,
-          imageFormat: ImageFormat.WEBP,
-        );
-      } else {
-        final thumbnailUrl = dataset.property.thumbnailUrl;
-        if (thumbnailUrl != null) {
-          final ref = _storage.refFromURL(thumbnailUrl);
-          await ref.writeToFile(thumbnailFile);
-        }
-      }
+  //     final thumbnailFile = Directory(path).file(Paths.datasetThumbnail);
+  //     if (thumbnailFile.existsSync()) {
+  //       return (null, thumbnailFile.path);
+  //     }
+  //     final videoFile = Directory(path).file(Paths.datasetVideo);
+  //     if (videoFile.existsSync()) {
+  //       await VideoThumbnail.thumbnailFile(
+  //         video: videoFile.path,
+  //         thumbnailPath: thumbnailFile.path,
+  //         imageFormat: ImageFormat.WEBP,
+  //       );
+  //     } else {
+  //       final thumbnailUrl = dataset.property.thumbnailUrl;
+  //       if (thumbnailUrl != null) {
+  //         final ref = _storage.refFromURL(thumbnailUrl);
+  //         await ref.writeToFile(thumbnailFile);
+  //       }
+  //     }
 
-      return (null, thumbnailFile.path);
-    } catch (e, stackTrace) {
-      const message = 'Failed getting dataset thumbnail';
-      final failure = Failure(message, error: e, stackTrace: stackTrace);
-      return (failure, null);
-    }
-  }
+  //     return (null, thumbnailFile.path);
+  //   } catch (e, stackTrace) {
+  //     const message = 'Failed getting dataset thumbnail';
+  //     final failure = Failure(message, error: e, stackTrace: stackTrace);
+  //     return (failure, null);
+  //   }
+  // }
 
   Future<(Failure?, Dataset?)> getDatasetStatus({
     required Dataset dataset,
