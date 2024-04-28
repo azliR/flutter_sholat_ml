@@ -1051,7 +1051,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
         ),
         _buildMenu(datasetProp),
         const SizedBox(width: 12),
-      ],
+      ] else
+        const SizedBox(),
+      const SizedBox(),
     ];
   }
 
