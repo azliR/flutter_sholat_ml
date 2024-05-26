@@ -1,3 +1,4 @@
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'ml_model_config.freezed.dart';
@@ -6,16 +7,6 @@ part 'ml_model_config.g.dart';
 enum InputDataType {
   float32,
   int32,
-}
-
-enum Smoothing {
-  movingAverage,
-  exponentialSmoothing;
-
-  String get name => switch (this) {
-        Smoothing.movingAverage => 'Moving Average',
-        Smoothing.exponentialSmoothing => 'Exponential Smoothing'
-      };
 }
 
 enum Filtering {

@@ -8,6 +8,7 @@ import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -98,11 +99,12 @@ class MlModelRepository {
 
         for (final smoothing in config.smoothings) {
           switch (smoothing) {
-            case Smoothing.movingAverage:
+            case MovingAverage():
               postProcessedPred =
                   _movingAverageSmoothing(postProcessedPred, config.windowSize);
-            case Smoothing.exponentialSmoothing:
-              postProcessedPred = _exponentialSmoothing(postProcessedPred, 0.5);
+            case ExponentialSmoothing():
+              postProcessedPred =
+                  _exponentialSmoothing(postProcessedPred, smoothing.alpha!);
           }
         }
 

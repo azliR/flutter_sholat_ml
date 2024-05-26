@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class FilterList<T extends Enum> extends StatelessWidget {
+class FilterList<T> extends StatelessWidget {
   const FilterList({
     required this.title,
     required this.selectedFilters,

@@ -9,6 +9,7 @@ import 'package:flutter_sholat_ml/features/ml_model/widgets/bottom_panel_widget.
 import 'package:flutter_sholat_ml/features/ml_model/widgets/filter_list_widget.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -162,7 +163,8 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                 builder: (context, ref, child) {
                   return BottomPanel(
                     logs: ref.watch(
-                        mlModelProviderFamily.select((value) => value.logs)),
+                      mlModelProviderFamily.select((value) => value.logs),
+                    ),
                     onClosePressed: () =>
                         _notifier.setShowBottomPanel(enable: false),
                   );
@@ -202,7 +204,8 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
     return InkWell(
       onTap: () {
         _modelNameController.text = ref.read(
-                mlModelProviderFamily.select((value) => value.model.name)) ??
+              mlModelProviderFamily.select((value) => value.model.name),
+            ) ??
             '';
         setState(() => _editNameMode = true);
       },
@@ -241,7 +244,8 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
     final recordState =
         ref.watch(mlModelProviderFamily.select((value) => value.recordState));
     final predictedCategory = ref.watch(
-        mlModelProviderFamily.select((value) => value.predictedCategory));
+      mlModelProviderFamily.select((value) => value.predictedCategory),
+    );
 
     final modelConfig =
         ref.read(mlModelProviderFamily.select((value) => value.modelConfig));
@@ -424,25 +428,66 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                         .select((value) => value.modelConfig.smoothings),
                   );
 
-                  return FilterList<Smoothing>(
+                  return FilterList<String>(
                     title: const Text('Smoothing'),
-                    selectedFilters: selectedFilters,
+                    selectedFilters:
+                        selectedFilters.map((filter) => filter.name).toSet(),
                     filters: Smoothing.values,
-                    filterNameBuilder: (filter) => filter.name,
+                    filterNameBuilder: (filter) {
+                      final smoothing = selectedFilters.firstWhere(
+                        (e) => e.name == filter,
+                        orElse: () => Smoothing.fromName(filter),
+                      );
+
+                      switch (smoothing) {
+                        case MovingAverage():
+                          return smoothing.name;
+                        case ExponentialSmoothing():
+                          if (smoothing.alpha == null) {
+                            return smoothing.name;
+                          }
+                          return '${smoothing.name} (${smoothing.alpha})';
+                      }
+                    },
                     onSelected: recordState != RecordState.ready
                         ? null
-                        : (filter, selected) {
+                        : (filter, selected) async {
                             final modelConfig = ref.read(
                               mlModelProviderFamily
                                   .select((value) => value.modelConfig),
                             );
 
+                            if (filter == 'Exponential Smoothing' && selected) {
+                              final result = await showDialog<double?>(
+                                context: context,
+                                builder: (context) {
+                                  return const _SliderDialog(
+                                    title: 'Set alpha',
+                                  );
+                                },
+                              );
+                              if (result == null) return;
+
+                              _notifier.setModelConfig(
+                                modelConfig.copyWith(
+                                  smoothings: {
+                                    ...selectedFilters,
+                                    ExponentialSmoothing(alpha: result),
+                                  },
+                                ),
+                              );
+                              return;
+                            }
+
                             _notifier.setModelConfig(
                               modelConfig.copyWith(
                                 smoothings: selected
-                                    ? {...selectedFilters, filter}
+                                    ? {
+                                        ...selectedFilters,
+                                        Smoothing.fromName(filter),
+                                      }
                                     : selectedFilters
-                                        .where((e) => e != filter)
+                                        .where((e) => e.name != filter)
                                         .toSet(),
                               ),
                             );
@@ -686,6 +731,58 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
         ),
       ],
       child: const Icon(Symbols.more_vert_rounded),
+    );
+  }
+}
+
+class _SliderDialog extends StatefulWidget {
+  const _SliderDialog({
+    required this.title,
+    super.key,
+  });
+
+  final String title;
+
+  @override
+  State<_SliderDialog> createState() => _SliderDialogState();
+}
+
+class _SliderDialogState extends State<_SliderDialog> {
+  var _value = 0.5;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Slider(
+            value: _value,
+            label: _value.toStringAsFixed(1),
+            divisions: 10,
+            onChanged: (value) {
+              setState(() {
+                _value = value;
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        OutlinedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        FilledButton.tonal(
+          onPressed: () {
+            Navigator.of(context).pop(_value);
+          },
+          child: const Text('Set'),
+        ),
+      ],
     );
   }
 }
