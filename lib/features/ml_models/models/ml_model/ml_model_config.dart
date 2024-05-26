@@ -1,3 +1,4 @@
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -7,16 +8,6 @@ part 'ml_model_config.g.dart';
 enum InputDataType {
   float32,
   int32,
-}
-
-enum Filtering {
-  medianFilter,
-  lowPassFilter;
-
-  String get name => switch (this) {
-        Filtering.medianFilter => 'Median Filter',
-        Filtering.lowPassFilter => 'Low Pass Filter'
-      };
 }
 
 enum TemporalConsistencyEnforcement {

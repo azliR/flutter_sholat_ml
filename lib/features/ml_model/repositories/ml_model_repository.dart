@@ -8,6 +8,7 @@ import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
@@ -110,10 +111,10 @@ class MlModelRepository {
 
         for (final filtering in config.filterings) {
           switch (filtering) {
-            case Filtering.medianFilter:
+            case MedianFilter():
               postProcessedPred =
                   _medianFilter(postProcessedPred, config.windowSize);
-            case Filtering.lowPassFilter:
+            case LowPassFilter():
               postProcessedPred = _lowPassFilter(postProcessedPred, 0.5);
           }
         }

@@ -9,6 +9,7 @@ import 'package:flutter_sholat_ml/features/ml_model/widgets/bottom_panel_widget.
 import 'package:flutter_sholat_ml/features/ml_model/widgets/filter_list_widget.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -503,25 +504,65 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                         .select((value) => value.modelConfig.filterings),
                   );
 
-                  return FilterList<Filtering>(
+                  return FilterList<String>(
                     title: const Text('Filtering'),
-                    selectedFilters: selectedFilters,
+                    selectedFilters: selectedFilters.map((e) => e.name).toSet(),
                     filters: Filtering.values,
-                    filterNameBuilder: (filter) => filter.name,
+                    filterNameBuilder: (filter) {
+                      final filtering = selectedFilters.firstWhere(
+                        (e) => e.name == filter,
+                        orElse: () => Filtering.fromName(filter),
+                      );
+
+                      switch (filtering) {
+                        case MedianFilter():
+                          return filtering.name;
+                        case LowPassFilter():
+                          if (filtering.alpha == null) {
+                            return filtering.name;
+                          }
+                          return '${filtering.name} (${filtering.alpha})';
+                      }
+                    },
                     onSelected: recordState != RecordState.ready
                         ? null
-                        : (filter, selected) {
+                        : (filter, selected) async {
                             final modelConfig = ref.read(
                               mlModelProviderFamily
                                   .select((value) => value.modelConfig),
                             );
 
+                            if (filter == 'Low Pass Filter' && selected) {
+                              final result = await showDialog<double?>(
+                                context: context,
+                                builder: (context) {
+                                  return const _SliderDialog(
+                                    title: 'Set alpha',
+                                  );
+                                },
+                              );
+                              if (result == null) return;
+
+                              _notifier.setModelConfig(
+                                modelConfig.copyWith(
+                                  filterings: {
+                                    ...selectedFilters,
+                                    LowPassFilter(alpha: result),
+                                  },
+                                ),
+                              );
+                              return;
+                            }
+
                             _notifier.setModelConfig(
                               modelConfig.copyWith(
                                 filterings: selected
-                                    ? {...selectedFilters, filter}
+                                    ? {
+                                        ...selectedFilters,
+                                        Filtering.fromName(filter),
+                                      }
                                     : selectedFilters
-                                        .where((e) => e != filter)
+                                        .where((e) => e.name != filter)
                                         .toSet(),
                               ),
                             );
