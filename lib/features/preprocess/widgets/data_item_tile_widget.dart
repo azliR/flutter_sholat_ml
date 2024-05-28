@@ -11,6 +11,7 @@ class DataItemTile extends StatelessWidget {
     required this.predictedCategory,
     required this.onTap,
     required this.onLongPress,
+    required this.enablePredictedPreview,
     required this.isHighlighted,
     required this.isSelected,
     required this.hasProblem,
@@ -22,6 +23,7 @@ class DataItemTile extends StatelessWidget {
   final SholatMovementCategory? predictedCategory;
   final void Function() onTap;
   final void Function() onLongPress;
+  final bool enablePredictedPreview;
   final bool isHighlighted;
   final bool isSelected;
   final bool hasProblem;

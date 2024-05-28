@@ -21,6 +21,20 @@ Future<List<Problem>> analyseDataset(AnalyseDatasetRef ref) async {
   return problems!;
 }
 
+@riverpod
+class EnablePredictedPreview extends _$EnablePredictedPreview {
+  @override
+  bool build() => false;
+
+  void setEnable(bool enable) {
+    if (enable) {
+      ref.read(preprocessProvider.notifier).clearSelectedDataItems();
+    }
+
+    state = enable;
+  }
+}
+
 // @riverpod
 // class DatasetNotifier extends _$DatasetNotifier {
 //   final _preprocessRepository = PreprocessRepository();

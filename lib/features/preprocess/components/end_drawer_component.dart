@@ -6,6 +6,7 @@ import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
@@ -79,6 +80,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
     final selectedModel = ref.watch(selectedMlModelProvider)!;
     final predictedCategories = ref.watch(predictedCategoriesProvider);
     final evaluationAsync = ref.watch(modelEvaluationProvider);
+    final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
 
     return ListView(
       children: [
@@ -157,7 +159,17 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
                 ),
               ),
             ),
-            if (predictedCategories.valueOrNull != null)
+            if (predictedCategories.valueOrNull != null) ...[
+              OutlinedButton.icon(
+                onPressed: () => ref
+                    .read(enablePredictedPreviewProvider.notifier)
+                    .setEnable(!enablePredictedPreview),
+                label:
+                    Text(enablePredictedPreview ? 'Remove preview' : 'Preview'),
+                icon: enablePredictedPreview
+                    ? const Icon(Symbols.preview_off_rounded)
+                    : const Icon(Symbols.preview_rounded),
+              ),
               OutlinedButton.icon(
                 onPressed: () => ref
                     .read(predictedCategoriesProvider.notifier)
@@ -165,6 +177,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
                 label: const Text('Clear Predictions'),
                 icon: const Icon(Symbols.delete_rounded),
               ),
+            ],
           ],
         ),
       ],

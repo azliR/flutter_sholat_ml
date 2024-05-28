@@ -1,7 +1,15 @@
+import 'dart:developer';
+import 'dart:isolate';
+
+import 'package:dartx/dartx_io.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/preprocess/components/dataset_list_component.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'data_item_provider.g.dart';
 
@@ -11,8 +19,34 @@ class GenerateDataItemSection extends _$GenerateDataItemSection {
 
   @override
   Future<List<DataItemSection>> build() async {
-    final dataItems =
+    final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
+    final predictedCategories =
+        ref.watch(predictedCategoriesProvider).valueOrNull;
+    var dataItems =
         ref.watch(preprocessProvider.select((value) => value.dataItems));
+
+    if (enablePredictedPreview && predictedCategories != null) {
+      log('object 3');
+      dataItems = await Isolate.run(
+        () {
+          var lastMovementSetId = const Uuid().v4();
+          SholatMovementCategory? lastLabelCategory;
+          return dataItems.mapIndexed(
+            (index, dataItem) {
+              final predictedCategory = predictedCategories[index];
+              if (lastLabelCategory != predictedCategory) {
+                lastMovementSetId = const Uuid().v4();
+              }
+              lastLabelCategory = predictedCategory;
+              return dataItem.copyWith(
+                labelCategory: () => predictedCategory,
+                movementSetId: () => lastMovementSetId,
+              );
+            },
+          ).toList();
+        },
+      );
+    }
 
     final (failure, sections) =
         await _preprocessRepository.generateSections(dataItems);

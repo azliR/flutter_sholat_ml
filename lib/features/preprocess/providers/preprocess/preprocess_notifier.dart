@@ -9,6 +9,7 @@ import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset_prop.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:path/path.dart';
@@ -95,6 +96,9 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   void setSelectedDataset(int index) {
+    final enablePredictedPreview = ref.read(enablePredictedPreviewProvider);
+    if (enablePredictedPreview) return;
+
     final selectedDataItemIndexes = state.selectedDataItemIndexes;
     if (selectedDataItemIndexes.contains(index)) {
       state = state.copyWith(
@@ -191,6 +195,24 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     clearSelectedDataItems();
     return movementSetId;
   }
+
+  // void setBatchDataItemLabels({
+  //   required Map<SholatMovementCategory, SholatMovement> labels,
+  // }) async {
+  //   final updatedDataItems = [...state.dataItems];
+  //   for (final (index, entry) in labels.entries.indexed) {
+  //     updatedDataItems[index] = updatedDataItems[index].copyWith(
+  //       movementSetId: () => const Uuid().v4(),
+  //       labelCategory: () => entry.key,
+  //       label: () => entry.value,
+  //     );
+  //   }
+
+  //   state = state.copyWith(
+  //     dataItems: updatedDataItems,
+  //     isEdited: true,
+  //   );
+  // }
 
   void setDataItemNoises(
     SholatNoiseMovement? noiseMovement,

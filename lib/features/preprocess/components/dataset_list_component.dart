@@ -69,6 +69,8 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                     );
                     final selectedSectionIndex =
                         ref.watch(selectedSectionIndexProvider);
+                    final enablePredictedPreview =
+                        ref.watch(enablePredictedPreviewProvider);
 
                     return MultiSliver(
                       pushPinnedChildren: true,
@@ -80,6 +82,7 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                             index: sectionIndex,
                             selected: selectedSectionIndex == sectionIndex,
                             section: sections[sectionIndex],
+                            enablePredictedPreview: enablePredictedPreview,
                             onTap: (overlapsContent) {
                               if (overlapsContent) {
                                 Scrollable.ensureVisible(
@@ -176,10 +179,14 @@ class _DatasetListState extends ConsumerState<DatasetList> {
           ),
         );
 
+        final enablePredictedPreview =
+            ref.watch(enablePredictedPreviewProvider);
+
         return DataItemTile(
           index: index,
           dataItem: dataItem,
           predictedCategory: predictedCategory,
+          enablePredictedPreview: enablePredictedPreview,
           isHighlighted: index == currentHighlightedIndex,
           isSelected: selected,
           hasProblem: hasProblem,
@@ -259,12 +266,14 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.index,
     required this.selected,
     required this.section,
+    required this.enablePredictedPreview,
     required this.onTap,
   });
 
   final int index;
   final bool selected;
   final DataItemSection section;
+  final bool enablePredictedPreview;
   final void Function(bool overlapsContent) onTap;
 
   bool _isColorDark(Color color) {
@@ -330,7 +339,7 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
               child: Text(section.dataItems.length.toString()),
             ),
             const SizedBox(width: 8),
-            if (section.movementSetId != null)
+            if (section.movementSetId != null && !enablePredictedPreview)
               () {
                 final color = Color(
                   int.parse(

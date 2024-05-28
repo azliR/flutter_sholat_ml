@@ -5,6 +5,7 @@ import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 import 'package:flutter_sholat_ml/enums/sholat_noise_movement.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -504,12 +505,47 @@ class _ToolbarState extends ConsumerState<Toolbar> {
             : state.lastSelectedIndex,
       ),
     );
+    final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
 
     return SizedBox(
       height: 32,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          if (enablePredictedPreview) ...[
+            IconButton(
+              tooltip: 'Back',
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () => ref
+                  .read(enablePredictedPreviewProvider.notifier)
+                  .setEnable(false),
+              icon: const Icon(
+                Symbols.arrow_back_rounded,
+                weight: 300,
+              ),
+            ),
+            Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              height: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.outline,
+                ),
+              ),
+              child: Text(
+                'Previewing predicted labels',
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
+            const Spacer(),
+          ],
           if (!isJumpSelectMode && selectedDataItemIndexes.isNotEmpty)
             Expanded(
               child: LayoutBuilder(
@@ -676,6 +712,20 @@ class _ToolbarState extends ConsumerState<Toolbar> {
                     weight: 300,
                   ),
           ),
+          // if (!enablePredictedPreview) ...[
+          //   const VerticalDivider(),
+          //   FilledButton.tonal(
+          //     onPressed: () {
+          //       ref
+          //         .read(enablePredictedPreviewProvider.notifier)
+          //         .setEnable(false);
+          //       final labels = ref.read(predictedCategoriesProvider).requireValue;
+
+          //       _notifier.setBatchDataItemLabels()
+          //     },
+          //     child: Text('Apply'),
+          //   ),
+          // ],
           const SizedBox(width: 4),
         ],
       ),
