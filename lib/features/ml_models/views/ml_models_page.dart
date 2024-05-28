@@ -89,6 +89,7 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
                   final index = _modelsPagingController.itemList!
                       .indexWhere((e) => e.id == model.id);
                   _modelsPagingController.itemList![index] = model;
+                  // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
                   _modelsPagingController.notifyListeners();
                 },
               ),
@@ -105,6 +106,7 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
             _modelsPagingController.itemList?.removeWhere(
               (mlModel) => presentationState.mlModels.contains(mlModel),
             );
+            // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
             _modelsPagingController.notifyListeners();
           case DeleteMlModelFailureState():
             context.loaderOverlay.hide();
@@ -249,6 +251,7 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
                       services: currentServices,
                       onModelChanged: (model) {
                         _modelsPagingController.itemList![index] = model;
+                        // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
                         _modelsPagingController.notifyListeners();
                       },
                     ),

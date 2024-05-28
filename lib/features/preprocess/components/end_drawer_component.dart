@@ -8,7 +8,6 @@ import 'package:flutter_sholat_ml/core/not_found/illustration_widget.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
-import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/widgets/lists/rounded_list_tile_widget.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -22,7 +21,7 @@ class EndDrawer extends ConsumerStatefulWidget {
 }
 
 class _EndDrawerState extends ConsumerState<EndDrawer> {
-  late final PreprocessNotifier _notifier;
+  // late final PreprocessNotifier _notifier;
 
   Future<void> _onSelectModel() async {
     final model = await context.router.push<MlModel>(const ModelPickerRoute());
@@ -33,7 +32,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
 
   @override
   void initState() {
-    _notifier = ref.read(preprocessProvider.notifier);
+    // _notifier = ref.read(preprocessProvider.notifier);
     super.initState();
   }
 

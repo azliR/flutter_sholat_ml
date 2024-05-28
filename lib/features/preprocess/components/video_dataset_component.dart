@@ -23,7 +23,7 @@ class VideoDataset extends ConsumerStatefulWidget {
 }
 
 class _VideoDatasetState extends ConsumerState<VideoDataset> {
-  late final PreprocessNotifier _notifier;
+  // late final PreprocessNotifier _notifier;
 
   Future<void> _showSpeedMenu(BuildContext context) async {
     final position = determineMenuPosition(context);
@@ -88,7 +88,7 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
 
   @override
   void initState() {
-    _notifier = ref.read(preprocessProvider.notifier);
+    // _notifier = ref.read(preprocessProvider.notifier);
 
     super.initState();
   }

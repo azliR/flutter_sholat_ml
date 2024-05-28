@@ -41,7 +41,7 @@ class PredictedCategories extends _$PredictedCategories {
         ref.read(preprocessProvider.select((value) => value.dataItems));
     const windowStep = 10;
 
-    final (extractingFailure, X, y) =
+    final (extractingFailure, X, _) =
         await _preprocessRepository.createSegmentsAndLabels(
       dataItems: dataItems,
       windowSize: model.config.windowSize,
