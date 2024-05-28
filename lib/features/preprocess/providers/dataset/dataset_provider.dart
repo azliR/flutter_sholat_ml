@@ -1,7 +1,13 @@
+import 'dart:isolate';
+
+import 'package:dartx/dartx_io.dart';
+import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:uuid/uuid.dart';
 
 part 'dataset_provider.g.dart';
 
@@ -9,8 +15,34 @@ part 'dataset_provider.g.dart';
 Future<List<Problem>> analyseDataset(AnalyseDatasetRef ref) async {
   final preprocessRepository = PreprocessRepository();
 
-  final dataItems =
+  var dataItems =
       ref.watch(preprocessProvider.select((value) => value.dataItems));
+  final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
+
+  if (enablePredictedPreview) {
+    final predictedCategories =
+        ref.watch(predictedCategoriesProvider).requireValue!;
+
+    dataItems = await Isolate.run(
+      () {
+        var lastMovementSetId = const Uuid().v4();
+        SholatMovementCategory? lastLabelCategory;
+        return dataItems.mapIndexed(
+          (index, dataItem) {
+            final predictedCategory = predictedCategories[index];
+            if (lastLabelCategory != predictedCategory) {
+              lastMovementSetId = const Uuid().v4();
+            }
+            lastLabelCategory = predictedCategory;
+            return dataItem.copyWith(
+              labelCategory: () => predictedCategory,
+              movementSetId: () => lastMovementSetId,
+            );
+          },
+        ).toList();
+      },
+    );
+  } else {}
 
   final (failure, problems) =
       await preprocessRepository.analyseDataset(dataItems);
@@ -29,6 +61,10 @@ class EnablePredictedPreview extends _$EnablePredictedPreview {
   void setEnable(bool enable) {
     if (enable) {
       ref.read(preprocessProvider.notifier).clearSelectedDataItems();
+
+      if (ref.watch(predictedCategoriesProvider).valueOrNull == null) {
+        state = false;
+      }
     }
 
     state = enable;

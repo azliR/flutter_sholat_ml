@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:isolate';
 
 import 'package:dartx/dartx_io.dart';
@@ -20,13 +19,13 @@ class GenerateDataItemSection extends _$GenerateDataItemSection {
   @override
   Future<List<DataItemSection>> build() async {
     final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
-    final predictedCategories =
-        ref.watch(predictedCategoriesProvider).valueOrNull;
     var dataItems =
         ref.watch(preprocessProvider.select((value) => value.dataItems));
 
-    if (enablePredictedPreview && predictedCategories != null) {
-      log('object 3');
+    if (enablePredictedPreview) {
+      final predictedCategories =
+          ref.watch(predictedCategoriesProvider).requireValue!;
+
       dataItems = await Isolate.run(
         () {
           var lastMovementSetId = const Uuid().v4();

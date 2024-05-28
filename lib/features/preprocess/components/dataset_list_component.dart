@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/asset_images.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
-import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/data_item/data_item_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
@@ -155,28 +154,15 @@ class _DatasetListState extends ConsumerState<DatasetList> {
         );
         final hasProblem = ref.watch(
           analyseDatasetProvider.select(
-            (state) =>
-                state.valueOrNull?.any(
-                  (problem) => switch (problem) {
-                    MissingLabelProblem() => Iterable.generate(
-                        problem.endIndex - problem.startIndex + 1,
-                        (index) => problem.startIndex + index,
-                      ).contains(index),
-                    DeprecatedLabelProblem() => Iterable.generate(
-                        problem.endIndex - problem.startIndex + 1,
-                        (index) => problem.startIndex + index,
-                      ).contains(index),
-                    DeprecatedLabelCategoryProblem() => Iterable.generate(
-                        problem.endIndex - problem.startIndex + 1,
-                        (index) => problem.startIndex + index,
-                      ).contains(index),
-                    WrongMovementSequenceProblem() => Iterable.generate(
-                        problem.endIndex - problem.startIndex + 1,
-                        (index) => problem.startIndex + index,
-                      ).contains(index),
-                  },
-                ) ??
-                false,
+            (state) {
+              return state.valueOrNull?.any(
+                    (problem) {
+                      return index >= problem.startIndex &&
+                          index <= problem.endIndex;
+                    },
+                  ) ??
+                  false;
+            },
           ),
         );
 

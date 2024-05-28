@@ -197,29 +197,55 @@ class PreprocessRepository {
               );
             }
 
-            if (labelCategory == SholatMovementCategory.qunut) {
-              final prevLabelRecord = labelRecords.elementAtOrNull(index - 1);
-              final nextLabelRecord = labelRecords.elementAtOrNull(index + 1);
+            final prevLabelRecord = labelRecords.elementAtOrNull(index - 1);
+            final nextLabelRecord = labelRecords.elementAtOrNull(index + 1);
 
-              final prevLabel = prevLabelRecord?.$3;
-              final nextLabel = nextLabelRecord?.$3;
+            final prevLabel = prevLabelRecord?.$3;
+            final prevLabelCategory = prevLabelRecord?.$4;
+            final nextLabel = nextLabelRecord?.$3;
+            final nextLabelCategory = nextLabelRecord?.$4;
 
-              if (prevLabel != SholatMovement.transisiBerdiriKeQunut ||
-                  nextLabel != SholatMovement.transisiQunutKeBerdiri) {
-                previous.add(
-                  WrongMovementSequenceProblem(
-                    startIndex: startIndex,
-                    endIndex: endIndex!,
-                    label: label,
-                    expectedPreviousLabels: [
-                      SholatMovement.transisiBerdiriKeQunut,
-                    ],
-                    expectedNextLabels: [
-                      SholatMovement.transisiQunutKeBerdiri,
-                    ],
-                  ),
-                );
-              }
+            if (!labelCategory.previousMovement.contains(prevLabel)) {
+              previous.add(
+                WrongPreviousMovementSequenceProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                  label: label,
+                  expectedLabels: labelCategory.previousMovement,
+                ),
+              );
+            }
+            if (!labelCategory.nextMovement.contains(nextLabel)) {
+              previous.add(
+                WrongNextMovementSequenceProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                  label: label,
+                  expectedLabels: labelCategory.nextMovement,
+                ),
+              );
+            }
+            if (!labelCategory.previousMovementCategory
+                .contains(prevLabelCategory)) {
+              previous.add(
+                WrongPreviousMovementCategorySequenceProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                  label: labelCategory,
+                  expectedLabels: labelCategory.previousMovementCategory,
+                ),
+              );
+            }
+            if (!labelCategory.nextMovementCategory
+                .contains(nextLabelCategory)) {
+              previous.add(
+                WrongNextMovementCategorySequenceProblem(
+                  startIndex: startIndex,
+                  endIndex: endIndex!,
+                  label: labelCategory,
+                  expectedLabels: labelCategory.nextMovementCategory,
+                ),
+              );
             }
             return previous;
           });

@@ -38,16 +38,54 @@ final class DeprecatedLabelCategoryProblem extends Problem {
   final SholatMovementCategory labelCategory;
 }
 
-final class WrongMovementSequenceProblem extends Problem {
-  const WrongMovementSequenceProblem({
+sealed class MovementSequenceProblem<T> extends Problem {
+  const MovementSequenceProblem({
     required super.startIndex,
     required super.endIndex,
     required this.label,
-    required this.expectedPreviousLabels,
-    required this.expectedNextLabels,
+    required this.expectedLabels,
   });
 
-  final SholatMovement label;
-  final List<SholatMovement> expectedPreviousLabels;
-  final List<SholatMovement> expectedNextLabels;
+  final T label;
+  final List<T?> expectedLabels;
+}
+
+final class WrongPreviousMovementSequenceProblem
+    extends MovementSequenceProblem<SholatMovement> {
+  const WrongPreviousMovementSequenceProblem({
+    required super.startIndex,
+    required super.endIndex,
+    required super.label,
+    required super.expectedLabels,
+  });
+}
+
+final class WrongNextMovementSequenceProblem
+    extends MovementSequenceProblem<SholatMovement> {
+  const WrongNextMovementSequenceProblem({
+    required super.startIndex,
+    required super.endIndex,
+    required super.label,
+    required super.expectedLabels,
+  });
+}
+
+final class WrongPreviousMovementCategorySequenceProblem
+    extends MovementSequenceProblem<SholatMovementCategory> {
+  const WrongPreviousMovementCategorySequenceProblem({
+    required super.startIndex,
+    required super.endIndex,
+    required super.label,
+    required super.expectedLabels,
+  });
+}
+
+final class WrongNextMovementCategorySequenceProblem
+    extends MovementSequenceProblem<SholatMovementCategory> {
+  const WrongNextMovementCategorySequenceProblem({
+    required super.startIndex,
+    required super.endIndex,
+    required super.label,
+    required super.expectedLabels,
+  });
 }

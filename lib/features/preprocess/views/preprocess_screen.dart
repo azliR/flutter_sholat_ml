@@ -784,7 +784,10 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                                           case MissingLabelProblem():
                                           case DeprecatedLabelProblem():
                                           case DeprecatedLabelCategoryProblem():
-                                          case WrongMovementSequenceProblem():
+                                          case WrongPreviousMovementSequenceProblem():
+                                          case WrongNextMovementSequenceProblem():
+                                          case WrongPreviousMovementCategorySequenceProblem():
+                                          case WrongNextMovementCategorySequenceProblem():
                                             _scrollToDataItemTile(
                                               problem.startIndex,
                                             );

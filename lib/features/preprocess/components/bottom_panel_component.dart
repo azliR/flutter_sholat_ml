@@ -27,8 +27,14 @@ class BottomPanel extends StatelessWidget {
         'Deprecated label ${problem.label.value} from index $startIndex to $endIndex',
       DeprecatedLabelCategoryProblem() =>
         'Deprecated label category ${problem.labelCategory.value} from index $startIndex to $endIndex',
-      WrongMovementSequenceProblem() =>
-        'Wrong movement sequence of ${problem.label.value} from index $startIndex to $endIndex',
+      WrongPreviousMovementSequenceProblem() =>
+        'Wrong previous movement sequence of ${problem.label.value} from index $startIndex to $endIndex',
+      WrongPreviousMovementCategorySequenceProblem() =>
+        'Wrong previous movement category sequence from index $startIndex to $endIndex',
+      WrongNextMovementSequenceProblem() =>
+        'Wrong next movement sequence of ${problem.label.value} from index $startIndex to $endIndex',
+      WrongNextMovementCategorySequenceProblem() =>
+        'Wrong next movement category sequence from index $startIndex to $endIndex',
     };
   }
 
@@ -110,15 +116,13 @@ class BottomPanel extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(_toTitleStr(problem)),
-                                if (problem
-                                    is WrongMovementSequenceProblem) ...[
+                                if (problem is MovementSequenceProblem) ...[
                                   Text(
-                                    'Expected previous labels: ${problem.expectedPreviousLabels.map((e) => e.value).join(', ')}',
-                                    style: textTheme.labelMedium,
-                                  ),
-                                  Text(
-                                    'Expected next labels: ${problem.expectedNextLabels.map((e) => e.value).join(', ')}',
-                                    style: textTheme.labelMedium,
+                                    'Expected: ${problem.expectedLabels.map((e) => e?.value).join(', ')}',
+                                    style: textTheme.labelMedium?.copyWith(
+                                      fontWeight: FontWeight.normal,
+                                      color: colorScheme.outline,
+                                    ),
                                   ),
                                 ],
                               ],

@@ -1,6 +1,7 @@
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/ml_model/repositories/ml_model_repository.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -26,7 +27,10 @@ class PredictedCategories extends _$PredictedCategories {
     return null;
   }
 
-  void clearPrediction() => state = const AsyncData(null);
+  void clearPrediction() {
+    ref.read(enablePredictedPreviewProvider.notifier).setEnable(false);
+    state = const AsyncData(null);
+  }
 
   Future<void> startPrediction() async {
     state = const AsyncLoading();
@@ -90,9 +94,6 @@ class PredictedCategories extends _$PredictedCategories {
 
       return List.filled(windowStep, firstTakbirFound ? category : null);
     }).toList();
-
-    print('predictions:${predictions.length}');
-    print('expandedPredictions:${expandedPredictions.length}');
 
     if (expandedPredictions.length < dataItems.length) {
       expandedPredictions.addAll(
