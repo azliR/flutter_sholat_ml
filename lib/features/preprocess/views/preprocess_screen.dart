@@ -607,10 +607,22 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
 
           final isSelectMode =
               ref.read(preprocessProvider).selectedDataItemIndexes.isNotEmpty;
+          final isPredictedAvailable =
+              ref.read(predictedCategoriesProvider).maybeWhen(
+                    data: (value) => value != null && value.isNotEmpty,
+                    orElse: () => false,
+                  );
 
           final isEdited = ref.read(preprocessProvider).isEdited;
-          if (isEdited || isSelectMode) {
+          if (isEdited || isSelectMode || isPredictedAvailable) {
             await _showExitDialog();
+            return;
+          }
+
+          final enablePredictedPreview =
+              ref.read(enablePredictedPreviewProvider);
+          if (enablePredictedPreview) {
+            ref.read(enablePredictedPreviewProvider.notifier).setEnable(false);
             return;
           }
 

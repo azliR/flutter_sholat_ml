@@ -11,6 +11,7 @@ import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/ml_model/repositories/ml_model_repository.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/ml_model/ml_model_provider.dart';
 import 'package:flutter_sholat_ml/features/record/repositories/record_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -288,6 +289,12 @@ class MlModelNotifier
       updatedAt: DateTime.now(),
     );
     _mlModelRepository.saveModel(updatedModel);
+
+    final selectedModel = ref.read(selectedMlModelProvider);
+    if (selectedModel != null && selectedModel.id == model.id) {
+      ref.read(selectedMlModelProvider.notifier).setModel(updatedModel);
+    }
+
     state = state.copyWith(model: updatedModel);
   }
 }

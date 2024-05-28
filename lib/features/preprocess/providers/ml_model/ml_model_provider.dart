@@ -29,7 +29,6 @@ class PredictedCategories extends _$PredictedCategories {
   void clearPrediction() => state = const AsyncData(null);
 
   Future<void> startPrediction() async {
-    state = const AsyncData(null);
     state = const AsyncLoading();
 
     final model = ref.read(selectedMlModelProvider);

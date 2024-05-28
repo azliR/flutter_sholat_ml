@@ -77,10 +77,16 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
   }
 
   Widget _buildModelPage() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     final selectedModel = ref.watch(selectedMlModelProvider)!;
     final predictedCategories = ref.watch(predictedCategoriesProvider);
     final evaluationAsync = ref.watch(modelEvaluationProvider);
     final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
+    final selectedFilterLength = selectedModel.config.smoothings.length +
+        selectedModel.config.filterings.length +
+        selectedModel.config.temporalConsistencyEnforcements.length;
 
     return ListView(
       children: [
@@ -102,7 +108,25 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           onTap: _onSelectModel,
         ),
         RoundedListTile(
-          title: const Text('Change Configurations'),
+          title: Row(
+            children: [
+              const Text('Configurations'),
+              if (selectedFilterLength > 0)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    selectedFilterLength.toString(),
+                    style: textTheme.labelMedium
+                        ?.copyWith(color: colorScheme.onSecondary),
+                  ),
+                ),
+            ],
+          ),
           leading: const Icon(Symbols.tune_rounded),
           trailing: const Icon(Symbols.chevron_right_rounded),
           filled: false,
@@ -171,9 +195,12 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
                     : const Icon(Symbols.preview_rounded),
               ),
               OutlinedButton.icon(
-                onPressed: () => ref
-                    .read(predictedCategoriesProvider.notifier)
-                    .clearPrediction(),
+                onPressed: () {
+                  ref
+                      .read(predictedCategoriesProvider.notifier)
+                      .clearPrediction();
+                  Navigator.pop(context);
+                },
                 label: const Text('Clear Predictions'),
                 icon: const Icon(Symbols.delete_rounded),
               ),
