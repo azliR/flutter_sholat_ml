@@ -64,7 +64,7 @@ class PredictedCategories extends _$PredictedCategories {
     final (failure, predictions) = await _mlModelRepository.predict(
       path: model.path,
       data: data,
-      previousLabels: null,
+      previousLabels: [],
       config: model.config.copyWith(
         batchSize: batchSize,
       ),

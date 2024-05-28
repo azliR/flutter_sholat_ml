@@ -10,6 +10,7 @@ import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.da
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -18,6 +19,7 @@ import 'package:synchronized/synchronized.dart';
 
 class MlModelRepository {
   final _lock = Lock();
+  final _majorityVoter = MajorityVoter();
 
   OrtSession? _session;
   OrtSessionOptions? _sessionOptions;
@@ -44,7 +46,7 @@ class MlModelRepository {
   Future<(Failure?, List<SholatMovementCategory>?)> predict({
     required String path,
     required List<num> data,
-    required List<SholatMovementCategory>? previousLabels,
+    required List<SholatMovementCategory> previousLabels,
     required MlModelConfig config,
     required bool skipWhenLocked,
     void Function()? onPredicting,
@@ -115,17 +117,18 @@ class MlModelRepository {
               postProcessedPred =
                   _medianFilter(postProcessedPred, config.windowSize);
             case LowPassFilter():
-              postProcessedPred = _lowPassFilter(postProcessedPred, 0.5);
+              postProcessedPred =
+                  _lowPassFilter(postProcessedPred, filtering.alpha!);
           }
         }
 
         for (final tce in config.temporalConsistencyEnforcements) {
           switch (tce) {
-            case TemporalConsistencyEnforcement.majorityVoting:
-              postProcessedPred = _majorityVoting(yPred, config.windowSize);
-            case TemporalConsistencyEnforcement.transitionConstraints:
+            case MajorityVoting():
+              break;
+            case TransitionConstraints():
               postProcessedPred =
-                  _applyTransitionConstraints(postProcessedPred, 2);
+                  _transitionConstraints(postProcessedPred, tce.minDuration!);
           }
         }
 
@@ -138,7 +141,23 @@ class MlModelRepository {
           element?.release();
         }
 
-        final predictions = indexes.map((i) => _labelCategories[i]!).toList();
+        final predictions = indexes.map((i) {
+          var prediction = _labelCategories[i]!;
+          for (final tce in config.temporalConsistencyEnforcements) {
+            switch (tce) {
+              case MajorityVoting():
+                final newPrediction = _majorityVoter.votedPrediction(
+                  prediction.name,
+                  tce.minConsecutivePredictions!,
+                );
+                prediction = SholatMovementCategory.values
+                    .firstWhere((element) => element.name == newPrediction);
+              case TransitionConstraints():
+                break;
+            }
+          }
+          return prediction;
+        }).toList();
         return (null, predictions);
       });
     } catch (e, stackTrace) {
@@ -279,7 +298,6 @@ class MlModelRepository {
   List<double> _lowPassFilterSublist(List<double> sublist, double alpha) {
     final filteredSublist = List<double>.filled(sublist.length, 0);
 
-    // Initialize the previous value with the first data point
     var prevValue = sublist[0];
     filteredSublist[0] = prevValue;
 
@@ -331,7 +349,7 @@ class MlModelRepository {
     return votedPredictions;
   }
 
-  List<List<double>> _applyTransitionConstraints(
+  List<List<double>> _transitionConstraints(
     List<List<double>> predictions,
     int minDuration,
   ) {
@@ -415,5 +433,26 @@ class MlModelRepository {
     _session?.release();
     _sessionOptions?.release();
     OrtEnv.instance.release();
+  }
+}
+
+class MajorityVoter {
+  MajorityVoter();
+
+  final List<String> _predictionWindow = [];
+
+  String votedPrediction(String prediction, int threshold) {
+    _predictionWindow.add(prediction);
+
+    if (_predictionWindow.length > threshold) {
+      _predictionWindow.removeAt(0);
+    }
+
+    final counts = <String, int>{};
+    for (final prediction in _predictionWindow) {
+      counts[prediction] = (counts[prediction] ?? 0) + 1;
+    }
+
+    return counts.entries.maxBy((entry) => entry.value)?.key ?? '';
   }
 }

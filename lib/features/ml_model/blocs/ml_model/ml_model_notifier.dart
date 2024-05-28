@@ -171,9 +171,7 @@ class MlModelNotifier
       path: _mlModel.path,
       data: inputData,
       config: modelConfig,
-      previousLabels: modelConfig.enableTeacherForcing
-          ? state.predictedCategories?.takeLast(modelConfig.batchSize)
-          : null,
+      previousLabels: state.predictedCategories ?? [],
       skipWhenLocked: true,
       onPredicting: () {
         state = state.copyWith(

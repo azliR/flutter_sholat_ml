@@ -1,5 +1,6 @@
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'ml_model_config.freezed.dart';
@@ -8,17 +9,6 @@ part 'ml_model_config.g.dart';
 enum InputDataType {
   float32,
   int32,
-}
-
-enum TemporalConsistencyEnforcement {
-  majorityVoting,
-  transitionConstraints;
-
-  String get name => switch (this) {
-        TemporalConsistencyEnforcement.majorityVoting => 'Majority Voting',
-        TemporalConsistencyEnforcement.transitionConstraints =>
-          'Transition Constraints'
-      };
 }
 
 @freezed

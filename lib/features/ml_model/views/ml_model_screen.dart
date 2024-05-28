@@ -11,6 +11,7 @@ import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.da
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -376,239 +377,308 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
           },
         ),
         const SizedBox(height: 16),
-        Card.outlined(
-          clipBehavior: Clip.antiAlias,
-          child: ExpansionTile(
-            title: Consumer(
-              builder: (context, ref, child) {
-                final selectedFilterLength = ref.watch(
-                  mlModelProviderFamily.select(
-                    (value) =>
-                        value.modelConfig.smoothings.length +
-                        value.modelConfig.filterings.length +
-                        value
-                            .modelConfig.temporalConsistencyEnforcements.length,
+        ExpansionTile(
+          title: Consumer(
+            builder: (context, ref, child) {
+              final selectedFilterLength = ref.watch(
+                mlModelProviderFamily.select(
+                  (value) =>
+                      value.modelConfig.smoothings.length +
+                      value.modelConfig.filterings.length +
+                      value.modelConfig.temporalConsistencyEnforcements.length,
+                ),
+              );
+              return Row(
+                children: [
+                  const Flexible(
+                    child: Text('Advanced options'),
                   ),
-                );
-                return Row(
-                  children: [
-                    const Flexible(
-                      child: Text('Advanced options'),
-                    ),
-                    if (selectedFilterLength > 0)
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: colorScheme.secondary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          selectedFilterLength.toString(),
-                          style: textTheme.labelMedium
-                              ?.copyWith(color: colorScheme.onSecondary),
-                        ),
+                  if (selectedFilterLength > 0)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondary,
+                        shape: BoxShape.circle,
                       ),
-                  ],
+                      child: Text(
+                        selectedFilterLength.toString(),
+                        style: textTheme.labelMedium
+                            ?.copyWith(color: colorScheme.onSecondary),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(24)),
+          ),
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          collapsedShape: RoundedRectangleBorder(
+            borderRadius: const BorderRadius.all(Radius.circular(16)),
+            side: BorderSide(color: colorScheme.outline),
+          ),
+          children: [
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            Consumer(
+              builder: (context, ref, child) {
+                final selectedFilters = ref.watch(
+                  mlModelProviderFamily
+                      .select((value) => value.modelConfig.smoothings),
+                );
+
+                return FilterList<String>(
+                  title: const Text('Smoothing'),
+                  selectedFilters:
+                      selectedFilters.map((filter) => filter.name).toSet(),
+                  filters: Smoothing.values,
+                  filterNameBuilder: (filter) {
+                    final smoothing = selectedFilters.firstWhere(
+                      (e) => e.name == filter,
+                      orElse: () => Smoothing.fromName(filter),
+                    );
+
+                    switch (smoothing) {
+                      case MovingAverage():
+                        return smoothing.name;
+                      case ExponentialSmoothing():
+                        if (smoothing.alpha == null) {
+                          return smoothing.name;
+                        }
+                        return '${smoothing.name} (${smoothing.alpha})';
+                    }
+                  },
+                  onSelected: recordState != RecordState.ready
+                      ? null
+                      : (filter, selected) async {
+                          final modelConfig = ref.read(
+                            mlModelProviderFamily
+                                .select((value) => value.modelConfig),
+                          );
+
+                          if (filter == 'Exponential Smoothing' && selected) {
+                            final result = await showDialog<double?>(
+                              context: context,
+                              builder: (context) {
+                                return const _SliderDialog(
+                                  title: 'Set alpha',
+                                );
+                              },
+                            );
+                            if (result == null) return;
+
+                            _notifier.setModelConfig(
+                              modelConfig.copyWith(
+                                smoothings: {
+                                  ...selectedFilters,
+                                  ExponentialSmoothing(alpha: result),
+                                },
+                              ),
+                            );
+                            return;
+                          }
+
+                          _notifier.setModelConfig(
+                            modelConfig.copyWith(
+                              smoothings: selected
+                                  ? {
+                                      ...selectedFilters,
+                                      Smoothing.fromName(filter),
+                                    }
+                                  : selectedFilters
+                                      .where((e) => e.name != filter)
+                                      .toSet(),
+                            ),
+                          );
+                        },
                 );
               },
             ),
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(24)),
-            ),
-            collapsedShape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(24)),
-            ),
-            children: [
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              Consumer(
-                builder: (context, ref, child) {
-                  final selectedFilters = ref.watch(
-                    mlModelProviderFamily
-                        .select((value) => value.modelConfig.smoothings),
-                  );
+            const SizedBox(height: 8),
+            Consumer(
+              builder: (context, ref, child) {
+                final selectedFilters = ref.watch(
+                  mlModelProviderFamily
+                      .select((value) => value.modelConfig.filterings),
+                );
 
-                  return FilterList<String>(
-                    title: const Text('Smoothing'),
-                    selectedFilters:
-                        selectedFilters.map((filter) => filter.name).toSet(),
-                    filters: Smoothing.values,
-                    filterNameBuilder: (filter) {
-                      final smoothing = selectedFilters.firstWhere(
-                        (e) => e.name == filter,
-                        orElse: () => Smoothing.fromName(filter),
-                      );
+                return FilterList<String>(
+                  title: const Text('Filtering'),
+                  selectedFilters: selectedFilters.map((e) => e.name).toSet(),
+                  filters: Filtering.values,
+                  filterNameBuilder: (filter) {
+                    final filtering = selectedFilters.firstWhere(
+                      (e) => e.name == filter,
+                      orElse: () => Filtering.fromName(filter),
+                    );
 
-                      switch (smoothing) {
-                        case MovingAverage():
-                          return smoothing.name;
-                        case ExponentialSmoothing():
-                          if (smoothing.alpha == null) {
-                            return smoothing.name;
-                          }
-                          return '${smoothing.name} (${smoothing.alpha})';
-                      }
-                    },
-                    onSelected: recordState != RecordState.ready
-                        ? null
-                        : (filter, selected) async {
-                            final modelConfig = ref.read(
-                              mlModelProviderFamily
-                                  .select((value) => value.modelConfig),
-                            );
-
-                            if (filter == 'Exponential Smoothing' && selected) {
-                              final result = await showDialog<double?>(
-                                context: context,
-                                builder: (context) {
-                                  return const _SliderDialog(
-                                    title: 'Set alpha',
-                                  );
-                                },
-                              );
-                              if (result == null) return;
-
-                              _notifier.setModelConfig(
-                                modelConfig.copyWith(
-                                  smoothings: {
-                                    ...selectedFilters,
-                                    ExponentialSmoothing(alpha: result),
-                                  },
-                                ),
-                              );
-                              return;
-                            }
-
-                            _notifier.setModelConfig(
-                              modelConfig.copyWith(
-                                smoothings: selected
-                                    ? {
-                                        ...selectedFilters,
-                                        Smoothing.fromName(filter),
-                                      }
-                                    : selectedFilters
-                                        .where((e) => e.name != filter)
-                                        .toSet(),
-                              ),
-                            );
-                          },
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              Consumer(
-                builder: (context, ref, child) {
-                  final selectedFilters = ref.watch(
-                    mlModelProviderFamily
-                        .select((value) => value.modelConfig.filterings),
-                  );
-
-                  return FilterList<String>(
-                    title: const Text('Filtering'),
-                    selectedFilters: selectedFilters.map((e) => e.name).toSet(),
-                    filters: Filtering.values,
-                    filterNameBuilder: (filter) {
-                      final filtering = selectedFilters.firstWhere(
-                        (e) => e.name == filter,
-                        orElse: () => Filtering.fromName(filter),
-                      );
-
-                      switch (filtering) {
-                        case MedianFilter():
+                    switch (filtering) {
+                      case MedianFilter():
+                        return filtering.name;
+                      case LowPassFilter():
+                        if (filtering.alpha == null) {
                           return filtering.name;
-                        case LowPassFilter():
-                          if (filtering.alpha == null) {
-                            return filtering.name;
-                          }
-                          return '${filtering.name} (${filtering.alpha})';
-                      }
-                    },
-                    onSelected: recordState != RecordState.ready
-                        ? null
-                        : (filter, selected) async {
-                            final modelConfig = ref.read(
-                              mlModelProviderFamily
-                                  .select((value) => value.modelConfig),
-                            );
+                        }
+                        return '${filtering.name} (${filtering.alpha})';
+                    }
+                  },
+                  onSelected: recordState != RecordState.ready
+                      ? null
+                      : (filter, selected) async {
+                          final modelConfig = ref.read(
+                            mlModelProviderFamily
+                                .select((value) => value.modelConfig),
+                          );
 
-                            if (filter == 'Low Pass Filter' && selected) {
-                              final result = await showDialog<double?>(
-                                context: context,
-                                builder: (context) {
-                                  return const _SliderDialog(
-                                    title: 'Set alpha',
-                                  );
+                          if (filter == 'Low Pass Filter' && selected) {
+                            final result = await showDialog<double?>(
+                              context: context,
+                              builder: (context) {
+                                return const _SliderDialog(
+                                  title: 'Set alpha',
+                                );
+                              },
+                            );
+                            if (result == null) return;
+
+                            _notifier.setModelConfig(
+                              modelConfig.copyWith(
+                                filterings: {
+                                  ...selectedFilters,
+                                  LowPassFilter(alpha: result),
                                 },
-                              );
-                              if (result == null) return;
+                              ),
+                            );
+                            return;
+                          }
 
-                              _notifier.setModelConfig(
-                                modelConfig.copyWith(
-                                  filterings: {
-                                    ...selectedFilters,
-                                    LowPassFilter(alpha: result),
-                                  },
-                                ),
-                              );
-                              return;
-                            }
+                          _notifier.setModelConfig(
+                            modelConfig.copyWith(
+                              filterings: selected
+                                  ? {
+                                      ...selectedFilters,
+                                      Filtering.fromName(filter),
+                                    }
+                                  : selectedFilters
+                                      .where((e) => e.name != filter)
+                                      .toSet(),
+                            ),
+                          );
+                        },
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            Consumer(
+              builder: (context, ref, child) {
+                final selectedFilters = ref.watch(
+                  mlModelProviderFamily.select(
+                    (value) =>
+                        value.modelConfig.temporalConsistencyEnforcements,
+                  ),
+                );
+
+                return FilterList<String>(
+                  title: const Text('Temporal Consistency Enforcement'),
+                  selectedFilters: selectedFilters.map((e) => e.name).toSet(),
+                  filters: TemporalConsistencyEnforcement.values,
+                  filterNameBuilder: (filter) {
+                    final tce = selectedFilters.firstWhere(
+                      (e) => e.name == filter,
+                      orElse: () =>
+                          TemporalConsistencyEnforcement.fromName(filter),
+                    );
+
+                    switch (tce) {
+                      case MajorityVoting():
+                        if (tce.minConsecutivePredictions == null) {
+                          return tce.name;
+                        }
+                        return '${tce.name} (${tce.minConsecutivePredictions})';
+                      case TransitionConstraints():
+                        if (tce.minDuration == null) {
+                          return tce.name;
+                        }
+                        return '${tce.name} (${tce.minDuration})';
+                    }
+                  },
+                  onSelected: recordState != RecordState.ready
+                      ? null
+                      : (filter, selected) async {
+                          final modelConfig = ref.read(
+                            mlModelProviderFamily
+                                .select((value) => value.modelConfig),
+                          );
+
+                          if (filter == 'Majority Voting' && selected) {
+                            final result = await showDialog<int?>(
+                              context: context,
+                              builder: (context) {
+                                return const _NumberFieldDialog(
+                                  title: 'Set min consecutive predictions',
+                                  initialValue: 3,
+                                );
+                              },
+                            );
+                            if (result == null) return;
 
                             _notifier.setModelConfig(
                               modelConfig.copyWith(
-                                filterings: selected
-                                    ? {
-                                        ...selectedFilters,
-                                        Filtering.fromName(filter),
-                                      }
-                                    : selectedFilters
-                                        .where((e) => e.name != filter)
-                                        .toSet(),
+                                temporalConsistencyEnforcements: {
+                                  ...selectedFilters,
+                                  MajorityVoting(
+                                    minConsecutivePredictions: result,
+                                  ),
+                                },
                               ),
                             );
-                          },
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              Consumer(
-                builder: (context, ref, child) {
-                  final selectedFilters = ref.watch(
-                    mlModelProviderFamily.select(
-                      (value) =>
-                          value.modelConfig.temporalConsistencyEnforcements,
-                    ),
-                  );
-
-                  return FilterList<TemporalConsistencyEnforcement>(
-                    title: const Text('Temporal Consistency Enforcement'),
-                    selectedFilters: selectedFilters,
-                    filters: TemporalConsistencyEnforcement.values,
-                    filterNameBuilder: (filter) => filter.name,
-                    onSelected: recordState != RecordState.ready
-                        ? null
-                        : (filter, selected) {
-                            final modelConfig = ref.read(
-                              mlModelProviderFamily
-                                  .select((value) => value.modelConfig),
+                            return;
+                          } else if (filter == 'Transition Constraints' &&
+                              selected) {
+                            final result = await showDialog<int?>(
+                              context: context,
+                              builder: (context) {
+                                return const _NumberFieldDialog(
+                                  title: 'Set min duration',
+                                  initialValue: 3,
+                                );
+                              },
                             );
+                            if (result == null) return;
 
                             _notifier.setModelConfig(
                               modelConfig.copyWith(
-                                temporalConsistencyEnforcements: selected
-                                    ? {...selectedFilters, filter}
-                                    : selectedFilters
-                                        .where((e) => e != filter)
-                                        .toSet(),
+                                temporalConsistencyEnforcements: {
+                                  ...selectedFilters,
+                                  TransitionConstraints(minDuration: result),
+                                },
                               ),
                             );
-                          },
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
+                            return;
+                          }
+
+                          _notifier.setModelConfig(
+                            modelConfig.copyWith(
+                              temporalConsistencyEnforcements: selected
+                                  ? {
+                                      ...selectedFilters,
+                                      TemporalConsistencyEnforcement.fromName(
+                                        filter,
+                                      ),
+                                    }
+                                  : selectedFilters
+                                      .where((e) => e.name != filter)
+                                      .toSet(),
+                            ),
+                          );
+                        },
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
         const SizedBox(height: 16),
         Text(
@@ -820,6 +890,86 @@ class _SliderDialogState extends State<_SliderDialog> {
         FilledButton.tonal(
           onPressed: () {
             Navigator.of(context).pop(_value);
+          },
+          child: const Text('Set'),
+        ),
+      ],
+    );
+  }
+}
+
+class _NumberFieldDialog extends StatefulWidget {
+  const _NumberFieldDialog({
+    required this.title,
+    required this.initialValue,
+    super.key,
+  });
+
+  final String title;
+  final int initialValue;
+
+  @override
+  State<_NumberFieldDialog> createState() => _NumberFieldDialogState();
+}
+
+class _NumberFieldDialogState extends State<_NumberFieldDialog> {
+  late final TextEditingController _controller;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    _controller = TextEditingController(text: widget.initialValue.toString());
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _controller,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.done,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a value';
+                }
+                final number = int.tryParse(value);
+                if (number == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        OutlinedButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        FilledButton.tonal(
+          onPressed: () {
+            if (!_formKey.currentState!.validate()) return;
+
+            Navigator.of(context).pop(int.parse(_controller.text));
           },
           child: const Text('Set'),
         ),
