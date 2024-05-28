@@ -10,7 +10,8 @@ part 'ml_models_state.dart';
 
 final mlModelsProvider =
     NotifierProvider.autoDispose<MlModelsNotifier, MlModelsState>(
-        MlModelsNotifier.new);
+  MlModelsNotifier.new,
+);
 
 class MlModelsNotifier extends AutoDisposeNotifier<MlModelsState> {
   MlModelsNotifier() : _mlModelsRepository = MlModelsRepository();

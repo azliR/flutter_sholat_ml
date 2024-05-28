@@ -37,7 +37,9 @@ class _AppState extends ConsumerState<App> {
 
     final colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
     final darkColorScheme = ColorScheme.fromSeed(
-        seedColor: Colors.green, brightness: Brightness.dark);
+      seedColor: Colors.green,
+      brightness: Brightness.dark,
+    );
 
     final lightTheme = _generateThemeData(
       colorScheme: colorScheme,
@@ -91,7 +93,7 @@ class _AppState extends ConsumerState<App> {
 
     return themeData.copyWith(
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.background,
+      scaffoldBackgroundColor: colorScheme.surface,
       menuButtonTheme: MenuButtonThemeData(
         style: MenuItemButton.styleFrom(
           minimumSize: const Size(160, 56),

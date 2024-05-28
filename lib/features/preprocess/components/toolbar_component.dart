@@ -103,7 +103,7 @@ class _ToolbarState extends ConsumerState<Toolbar> {
                                     ),
                                   ),
                             label: Text(category.name),
-                            color: MaterialStatePropertyAll(
+                            color: WidgetStatePropertyAll(
                               colorScheme.secondaryContainer,
                             ),
                             tooltip: category.name,

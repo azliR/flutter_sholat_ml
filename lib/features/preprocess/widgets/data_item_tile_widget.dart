@@ -33,7 +33,7 @@ class DataItemTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    var backgroundColor = colorScheme.background;
+    var backgroundColor = colorScheme.surface;
     if (isSelected) {
       backgroundColor = colorScheme.primaryContainer;
       // } else if (dataItem.isLabeled) {

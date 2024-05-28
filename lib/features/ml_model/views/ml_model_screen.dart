@@ -849,7 +849,6 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
 class _SliderDialog extends StatefulWidget {
   const _SliderDialog({
     required this.title,
-    super.key,
   });
 
   final String title;
@@ -902,7 +901,6 @@ class _NumberFieldDialog extends StatefulWidget {
   const _NumberFieldDialog({
     required this.title,
     required this.initialValue,
-    super.key,
   });
 
   final String title;

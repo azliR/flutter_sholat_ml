@@ -92,7 +92,9 @@ class BottomPanel extends StatelessWidget {
                     onTap: () => onProblemPressed(problem),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 4, horizontal: 8),
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

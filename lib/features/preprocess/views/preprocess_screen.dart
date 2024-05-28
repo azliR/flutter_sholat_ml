@@ -70,7 +70,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     enablePinching: true,
     enableMouseWheelZooming: true,
     enableSelectionZooming: true,
-    zoomMode: ZoomMode.xy,
   );
   final _primaryXAxis = const NumericAxis(
     initialVisibleMaximum: 200,
@@ -885,11 +884,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                         }(),
                         color: () {
                           if (isAutosaving || isAnalysing) {
-                            return colorScheme.onBackground;
+                            return colorScheme.onSurface;
                           }
                           return datasetProp.isSyncedWithCloud
                               ? colorScheme.primary
-                              : colorScheme.onBackground;
+                              : colorScheme.onSurface;
                         }(),
                       )
                           .animate(
@@ -917,11 +916,11 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                           style: textTheme.bodySmall?.copyWith(
                             color: () {
                               if (isAutosaving) {
-                                return colorScheme.onBackground;
+                                return colorScheme.onSurface;
                               }
                               return datasetProp.isSyncedWithCloud
                                   ? colorScheme.primary
-                                  : colorScheme.onBackground;
+                                  : colorScheme.onSurface;
                             }(),
                           ),
                         ),

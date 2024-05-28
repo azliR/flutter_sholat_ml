@@ -146,7 +146,7 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
                         hasEvaluated ? FontWeight.bold : FontWeight.normal,
                     color: hasEvaluated
                         ? colorScheme.primary
-                        : colorScheme.onBackground,
+                        : colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -164,7 +164,7 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
                   style: textTheme.bodySmall?.copyWith(
                     color: isSyncedWithCloud
                         ? colorScheme.primary
-                        : colorScheme.onBackground,
+                        : colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -192,7 +192,6 @@ class _InfoChip extends StatelessWidget {
   const _InfoChip({
     required this.icon,
     required this.title,
-    super.key,
   });
 
   final Widget? icon;
@@ -222,7 +221,7 @@ class _InfoChip extends StatelessWidget {
                   data: IconThemeData(
                     size: 18,
                     weight: 400,
-                    color: colorScheme.onBackground,
+                    color: colorScheme.onSurface,
                     fill: 0,
                   ),
                   child: icon!,

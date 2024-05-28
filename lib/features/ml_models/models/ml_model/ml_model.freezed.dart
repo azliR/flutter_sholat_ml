@@ -215,7 +215,6 @@ class _$MlModelImpl implements _MlModel {
           batchSize: 1,
           windowSize: 20,
           numberOfFeatures: 3,
-          stepSize: 10,
           inputDataType: InputDataType.float32,
           smoothings: {},
           filterings: {},

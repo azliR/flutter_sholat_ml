@@ -91,8 +91,8 @@ class PredictedCategories extends _$PredictedCategories {
       return List.filled(windowStep, firstTakbirFound ? category : null);
     }).toList();
 
-    print('predictions:' + predictions.length.toString());
-    print('expandedPredictions:' + expandedPredictions.length.toString());
+    print('predictions:${predictions.length}');
+    print('expandedPredictions:${expandedPredictions.length}');
 
     if (expandedPredictions.length < dataItems.length) {
       expandedPredictions.addAll(

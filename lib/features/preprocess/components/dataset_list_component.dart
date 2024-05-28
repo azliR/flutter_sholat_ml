@@ -92,7 +92,8 @@ class _DatasetListState extends ConsumerState<DatasetList> {
 
                               ref
                                   .read(
-                                      generateDataItemSectionProvider.notifier)
+                                    generateDataItemSectionProvider.notifier,
+                                  )
                                   .toggleSectionAt(sectionIndex);
                               ref
                                   .read(selectedSectionIndexProvider.notifier)
@@ -314,7 +315,7 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
     }
 
     return Material(
-      color: colorScheme.background,
+      color: colorScheme.surface,
       shape: selected
           ? RoundedRectangleBorder(
               borderRadius: const BorderRadius.all(Radius.circular(16)),
@@ -360,7 +361,9 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: color,
                         borderRadius: BorderRadius.circular(16),

@@ -59,7 +59,11 @@ class _ManualDeviceConnectScreenState
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.fromLTRB(
-                16, 0, 16, kBottomNavigationBarHeight),
+              16,
+              0,
+              16,
+              kBottomNavigationBarHeight,
+            ),
             children: [
               TextFormField(
                 controller: _macAddressController,
