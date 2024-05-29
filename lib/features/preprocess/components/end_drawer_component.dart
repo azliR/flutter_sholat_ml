@@ -88,17 +88,22 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
         selectedModel.config.temporalConsistencyEnforcements.length;
 
     return ListView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        8 + MediaQuery.paddingOf(context).top,
+        16,
+        24,
+      ),
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          child: Text(
-            'Model',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
+        Text(
+          'Model',
+          style: Theme.of(context).textTheme.titleSmall,
         ),
+        const SizedBox(height: 4),
         RoundedListTile(
           title: Text(selectedModel.name),
           dense: true,
+          margin: const EdgeInsets.symmetric(vertical: 4),
           trailing: IconButton(
             icon: const Icon(Symbols.close_rounded),
             onPressed: () =>
@@ -130,6 +135,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           trailing: const Icon(Symbols.chevron_right_rounded),
           filled: false,
           dense: true,
+          margin: const EdgeInsets.symmetric(vertical: 4),
           onTap: () {
             final currentBluetoothDevice =
                 ref.read(authDeviceProvider).currentBluetoothDevice;
@@ -146,66 +152,69 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
             );
           },
         ),
-        const SizedBox(height: 16),
         evaluationAsync.when(
           data: (data) {
             if (data == null) return const SizedBox();
 
-            final accuracy = (data * 100).toStringAsFixed(2);
-            return Center(
-              child: Text(
-                '$accuracy% Accuracy',
-                textAlign: TextAlign.center,
+            final accuracy = data * 100;
+            return Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${accuracy.toStringAsFixed(2)}%',
+                    textAlign: TextAlign.center,
+                    style: textTheme.displaySmall,
+                  ),
+                  Text(
+                    'Accuracy',
+                    style: textTheme.bodyMedium,
+                  ),
+                ],
               ),
             );
           },
           error: (error, stackTrace) => Text(error.toString()),
           loading: () => const SizedBox(),
         ),
-        const SizedBox(height: 16),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Center(
-              child: FilledButton.tonal(
-                onPressed: predictedCategories.maybeWhen(
-                  loading: () => null,
-                  orElse: () => () => ref
-                      .read(predictedCategoriesProvider.notifier)
-                      .startPrediction(),
-                ),
-                child: Text(
-                  predictedCategories.maybeWhen(
-                    loading: () => 'Predicting...',
-                    orElse: () => 'Start Prediction',
-                  ),
-                ),
-              ),
+        const SizedBox(height: 24),
+        FilledButton.tonal(
+          onPressed: predictedCategories.maybeWhen(
+            loading: () => null,
+            orElse: () => () => ref
+                .read(predictedCategoriesProvider.notifier)
+                .startPrediction(),
+          ),
+          child: Text(
+            predictedCategories.maybeWhen(
+              loading: () => 'Predicting...',
+              orElse: () => 'Start Prediction',
             ),
-            if (predictedCategories.valueOrNull != null) ...[
-              OutlinedButton.icon(
-                onPressed: () => ref
-                    .read(enablePredictedPreviewProvider.notifier)
-                    .setEnable(!enablePredictedPreview),
-                label:
-                    Text(enablePredictedPreview ? 'Remove preview' : 'Preview'),
-                icon: enablePredictedPreview
-                    ? const Icon(Symbols.preview_off_rounded)
-                    : const Icon(Symbols.preview_rounded),
-              ),
-              OutlinedButton.icon(
-                onPressed: () {
-                  ref
-                      .read(predictedCategoriesProvider.notifier)
-                      .clearPrediction();
-                  Navigator.pop(context);
-                },
-                label: const Text('Clear Predictions'),
-                icon: const Icon(Symbols.delete_rounded),
-              ),
-            ],
-          ],
+          ),
         ),
+        if (predictedCategories.valueOrNull != null) ...[
+          OutlinedButton.icon(
+            onPressed: () {
+              ref
+                  .read(enablePredictedPreviewProvider.notifier)
+                  .setEnable(!enablePredictedPreview);
+              Navigator.pop(context);
+            },
+            label: Text(enablePredictedPreview ? 'Remove preview' : 'Preview'),
+            icon: enablePredictedPreview
+                ? const Icon(Symbols.visibility_off_rounded)
+                : const Icon(Symbols.visibility_rounded),
+          ),
+          OutlinedButton.icon(
+            onPressed: () {
+              ref.read(predictedCategoriesProvider.notifier).clearPrediction();
+              Navigator.pop(context);
+            },
+            label: const Text('Clear Predictions'),
+            icon: const Icon(Symbols.delete_rounded),
+          ),
+        ],
       ],
     );
   }
