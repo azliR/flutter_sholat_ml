@@ -153,7 +153,7 @@ class _DatasetListState extends ConsumerState<DatasetList> {
           ),
         );
         final hasProblem = ref.watch(
-          analyseDatasetProvider.select(
+          datasetProblemsProvider.select(
             (state) {
               return state.valueOrNull?.any(
                     (problem) {

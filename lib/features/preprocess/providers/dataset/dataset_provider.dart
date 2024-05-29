@@ -12,45 +12,66 @@ import 'package:uuid/uuid.dart';
 part 'dataset_provider.g.dart';
 
 @riverpod
-Future<List<Problem>> analyseDataset(AnalyseDatasetRef ref) async {
-  final preprocessRepository = PreprocessRepository();
-
-  var dataItems =
-      ref.watch(preprocessProvider.select((value) => value.dataItems));
-  final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
-
-  if (enablePredictedPreview) {
-    final predictedCategories =
-        ref.watch(predictedCategoriesProvider).requireValue!;
-
-    dataItems = await Isolate.run(
-      () {
-        var lastMovementSetId = const Uuid().v4();
-        SholatMovementCategory? lastLabelCategory;
-        return dataItems.mapIndexed(
-          (index, dataItem) {
-            final predictedCategory = predictedCategories[index];
-            if (lastLabelCategory != predictedCategory) {
-              lastMovementSetId = const Uuid().v4();
-            }
-            lastLabelCategory = predictedCategory;
-            return dataItem.copyWith(
-              labelCategory: () => predictedCategory,
-              movementSetId: () => lastMovementSetId,
-            );
-          },
-        ).toList();
-      },
-    );
-  } else {}
-
-  final (failure, problems) =
-      await preprocessRepository.analyseDataset(dataItems);
-  if (failure != null) {
-    throw Exception(failure.message);
+class ProblemFilters extends _$ProblemFilters {
+  @override
+  Set<ProblemType> build() {
+    return ProblemType.values.toSet()
+      ..removeAll([
+        ProblemType.wrongPreviousMovementCategorySequence,
+        ProblemType.wrongNextMovementCategorySequence,
+      ]);
   }
 
-  return problems!;
+  void toggle(ProblemType type) {
+    state = state.contains(type)
+        ? state.where((element) => element != type).toSet()
+        : {...state, type};
+  }
+}
+
+@riverpod
+class DatasetProblems extends _$DatasetProblems {
+  @override
+  Future<List<Problem>> build() async {
+    final preprocessRepository = PreprocessRepository();
+
+    var dataItems =
+        ref.watch(preprocessProvider.select((value) => value.dataItems));
+    final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
+
+    if (enablePredictedPreview) {
+      final predictedCategories =
+          ref.watch(predictedCategoriesProvider).requireValue!;
+
+      dataItems = await Isolate.run(
+        () {
+          var lastMovementSetId = const Uuid().v4();
+          SholatMovementCategory? lastLabelCategory;
+          return dataItems.mapIndexed(
+            (index, dataItem) {
+              final predictedCategory = predictedCategories[index];
+              if (lastLabelCategory != predictedCategory) {
+                lastMovementSetId = const Uuid().v4();
+              }
+              lastLabelCategory = predictedCategory;
+              return dataItem.copyWith(
+                labelCategory: () => predictedCategory,
+                movementSetId: () => lastMovementSetId,
+              );
+            },
+          ).toList();
+        },
+      );
+    }
+
+    final (failure, problems) =
+        await preprocessRepository.analyseDataset(dataItems);
+    if (failure != null) {
+      throw Exception(failure.message);
+    }
+
+    return problems!;
+  }
 }
 
 @riverpod

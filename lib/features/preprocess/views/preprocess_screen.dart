@@ -554,7 +554,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
           _animationController.reset();
         }
       })
-      ..listen(analyseDatasetProvider, (previous, next) {
+      ..listen(datasetProblemsProvider, (previous, next) {
         if (next.hasError) {
           showErrorSnackbar(context, next.error.toString());
         }
@@ -773,7 +773,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                                 Consumer(
                                   builder: (context, ref, child) {
                                     final problems =
-                                        ref.watch(analyseDatasetProvider);
+                                        ref.watch(datasetProblemsProvider);
 
                                     return BottomPanel(
                                       problems: problems.valueOrNull ?? [],
@@ -849,7 +849,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                     const SaveDatasetAutoSavingState(),
               ),
             );
-            final isAnalysing = ref.watch(analyseDatasetProvider).isLoading;
+            final isAnalysing = ref.watch(datasetProblemsProvider).isLoading;
 
             return Row(
               children: [
@@ -1135,7 +1135,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
           menuChildren: [
             MenuItemButton(
               leadingIcon: const Icon(Symbols.rule_rounded),
-              onPressed: () => ref.invalidate(analyseDatasetProvider),
+              onPressed: () => ref.invalidate(datasetProblemsProvider),
               child: const Text('Analyse dataset'),
             ),
             MenuItemButton(

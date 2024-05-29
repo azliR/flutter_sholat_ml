@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/features/preprocess/models/problem.dart';
+import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class BottomPanel extends StatelessWidget {
+class BottomPanel extends ConsumerWidget {
   const BottomPanel({
     required this.problems,
     required this.isVerticalLayout,
@@ -39,9 +41,32 @@ class BottomPanel extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    final problemFilters = ref.watch(problemFiltersProvider);
+    final filteredProblems = problemFilters.isEmpty
+        ? problems
+        : problems.where((problem) {
+            return switch (problem.runtimeType) {
+              MissingLabelProblem =>
+                problemFilters.contains(ProblemType.missingLabel),
+              DeprecatedLabelProblem =>
+                problemFilters.contains(ProblemType.deprecatedLabel),
+              DeprecatedLabelCategoryProblem =>
+                problemFilters.contains(ProblemType.deprecatedLabelCategory),
+              WrongPreviousMovementSequenceProblem => problemFilters
+                  .contains(ProblemType.wrongPreviousMovementSequence),
+              WrongPreviousMovementCategorySequenceProblem => problemFilters
+                  .contains(ProblemType.wrongPreviousMovementCategorySequence),
+              WrongNextMovementSequenceProblem =>
+                problemFilters.contains(ProblemType.wrongNextMovementSequence),
+              WrongNextMovementCategorySequenceProblem => problemFilters
+                  .contains(ProblemType.wrongNextMovementCategorySequence),
+              _ => false,
+            };
+          }).toList();
 
     return Card.filled(
       margin: isVerticalLayout
@@ -73,9 +98,14 @@ class BottomPanel extends StatelessWidget {
                     color: colorScheme.errorContainer,
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Text(problems.length.toString()),
+                  child: Text(filteredProblems.length.toString()),
                 ),
+                const SizedBox(width: 4),
                 const Spacer(),
+                _FilterButton(
+                  filteredProblems: filteredProblems,
+                  problems: problems,
+                ),
                 IconButton(
                   style: IconButton.styleFrom(
                     visualDensity: VisualDensity.compact,
@@ -91,9 +121,9 @@ class BottomPanel extends StatelessWidget {
             const Divider(height: 4),
             Expanded(
               child: ListView.builder(
-                itemCount: problems.length,
+                itemCount: filteredProblems.length,
                 itemBuilder: (context, index) {
-                  final problem = problems[index];
+                  final problem = filteredProblems[index];
                   return InkWell(
                     onTap: () => onProblemPressed(problem),
                     child: Padding(
@@ -138,6 +168,96 @@ class BottomPanel extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FilterButton extends StatelessWidget {
+  const _FilterButton({
+    required this.filteredProblems,
+    required this.problems,
+    super.key,
+  });
+
+  final List<Problem> filteredProblems;
+  final List<Problem> problems;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        if (filteredProblems.length != problems.length)
+          Text(
+            'Showing ${filteredProblems.length} of ${problems.length}',
+          ),
+        IconButton(
+          onPressed: () {
+            showDialog<void>(
+              context: context,
+              builder: (context) {
+                return Consumer(
+                  builder: (context, ref, child) {
+                    const allProblems = ProblemType.values;
+                    final problemFilters = ref.watch(problemFiltersProvider);
+
+                    return AlertDialog(
+                      title: const Text('Filter'),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      content: SizedBox(
+                        width: 240,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: allProblems.length,
+                          itemBuilder: (context, index) {
+                            final problem = allProblems[index];
+
+                            return CheckboxListTile(
+                              contentPadding: const EdgeInsets.fromLTRB(
+                                24,
+                                0,
+                                24,
+                                0,
+                              ),
+                              title: Text(problem.name),
+                              dense: true,
+                              value: problemFilters.contains(problem),
+                              onChanged: (value) {
+                                ref
+                                    .read(problemFiltersProvider.notifier)
+                                    .toggle(problem);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                      actions: [
+                        OutlinedButton(
+                          onPressed: () =>
+                              ref.invalidate(problemFiltersProvider),
+                          child: const Text('Reset'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Close'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            );
+          },
+          icon: Badge(
+            isLabelVisible: filteredProblems.length != problems.length,
+            backgroundColor: colorScheme.primary,
+            child: const Icon(Symbols.filter_alt_rounded),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,6 +1,29 @@
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movements.dart';
 
+enum ProblemType {
+  missingLabel,
+  deprecatedLabel,
+  deprecatedLabelCategory,
+  wrongPreviousMovementSequence,
+  wrongNextMovementSequence,
+  wrongPreviousMovementCategorySequence,
+  wrongNextMovementCategorySequence;
+
+  String get name => switch (this) {
+        ProblemType.missingLabel => 'Missing Label',
+        ProblemType.deprecatedLabel => 'Deprecated Label',
+        ProblemType.deprecatedLabelCategory => 'Deprecated Label Category',
+        ProblemType.wrongPreviousMovementSequence =>
+          'Wrong Previous Movement Sequence',
+        ProblemType.wrongPreviousMovementCategorySequence =>
+          'Wrong Previous Movement Category Sequence',
+        ProblemType.wrongNextMovementSequence => 'Wrong Next Movement Sequence',
+        ProblemType.wrongNextMovementCategorySequence =>
+          'Wrong Next Movement Category Sequence',
+      };
+}
+
 sealed class Problem {
   const Problem({
     required this.startIndex,
