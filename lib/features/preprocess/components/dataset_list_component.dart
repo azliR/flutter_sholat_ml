@@ -327,44 +327,30 @@ class _ExpandableHeaderDelegate extends SliverPersistentHeaderDelegate {
             ),
             const SizedBox(width: 8),
             if (section.movementSetId != null && !enablePredictedPreview)
-              () {
-                final color = Color(
-                  int.parse(
-                    'ff${section.movementSetId!.substring(0, 6)}',
-                    radix: 16,
-                  ),
-                );
-
-                return Tooltip(
-                  message: 'Movement Set ID',
-                  waitDuration: const Duration(seconds: 1),
-                  child: InkWell(
-                    onTap: () {
-                      showSnackbar(
-                        context,
-                        'Movement Set ID: ${section.movementSetId}',
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 4,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        section.movementSetId!.substring(0, 6),
-                        style: textTheme.bodySmall?.copyWith(
-                          color:
-                              _isColorDark(color) ? Colors.white : Colors.black,
-                        ),
-                      ),
+              Tooltip(
+                message: 'Movement Set ID',
+                waitDuration: const Duration(seconds: 1),
+                child: InkWell(
+                  onTap: () {
+                    showSnackbar(
+                      context,
+                      'Movement Set ID: ${section.movementSetId}',
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 1,
                     ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child:
+                        Text('id: ${section.movementSetId!.substring(0, 5)}'),
                   ),
-                );
-              }(),
+                ),
+              ),
           ],
         ),
         leading: Text(index.toString()),

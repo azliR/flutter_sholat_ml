@@ -23,20 +23,17 @@ class BottomPanel extends ConsumerWidget {
     final endIndex = problem.endIndex;
 
     return switch (problem) {
-      MissingLabelProblem() =>
-        'Missing label from index ${endIndex - startIndex == 0 ? 'at index $startIndex' : '$startIndex to $endIndex'}',
-      DeprecatedLabelProblem() =>
-        'Deprecated label ${problem.label.value} from index $startIndex to $endIndex',
-      DeprecatedLabelCategoryProblem() =>
-        'Deprecated label category ${problem.labelCategory.value} from index $startIndex to $endIndex',
+      MissingLabelProblem() => 'Missing label.',
+      DeprecatedLabelProblem() => 'Deprecated label.',
+      DeprecatedLabelCategoryProblem() => 'Deprecated label category.',
       WrongPreviousMovementSequenceProblem() =>
-        'Wrong previous movement sequence of ${problem.label.value} from index $startIndex to $endIndex',
-      WrongPreviousMovementCategorySequenceProblem() =>
-        'Wrong previous movement category sequence from index $startIndex to $endIndex',
+        "Invalid previous movement sequence of '${problem.label.value}'",
       WrongNextMovementSequenceProblem() =>
-        'Wrong next movement sequence of ${problem.label.value} from index $startIndex to $endIndex',
+        "Invalid next movement sequence of '${problem.label.value}'",
+      WrongPreviousMovementCategorySequenceProblem() =>
+        "Invalid previous movement category sequence of '${problem.label.value}'",
       WrongNextMovementCategorySequenceProblem() =>
-        'Wrong next movement category sequence from index $startIndex to $endIndex',
+        "Invalid next movement category sequence of '${problem.label.value}'",
     };
   }
 
@@ -135,7 +132,7 @@ class BottomPanel extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Icon(
-                            Symbols.error_rounded,
+                            Symbols.cancel_rounded,
                             size: 20,
                             color: colorScheme.error,
                           ),
@@ -145,13 +142,28 @@ class BottomPanel extends ConsumerWidget {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(_toTitleStr(problem)),
+                                Text.rich(
+                                  TextSpan(
+                                    text: _toTitleStr(problem),
+                                    children: [
+                                      TextSpan(
+                                        text: problem.startIndex ==
+                                                problem.endIndex
+                                            ? ' [i ${problem.startIndex}]'
+                                            : ' [i ${problem.startIndex} - ${problem.endIndex}]',
+                                        style: textTheme.bodyMedium?.copyWith(
+                                          color: colorScheme.outline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  style: textTheme.bodyMedium,
+                                ),
                                 if (problem is MovementSequenceProblem) ...[
                                   Text(
                                     'Expected: ${problem.expectedLabels.map((e) => e?.value).join(', ')}',
                                     style: textTheme.labelMedium?.copyWith(
                                       fontWeight: FontWeight.normal,
-                                      color: colorScheme.outline,
                                     ),
                                   ),
                                 ],
@@ -203,7 +215,7 @@ class _FilterButton extends StatelessWidget {
                     final problemFilters = ref.watch(problemFiltersProvider);
 
                     return AlertDialog(
-                      title: const Text('Filter'),
+                      title: const Text('Show filter'),
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
                       content: SizedBox(
                         width: 240,
@@ -238,11 +250,11 @@ class _FilterButton extends StatelessWidget {
                               ref.invalidate(problemFiltersProvider),
                           child: const Text('Reset'),
                         ),
-                        OutlinedButton(
+                        FilledButton.tonal(
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Close'),
+                          child: const Text('Finish'),
                         ),
                       ],
                     );

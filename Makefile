@@ -46,3 +46,6 @@ native_splash: ## This command runs flutter_native_splash
 
 dependency_validator: ## This command runs dependency_validator
 	dart run dependency_validator		
+
+release_android:
+	flutter build apk --split-per-abi --flavor production --target lib/main_production.dart

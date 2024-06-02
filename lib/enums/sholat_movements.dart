@@ -2,12 +2,13 @@ import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 
 enum SholatMovement {
   takbiratulihram,
+  takbir,
   bersedekap,
   ruku,
   iktidalBersedekap,
   iktidalTanpaBersedekap,
   qunut,
-  qunutMembalikkanTangan,
+  // qunutMembalikkanTangan,
   sujud,
   dudukAntaraDuaSujud,
   dudukIstirohah,
@@ -32,6 +33,7 @@ enum SholatMovement {
       case SholatMovementCategory.takbir:
         return [
           SholatMovement.takbiratulihram,
+          SholatMovement.takbir,
         ];
       case SholatMovementCategory.berdiri:
         return [
@@ -49,7 +51,7 @@ enum SholatMovement {
       case SholatMovementCategory.qunut:
         return [
           SholatMovement.qunut,
-          SholatMovement.qunutMembalikkanTangan,
+          // SholatMovement.qunutMembalikkanTangan,
         ];
       case SholatMovementCategory.sujud:
         return [
@@ -79,12 +81,13 @@ enum SholatMovement {
 
   String get name => switch (this) {
         SholatMovement.takbiratulihram => 'Takbiratulihram',
+        SholatMovement.takbir => 'Takbir',
         SholatMovement.bersedekap => 'Bersedekap',
         SholatMovement.ruku => 'Ruku',
         SholatMovement.iktidalBersedekap => 'Iktidal Bersedekap',
         SholatMovement.iktidalTanpaBersedekap => 'Iktidal Tanpa Bersedekap',
         SholatMovement.qunut => 'Qunut',
-        SholatMovement.qunutMembalikkanTangan => 'Qunut Membalikkan Tangan',
+        // SholatMovement.qunutMembalikkanTangan => 'Qunut Membalikkan Tangan',
         SholatMovement.sujud => 'Sujud',
         SholatMovement.dudukAntaraDuaSujud => 'Duduk Antara Dua Sujud',
         SholatMovement.dudukIstirohah => 'Duduk Istirohah',
@@ -106,12 +109,13 @@ enum SholatMovement {
 
   String get value => switch (this) {
         SholatMovement.takbiratulihram => 'takbiratulihram',
+        SholatMovement.takbir => 'takbir',
         SholatMovement.bersedekap => 'bersedekap',
         SholatMovement.ruku => 'ruku',
         SholatMovement.iktidalBersedekap => 'iktidal_bersedekap',
         SholatMovement.iktidalTanpaBersedekap => 'iktidal_tanpa_bersedekap',
         SholatMovement.qunut => 'qunut',
-        SholatMovement.qunutMembalikkanTangan => 'qunut_membalikkan_tangan',
+        // SholatMovement.qunutMembalikkanTangan => 'qunut_membalikkan_tangan',
         SholatMovement.sujud => 'sujud',
         SholatMovement.dudukAntaraDuaSujud => 'duduk_antara_dua_sujud',
         SholatMovement.dudukIstirohah => 'duduk_istirohah',
@@ -132,7 +136,192 @@ enum SholatMovement {
       };
 
   bool get isDeprecated => [
-        SholatMovement.qunutMembalikkanTangan,
+        // SholatMovement.qunutMembalikkanTangan,
         SholatMovement.dudukIstirohah,
       ].contains(this);
+
+  List<SholatMovement?> get previousMovement {
+    return switch (this) {
+      SholatMovement.takbiratulihram => [
+          null,
+        ],
+      SholatMovement.takbir => [
+          null,
+          SholatMovement.bersedekap,
+          SholatMovement.transisiRukuKeIktidal,
+          SholatMovement.transisiDudukKeBersedekap,
+          SholatMovement.transisiSujudKeBersedekap,
+        ],
+      SholatMovement.bersedekap => [
+          null,
+          SholatMovement.transisiDudukKeBersedekap,
+          SholatMovement.transisiSujudKeBersedekap,
+        ],
+      SholatMovement.transisiBersedekapKeRuku => [
+          null,
+          SholatMovement.bersedekap,
+        ],
+      SholatMovement.ruku => [
+          null,
+          SholatMovement.transisiBersedekapKeRuku,
+        ],
+      SholatMovement.transisiRukuKeIktidal => [
+          null,
+          SholatMovement.ruku,
+        ],
+      SholatMovement.iktidalBersedekap ||
+      SholatMovement.iktidalTanpaBersedekap =>
+        [
+          null,
+          SholatMovement.takbir,
+          SholatMovement.transisiRukuKeIktidal,
+        ],
+      SholatMovement.transisiBerdiriKeQunut => [
+          null,
+          SholatMovement.iktidalBersedekap,
+          SholatMovement.iktidalTanpaBersedekap,
+        ],
+      SholatMovement.qunut => [
+          null,
+          SholatMovement.transisiBerdiriKeQunut,
+        ],
+      SholatMovement.transisiQunutKeBerdiri => [
+          null,
+          SholatMovement.qunut,
+        ],
+      SholatMovement.transisiIktidalKeSujud => [
+          null,
+          SholatMovement.iktidalBersedekap,
+          SholatMovement.iktidalTanpaBersedekap,
+        ],
+      SholatMovement.sujud => [
+          null,
+          SholatMovement.transisiIktidalKeSujud,
+          SholatMovement.transisiDudukKeSujud,
+        ],
+      SholatMovement.transisiSujudKeDuduk => [
+          null,
+          SholatMovement.sujud,
+        ],
+      SholatMovement.dudukAntaraDuaSujud ||
+      SholatMovement.dudukIstirohah ||
+      SholatMovement.dudukTasyahudAwal ||
+      SholatMovement.dudukTasyahudAkhir =>
+        [
+          null,
+          SholatMovement.transisiSujudKeDuduk,
+        ],
+      SholatMovement.transisiDudukKeSujud => [
+          null,
+          SholatMovement.dudukAntaraDuaSujud,
+          SholatMovement.dudukTasyahudAwal,
+        ],
+      SholatMovement.transisiDudukKeBersedekap => [
+          null,
+          SholatMovement.dudukIstirohah,
+          SholatMovement.dudukTasyahudAwal,
+        ],
+      SholatMovement.transisiSujudKeBersedekap => [
+          null,
+          SholatMovement.sujud,
+        ],
+    };
+  }
+
+  List<SholatMovement?> get nextMovement {
+    return switch (this) {
+      SholatMovement.takbiratulihram => [
+          null,
+          SholatMovement.bersedekap,
+        ],
+      SholatMovement.takbir => [
+          null,
+          SholatMovement.transisiBersedekapKeRuku,
+          SholatMovement.iktidalBersedekap,
+          SholatMovement.iktidalTanpaBersedekap,
+        ],
+      SholatMovement.bersedekap => [
+          null,
+          SholatMovement.takbir,
+          SholatMovement.transisiBersedekapKeRuku,
+        ],
+      SholatMovement.transisiBersedekapKeRuku => [
+          null,
+          SholatMovement.ruku,
+        ],
+      SholatMovement.ruku => [
+          null,
+          SholatMovement.transisiRukuKeIktidal,
+        ],
+      SholatMovement.transisiRukuKeIktidal => [
+          null,
+          SholatMovement.takbir,
+          SholatMovement.iktidalBersedekap,
+          SholatMovement.iktidalTanpaBersedekap,
+        ],
+      SholatMovement.iktidalTanpaBersedekap ||
+      SholatMovement.iktidalBersedekap =>
+        [
+          SholatMovement.transisiIktidalKeSujud,
+          SholatMovement.transisiBerdiriKeQunut,
+        ],
+      SholatMovement.transisiBerdiriKeQunut => [
+          null,
+          SholatMovement.qunut,
+        ],
+      SholatMovement.qunut => [
+          null,
+          SholatMovement.transisiQunutKeBerdiri,
+        ],
+      SholatMovement.transisiQunutKeBerdiri => [
+          null,
+          SholatMovement.qunut,
+        ],
+      SholatMovement.transisiIktidalKeSujud => [
+          null,
+          SholatMovement.sujud,
+        ],
+      SholatMovement.sujud => [
+          null,
+          SholatMovement.transisiSujudKeDuduk,
+          SholatMovement.transisiSujudKeBersedekap,
+        ],
+      SholatMovement.transisiSujudKeBersedekap => [
+          null,
+          SholatMovement.takbir,
+          SholatMovement.bersedekap,
+        ],
+      SholatMovement.transisiSujudKeDuduk => [
+          null,
+          SholatMovement.dudukAntaraDuaSujud,
+          SholatMovement.dudukIstirohah,
+          SholatMovement.dudukTasyahudAwal,
+          SholatMovement.dudukTasyahudAkhir,
+        ],
+      SholatMovement.dudukAntaraDuaSujud => [
+          null,
+          SholatMovement.transisiDudukKeSujud,
+        ],
+      SholatMovement.dudukIstirohah || SholatMovement.dudukTasyahudAwal => [
+          null,
+          SholatMovement.transisiDudukKeBersedekap,
+        ],
+      SholatMovement.dudukTasyahudAkhir => [
+          null,
+        ],
+      // SholatMovement.qunutMembalikkanTangan => [
+      //     null,
+      //     SholatMovement.qunut,
+      // ],
+      SholatMovement.transisiDudukKeSujud => [
+          null,
+          SholatMovement.sujud,
+        ],
+      SholatMovement.transisiDudukKeBersedekap => [
+          null,
+          SholatMovement.takbir,
+          SholatMovement.bersedekap,
+        ],
+    };
+  }
 }

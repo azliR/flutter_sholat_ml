@@ -205,23 +205,23 @@ class PreprocessRepository {
             final nextLabel = nextLabelRecord?.$3;
             final nextLabelCategory = nextLabelRecord?.$4;
 
-            if (!labelCategory.previousMovement.contains(prevLabel)) {
+            if (!label.previousMovement.contains(prevLabel)) {
               previous.add(
                 WrongPreviousMovementSequenceProblem(
                   startIndex: startIndex,
                   endIndex: endIndex!,
                   label: label,
-                  expectedLabels: labelCategory.previousMovement,
+                  expectedLabels: label.previousMovement,
                 ),
               );
             }
-            if (!labelCategory.nextMovement.contains(nextLabel)) {
+            if (!label.nextMovement.contains(nextLabel)) {
               previous.add(
                 WrongNextMovementSequenceProblem(
                   startIndex: startIndex,
                   endIndex: endIndex!,
                   label: label,
-                  expectedLabels: labelCategory.nextMovement,
+                  expectedLabels: label.nextMovement,
                 ),
               );
             }

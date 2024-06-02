@@ -35,16 +35,24 @@ class DataItemTile extends StatelessWidget {
 
     var backgroundColor = colorScheme.surface;
     if (isSelected) {
-      backgroundColor = colorScheme.primaryContainer;
+      backgroundColor = colorScheme.surfaceBright;
       // } else if (dataItem.isLabeled) {
       //   final splittedId = dataItem.movementSetId!.substring(0, 6);
       //   final hexColor = int.parse('ff$splittedId', radix: 16);
       //   final generatedColor = Color(hexColor);
       //   backgroundColor = Color.lerp(backgroundColor, generatedColor, 0.5)!;
+    } else if (hasProblem) {
+      backgroundColor = colorScheme.errorContainer;
     }
 
     Widget? icon;
-    if (dataItem.isLabeled && isSelected) {
+    if (hasProblem) {
+      icon = Icon(
+        Symbols.cancel_rounded,
+        color: colorScheme.error,
+        weight: 300,
+      );
+    } else if (dataItem.isLabeled && isSelected) {
       icon = Icon(
         Symbols.warning_rounded,
         color: colorScheme.secondary,
@@ -96,12 +104,7 @@ class DataItemTile extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: Center(
-                    child: hasProblem
-                        ? Icon(
-                            Symbols.error_circle_rounded_error_rounded,
-                            color: colorScheme.error,
-                          )
-                        : Text(index.toString()),
+                    child: Text(index.toString()),
                   ),
                 ),
                 Expanded(
