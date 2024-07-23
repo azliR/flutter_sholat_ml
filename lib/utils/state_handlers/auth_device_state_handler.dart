@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
+import 'package:flutter_sholat_ml/core/auth_device/models/wearable.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -19,10 +20,10 @@ void handleAuthDeviceState(
   void Function()? onAuthDeviceSuccess,
   void Function(Failure failure)? onAuthDeviceFailure,
   void Function()? onAuthDeviceResponseFailure,
-  void Function()? onAuthWithXiaomiAccountLoading,
-  void Function()? onAuthWithXiaomiAccountSuccess,
-  void Function(Failure failure)? onAuthWithXiaomiAccountFailure,
-  void Function()? onAuthWithXiaomiAccountResponseFailure,
+  void Function()? onLoginXiaomiAccountLoading,
+  void Function(Wearable wearable)? onLoginXiaomiAccountSuccess,
+  void Function(Failure failure)? onLoginXiaomiAccountFailure,
+  void Function()? onAuthXiaomiAccountResponseFailure,
   void Function(Failure failure)? onDisconnectDeviceFailure,
   void Function(Failure failure)? onGetPrimaryDeviceFailure,
   void Function(Failure failure)? onRemoveDeviceFailure,
@@ -98,21 +99,21 @@ void handleAuthDeviceState(
           context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');
         }
-      case AuthWithXiaomiAccountLoadingState():
-        if (onAuthWithXiaomiAccountLoading != null) {
-          onAuthWithXiaomiAccountLoading.call();
+      case LoginXiaomiAccountLoadingState():
+        if (onLoginXiaomiAccountLoading != null) {
+          onLoginXiaomiAccountLoading.call();
         } else {
           context.loaderOverlay.show();
         }
-      case AuthWithXiaomiAccountSuccessState():
-        if (onAuthWithXiaomiAccountSuccess != null) {
-          onAuthWithXiaomiAccountSuccess.call();
+      case LoginXiaomiAccountSuccessState():
+        if (onLoginXiaomiAccountSuccess != null) {
+          onLoginXiaomiAccountSuccess.call(presentationState.wearable);
         } else {
           context.loaderOverlay.hide();
         }
-      case AuthWithXiaomiAccountFailureState():
-        if (onAuthWithXiaomiAccountFailure != null) {
-          onAuthWithXiaomiAccountFailure.call(presentationState.failure);
+      case LoginXiaomiAccountFailureState():
+        if (onLoginXiaomiAccountFailure != null) {
+          onLoginXiaomiAccountFailure.call(presentationState.failure);
         } else {
           context.loaderOverlay.hide();
           showErrorSnackbar(
@@ -120,9 +121,9 @@ void handleAuthDeviceState(
             'Failed authenticating with xiaomi account',
           );
         }
-      case AuthWithXiaomiAccountResponseFailureState():
-        if (onAuthWithXiaomiAccountResponseFailure != null) {
-          onAuthWithXiaomiAccountResponseFailure.call();
+      case LoginXiaomiAccountResponseFailureState():
+        if (onAuthXiaomiAccountResponseFailure != null) {
+          onAuthXiaomiAccountResponseFailure.call();
         } else {
           context.loaderOverlay.hide();
           showErrorSnackbar(context, 'Failed authenticating device');

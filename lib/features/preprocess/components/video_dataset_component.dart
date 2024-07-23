@@ -5,17 +5,21 @@ import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/prepr
 import 'package:flutter_sholat_ml/features/preprocess/providers/video_player/video_player_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/widgets/dataset_prop_tile_widget.dart';
 import 'package:flutter_sholat_ml/utils/ui/menus.dart';
+import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoDataset extends ConsumerStatefulWidget {
   const VideoDataset({
     required this.videoPlayerController,
+    required this.isVideoDownloaded,
     required this.isVerticalLayout,
     super.key,
   });
 
-  final VideoPlayerController videoPlayerController;
+  final VideoPlayerController? videoPlayerController;
+  final bool isVideoDownloaded;
   final bool isVerticalLayout;
 
   @override
@@ -26,12 +30,17 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
   // late final PreprocessNotifier _notifier;
 
   Future<void> _showSpeedMenu(BuildContext context) async {
+    if (widget.videoPlayerController == null) {
+      showSnackbar(context, 'Video is not ready');
+      return;
+    }
+
     final position = determineMenuPosition(context);
 
     final result = await showMenu<double>(
       context: context,
       position: position,
-      initialValue: widget.videoPlayerController.value.playbackSpeed,
+      initialValue: widget.videoPlayerController!.value.playbackSpeed,
       items: [
         const PopupMenuItem(
           height: 40,
@@ -81,7 +90,7 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
       ],
     );
     if (result != null) {
-      await widget.videoPlayerController.setPlaybackSpeed(result);
+      await widget.videoPlayerController!.setPlaybackSpeed(result);
       ref.read(videoPlaybackSpeedProvider.notifier).setSpeed(result);
     }
   }
@@ -161,12 +170,14 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
                           icon: Symbols.dataset_rounded,
                         ),
                         const Divider(),
-                        DatasetPropTile(
-                          label: 'Duration',
-                          content: widget.videoPlayerController.value.duration
-                              .toString(),
-                          icon: Symbols.timer_rounded,
-                        ),
+                        if (widget.videoPlayerController != null)
+                          DatasetPropTile(
+                            label: 'Duration',
+                            content: widget
+                                .videoPlayerController!.value.duration
+                                .toString(),
+                            icon: Symbols.timer_rounded,
+                          ),
                       ],
                     ],
                   ),
@@ -222,7 +233,9 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
   }
 
   Widget _buildVideoPlayer() {
-    final isInitialised = widget.videoPlayerController.value.isInitialized;
+    final isInitialised =
+        widget.videoPlayerController?.value.isInitialized ?? false;
+    final videoUrl = ref.read(preprocessProvider).datasetProp?.videoUrl;
 
     return Padding(
       padding: const EdgeInsets.all(4),
@@ -230,11 +243,43 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
         borderRadius: const BorderRadius.all(Radius.circular(16)),
         child: AspectRatio(
           aspectRatio: isInitialised
-              ? widget.videoPlayerController.value.aspectRatio
+              ? widget.videoPlayerController!.value.aspectRatio
               : 2 / 3,
-          child: isInitialised
-              ? VideoPlayer(widget.videoPlayerController)
-              : const Center(child: CircularProgressIndicator()),
+          child: switch ((widget.isVideoDownloaded, isInitialised)) {
+            (true, true) => VideoPlayer(widget.videoPlayerController!),
+            (false, true) => throw Exception(
+                'Video should be downloaded before its initiated',
+              ),
+            (true, false) => const Center(child: CircularProgressIndicator()),
+            (false, false) => videoUrl != null
+                ? Center(
+                    child: TextButton(
+                      onPressed: () {},
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Symbols.download_rounded),
+                          SizedBox(height: 8),
+                          Text('Download video', textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+                  )
+                : const Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Symbols.play_disabled_rounded,
+                          size: 48,
+                          weight: 300,
+                        ),
+                        SizedBox(height: 8),
+                        Text('Video not available'),
+                      ],
+                    ),
+                  ),
+          },
         ),
       ),
     );

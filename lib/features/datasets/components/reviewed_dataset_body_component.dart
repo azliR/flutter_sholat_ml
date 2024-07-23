@@ -106,11 +106,18 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                           ),
                         ),
                       );
+                      final lastOpened = ref.watch(
+                        datasetsProvider.select(
+                          (state) =>
+                              state.lastOpenedDatasetId == dataset.property.id,
+                        ),
+                      );
 
                       return DatasetGridTile(
                         dataset: dataset,
                         selected: false,
                         labeled: true,
+                        lastOpened: lastOpened,
                         // onInitialise: () async {
                         // if (dataset.thumbnail == null &&
                         //     dataset.path != null) {
@@ -122,15 +129,17 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                         // }
                         // },
                         onTap: () async {
-                          if (dataset.downloaded ?? false) {
-                            await context.router
-                                .push(PreprocessRoute(path: dataset.path!));
-                            return;
-                          }
-                          await _notifier.downloadDatasetAt(
-                            index,
-                            dataset: dataset,
-                          );
+                          _notifier.setLastOpenedDatasetId(dataset.property.id);
+
+                          await context.router
+                              .push(PreprocessRoute(path: dataset.path!));
+                          // if (dataset.downloaded ?? false) {
+                          //   return;
+                          // }
+                          // await _notifier.downloadDatasetAt(
+                          //   index,
+                          //   dataset: dataset,
+                          // );
                         },
                         action: _buildMenu(index, dataset),
                       );

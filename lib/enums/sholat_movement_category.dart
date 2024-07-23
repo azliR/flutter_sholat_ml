@@ -36,7 +36,7 @@ enum SholatMovementCategory {
 
   bool get isDeprecated => false;
 
-  List<SholatMovementCategory?> get previousMovementCategory {
+  List<SholatMovementCategory?> get previousMovementCategories {
     return switch (this) {
       SholatMovementCategory.takbir => [
           null,
@@ -76,11 +76,12 @@ enum SholatMovementCategory {
           SholatMovementCategory.qunut,
           SholatMovementCategory.sujud,
           SholatMovementCategory.duduk,
+          SholatMovementCategory.transisi,
         ],
     };
   }
 
-  List<SholatMovementCategory?> get nextMovementCategory {
+  List<SholatMovementCategory?> get nextMovementCategories {
     return switch (this) {
       SholatMovementCategory.takbir => [
           null,
@@ -119,113 +120,48 @@ enum SholatMovementCategory {
           SholatMovementCategory.qunut,
           SholatMovementCategory.sujud,
           SholatMovementCategory.duduk,
+          SholatMovementCategory.transisi,
         ],
     };
   }
 
-  // List<SholatMovement?> get previousMovement {
-  //   return switch (this) {
-  //     SholatMovementCategory.takbir => [
-  //         null,
-  //         null,
-  //         SholatMovement.transisiDudukKeBersedekap,
-  //         SholatMovement.transisiSujudKeBersedekap,
-  //         SholatMovement.transisiRukuKeIktidal,
-  //       ],
-  //     SholatMovementCategory.berdiri => [
-  //         null,
-  //         SholatMovement.takbiratulihram,
-  //         SholatMovement.transisiDudukKeBersedekap,
-  //         SholatMovement.transisiSujudKeBersedekap,
-  //       ],
-  //     SholatMovementCategory.ruku => [
-  //         null,
-  //         SholatMovement.transisiBersedekapKeRuku,
-  //       ],
-  //     SholatMovementCategory.iktidal => [
-  //         null,
-  //         SholatMovement.transisiRukuKeIktidal,
-  //         SholatMovement.transisiQunutKeBerdiri,
-  //       ],
-  //     SholatMovementCategory.qunut => [
-  //         null,
-  //         SholatMovement.transisiBerdiriKeQunut,
-  //       ],
-  //     SholatMovementCategory.sujud => [
-  //         null,
-  //         SholatMovement.transisiIktidalKeSujud,
-  //         SholatMovement.transisiDudukKeSujud,
-  //       ],
-  //     SholatMovementCategory.duduk => [
-  //         null,
-  //         SholatMovement.transisiSujudKeDuduk,
-  //       ],
-  //     SholatMovementCategory.transisi => [
-  //         null,
-  //         SholatMovement.takbiratulihram,
-  //         SholatMovement.bersedekap,
-  //         SholatMovement.ruku,
-  //         SholatMovement.iktidalBersedekap,
-  //         SholatMovement.iktidalTanpaBersedekap,
-  //         SholatMovement.qunut,
-  //         SholatMovement.sujud,
-  //         SholatMovement.dudukAntaraDuaSujud,
-  //         SholatMovement.dudukIstirohah,
-  //         SholatMovement.dudukTasyahudAwal,
-  //         SholatMovement.dudukTasyahudAkhir,
-  //       ],
-  //   };
-  // }
-
-  // List<SholatMovement?> get nextMovement {
-  //   return switch (this) {
-  //     SholatMovementCategory.takbir => [
-  //         null,
-  //         SholatMovement.bersedekap,
-  //         SholatMovement.iktidalBersedekap,
-  //         SholatMovement.iktidalTanpaBersedekap,
-  //       ],
-  //     SholatMovementCategory.berdiri => [
-  //         null,
-  //         SholatMovement.transisiBersedekapKeRuku,
-  //       ],
-  //     SholatMovementCategory.ruku => [
-  //         null,
-  //         SholatMovement.transisiRukuKeIktidal,
-  //       ],
-  //     SholatMovementCategory.iktidal => [
-  //         null,
-  //         SholatMovement.transisiIktidalKeSujud,
-  //         SholatMovement.transisiBerdiriKeQunut,
-  //       ],
-  //     SholatMovementCategory.qunut => [
-  //         null,
-  //         SholatMovement.transisiQunutKeBerdiri,
-  //       ],
-  //     SholatMovementCategory.sujud => [
-  //         null,
-  //         SholatMovement.transisiSujudKeDuduk,
-  //         SholatMovement.transisiSujudKeBersedekap,
-  //       ],
-  //     SholatMovementCategory.duduk => [
-  //         null,
-  //         null,
-  //         SholatMovement.transisiDudukKeSujud,
-  //         SholatMovement.transisiDudukKeBersedekap,
-  //       ],
-  //     SholatMovementCategory.transisi => [
-  //         null,
-  //         SholatMovement.bersedekap,
-  //         SholatMovement.ruku,
-  //         SholatMovement.iktidalBersedekap,
-  //         SholatMovement.iktidalTanpaBersedekap,
-  //         SholatMovement.qunut,
-  //         SholatMovement.sujud,
-  //         SholatMovement.dudukAntaraDuaSujud,
-  //         SholatMovement.dudukIstirohah,
-  //         SholatMovement.dudukTasyahudAwal,
-  //         SholatMovement.dudukTasyahudAkhir,
-  //       ],
-  //   };
-  // }
+  List<SholatMovementCategory> get nextMovementCategoriesBySequence {
+    return switch (this) {
+      SholatMovementCategory.takbir => [
+          SholatMovementCategory.berdiri,
+          // SholatMovementCategory.iktidal,
+          // SholatMovementCategory.ruku,
+        ],
+      SholatMovementCategory.berdiri => [
+          SholatMovementCategory.ruku,
+        ],
+      SholatMovementCategory.ruku => [
+          SholatMovementCategory.iktidal,
+        ],
+      SholatMovementCategory.iktidal => [
+          SholatMovementCategory.sujud,
+          SholatMovementCategory.qunut,
+        ],
+      SholatMovementCategory.qunut => [
+          SholatMovementCategory.sujud,
+        ],
+      SholatMovementCategory.sujud => [
+          SholatMovementCategory.duduk,
+        ],
+      SholatMovementCategory.duduk => [
+          SholatMovementCategory.sujud,
+          SholatMovementCategory.berdiri,
+        ],
+      SholatMovementCategory.transisi => [
+          SholatMovementCategory.takbir,
+          SholatMovementCategory.berdiri,
+          SholatMovementCategory.ruku,
+          SholatMovementCategory.iktidal,
+          SholatMovementCategory.qunut,
+          SholatMovementCategory.sujud,
+          SholatMovementCategory.duduk,
+          SholatMovementCategory.transisi,
+        ],
+    };
+  }
 }

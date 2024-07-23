@@ -140,7 +140,7 @@ enum SholatMovement {
         SholatMovement.dudukIstirohah,
       ].contains(this);
 
-  List<SholatMovement?> get previousMovement {
+  List<SholatMovement?> get previousMovements {
     return switch (this) {
       SholatMovement.takbiratulihram => [
           null,
@@ -154,6 +154,8 @@ enum SholatMovement {
         ],
       SholatMovement.bersedekap => [
           null,
+          SholatMovement.takbiratulihram,
+          SholatMovement.takbir,
           SholatMovement.transisiDudukKeBersedekap,
           SholatMovement.transisiSujudKeBersedekap,
         ],
@@ -191,6 +193,7 @@ enum SholatMovement {
         ],
       SholatMovement.transisiIktidalKeSujud => [
           null,
+          SholatMovement.transisiQunutKeBerdiri,
           SholatMovement.iktidalBersedekap,
           SholatMovement.iktidalTanpaBersedekap,
         ],
@@ -228,7 +231,7 @@ enum SholatMovement {
     };
   }
 
-  List<SholatMovement?> get nextMovement {
+  List<SholatMovement?> get nextMovements {
     return switch (this) {
       SholatMovement.takbiratulihram => [
           null,
@@ -262,6 +265,7 @@ enum SholatMovement {
       SholatMovement.iktidalTanpaBersedekap ||
       SholatMovement.iktidalBersedekap =>
         [
+          null,
           SholatMovement.transisiIktidalKeSujud,
           SholatMovement.transisiBerdiriKeQunut,
         ],
@@ -275,7 +279,7 @@ enum SholatMovement {
         ],
       SholatMovement.transisiQunutKeBerdiri => [
           null,
-          SholatMovement.qunut,
+          SholatMovement.transisiIktidalKeSujud,
         ],
       SholatMovement.transisiIktidalKeSujud => [
           null,

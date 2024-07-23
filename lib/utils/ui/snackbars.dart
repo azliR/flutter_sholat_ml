@@ -24,7 +24,12 @@ void showSnackbar(
 }) {
   if (hidePreviousSnackbar) ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
+  final size = MediaQuery.sizeOf(context);
+
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
+    SnackBar(
+      content: Text(message),
+      width: size.width > 500 ? 500 : null,
+    ),
   );
 }

@@ -5,6 +5,7 @@ class DatasetsState extends Equatable {
     required this.needReviewDatasets,
     required this.reviewedDatasets,
     required this.selectedDatasetIndexes,
+    required this.lastOpenedDatasetId,
     required this.presentationState,
   });
 
@@ -12,18 +13,21 @@ class DatasetsState extends Equatable {
         needReviewDatasets: [],
         reviewedDatasets: [],
         selectedDatasetIndexes: [],
+        lastOpenedDatasetId: null,
         presentationState: DatasetsInitial(),
       );
 
   final List<Dataset> needReviewDatasets;
   final List<Dataset> reviewedDatasets;
   final List<int> selectedDatasetIndexes;
+  final String? lastOpenedDatasetId;
   final DatasetsPresentationState presentationState;
 
   DatasetsState copyWith({
     List<Dataset>? needReviewDatasets,
     List<Dataset>? reviewedDatasets,
     List<int>? selectedDatasetIndexes,
+    String? lastOpenedDatasetId,
     DatasetsPresentationState? presentationState,
   }) {
     return DatasetsState(
@@ -31,6 +35,7 @@ class DatasetsState extends Equatable {
       reviewedDatasets: reviewedDatasets ?? this.reviewedDatasets,
       selectedDatasetIndexes:
           selectedDatasetIndexes ?? this.selectedDatasetIndexes,
+      lastOpenedDatasetId: lastOpenedDatasetId ?? this.lastOpenedDatasetId,
       presentationState: presentationState ?? this.presentationState,
     );
   }
@@ -40,6 +45,7 @@ class DatasetsState extends Equatable {
         needReviewDatasets,
         reviewedDatasets,
         selectedDatasetIndexes,
+        lastOpenedDatasetId,
         presentationState,
       ];
 }

@@ -53,32 +53,35 @@ class _AppState extends ConsumerState<App> {
 
     final currentBrightness = Theme.of(context).brightness;
 
-    return GlobalLoaderOverlay(
-      useDefaultLoading: false,
-      useBackButtonInterceptor: true,
-      duration: const Duration(milliseconds: 250),
-      reverseDuration: const Duration(milliseconds: 250),
-      overlayColor: switch (currentBrightness) {
-        Brightness.dark => darkColorScheme.surface.withOpacity(0.5),
-        Brightness.light => colorScheme.surface.withOpacity(0.5),
-      },
-      overlayWidgetBuilder: (_) {
-        return const SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: LinearProgressIndicator(),
-          ),
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      themeMode: themeMode,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: _appRouter.config(),
+      builder: (context, child) {
+        return LoaderOverlay(
+          useDefaultLoading: false,
+          useBackButtonInterceptor: true,
+          duration: const Duration(milliseconds: 250),
+          reverseDuration: const Duration(milliseconds: 250),
+          overlayColor: switch (currentBrightness) {
+            Brightness.dark => darkColorScheme.surface.withOpacity(0.5),
+            Brightness.light => colorScheme.surface.withOpacity(0.5),
+          },
+          overlayWidgetBuilder: (_) {
+            return const SafeArea(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: LinearProgressIndicator(),
+              ),
+            );
+          },
+          child: child!,
         );
       },
-      child: MaterialApp.router(
-        debugShowCheckedModeBanner: false,
-        themeMode: themeMode,
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: _appRouter.config(),
-      ),
     );
   }
 

@@ -81,11 +81,15 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
 
     final selectedModel = ref.watch(selectedMlModelProvider)!;
     final predictedCategories = ref.watch(predictedCategoriesProvider);
-    final evaluationAsync = ref.watch(modelEvaluationProvider);
+    final accuracyAsync = ref.watch(modelAccuracyProvider);
+    final fluctuationRate = ref.watch(modelFluctuationRateProvider);
     final enablePredictedPreview = ref.watch(enablePredictedPreviewProvider);
-    final selectedFilterLength = selectedModel.config.smoothings.length +
-        selectedModel.config.filterings.length +
-        selectedModel.config.temporalConsistencyEnforcements.length;
+    final selectedFilterLength =
+        // selectedModel.config.smoothings.length +
+        // selectedModel.config.filterings.length +
+        selectedModel.config.temporalConsistencyEnforcements.length +
+            selectedModel.config.weightings.length;
+    final onlyPredictLabeled = ref.watch(onlyPredictLabeledProvider);
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -152,7 +156,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
             );
           },
         ),
-        evaluationAsync.when(
+        accuracyAsync.when(
           data: (data) {
             if (data == null) return const SizedBox();
 
@@ -178,7 +182,40 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           error: (error, stackTrace) => Text(error.toString()),
           loading: () => const SizedBox(),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 8),
+        fluctuationRate.when(
+          data: (data) {
+            if (data == null) return const SizedBox();
+
+            final accuracy = data * 100;
+            return Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Fluctuation: ${accuracy.toStringAsFixed(2)}%',
+                    style: textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Divider(),
+                ],
+              ),
+            );
+          },
+          error: (error, stackTrace) => Text(error.toString()),
+          loading: () => const SizedBox(),
+        ),
+        const SizedBox(height: 16),
+        SwitchListTile(
+          title: const Text('Only predict labeled items'),
+          dense: true,
+          value: onlyPredictLabeled,
+          onChanged: (value) {
+            ref.read(onlyPredictLabeledProvider.notifier).setEnable(value);
+          },
+        ),
+        const SizedBox(height: 8),
         FilledButton.tonal(
           onPressed: predictedCategories.maybeWhen(
             loading: () => null,
@@ -194,6 +231,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           ),
         ),
         if (predictedCategories.valueOrNull != null) ...[
+          Divider(),
           OutlinedButton.icon(
             onPressed: () {
               ref

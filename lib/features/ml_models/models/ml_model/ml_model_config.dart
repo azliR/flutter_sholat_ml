@@ -1,6 +1,5 @@
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/weightings.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'ml_model_config.freezed.dart';
@@ -19,10 +18,11 @@ class MlModelConfig with _$MlModelConfig {
     required int windowSize,
     required int numberOfFeatures,
     required InputDataType inputDataType,
-    required Set<Smoothing> smoothings,
-    required Set<Filtering> filterings,
+    // required Set<Smoothing> smoothings,
+    // required Set<Filtering> filterings,
     required Set<TemporalConsistencyEnforcement>
         temporalConsistencyEnforcements,
+    @Default({}) Set<Weighting> weightings,
     @Default(10) int stepSize,
   }) = _MlModelConfig;
 

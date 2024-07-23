@@ -16,7 +16,7 @@ import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 class DeviceRepository {
   final _dio = Dio(
     BaseOptions(
-      contentType: Headers.jsonContentType,
+      contentType: Headers.formUrlEncodedContentType,
     ),
   );
 
@@ -96,8 +96,14 @@ class DeviceRepository {
     try {
       log('Connecting to: ${device.remoteId.str}');
 
+      final (failure, _) = await turnOnBluetooth();
+
+      if (failure != null) {
+        return (failure, null);
+      }
+
       await device.connect(
-        timeout: const Duration(seconds: 10),
+        timeout: const Duration(seconds: 20),
       );
 
       log('Connected to: ${device.remoteId.str}');
@@ -144,6 +150,8 @@ class DeviceRepository {
   Future<(Failure?, List<Wearable>?)> loginWithXiaomiAccount(
     String accessToken,
   ) async {
+    String? loginToken;
+
     try {
       final random = Random();
       final deviceId1 = random.nextInt(256).toRadixString(16).padLeft(2, '0');
@@ -162,7 +170,7 @@ class DeviceRepository {
 
       log(body.toString());
 
-      final response = await _dio.post<dynamic>(
+      final response = await _dio.post<Map<String, dynamic>>(
         url,
         data: body,
         options: Options(
@@ -172,15 +180,14 @@ class DeviceRepository {
         ),
       );
       final statusCode = response.statusCode;
-      final data = response.data;
-      log(data?.toString() ?? 'no data');
+      final loginResult = response.data;
 
-      if ((statusCode != null && statusCode >= 400) || data == null) {
+      log(loginResult.toString());
+
+      if (loginResult == null || statusCode != 200) {
         final failure = Failure('Failed logging in with xiaomi account');
         return (failure, null);
       }
-
-      final loginResult = jsonDecode(data as String) as Map<String, dynamic>;
 
       if (loginResult.containsKey('error_code')) {
         final errorCode = loginResult['error_code'] as String;
@@ -200,13 +207,13 @@ class DeviceRepository {
           final failure = Failure('Unknown error code: $errorCode');
           return (failure, null);
         }
-      } else if (!loginResult.containsKey('error_code')) {
-        final failure = Failure("No 'token_info' parameter in login data.");
-        return (failure, null);
       }
 
-      final tokenInfo = loginResult['token_info'] as Map<String, dynamic>;
-      if (!tokenInfo.containsKey('app_token')) {
+      final tokenInfo = loginResult['token_info'] as Map<String, dynamic>?;
+      if (tokenInfo == null) {
+        final failure = Failure("No 'token_info' parameter in login data.");
+        return (failure, null);
+      } else if (!tokenInfo.containsKey('app_token')) {
         final failure = Failure("No 'app_token' parameter in login data.");
         return (failure, null);
       } else if (!tokenInfo.containsKey('login_token')) {
@@ -216,8 +223,9 @@ class DeviceRepository {
         final failure = Failure("No 'user_id' parameter in login data.");
         return (failure, null);
       }
+
+      loginToken = tokenInfo['login_token'] as String;
       final appToken = tokenInfo['app_token'] as String;
-      final loginToken = tokenInfo['login_token'] as String;
       final userId = tokenInfo['user_id'] as String;
 
       final (failure, wearables) = await getWearables(
@@ -237,6 +245,12 @@ class DeviceRepository {
       const message = 'Failed logging in with xiaomi account';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
+    } finally {
+      if (loginToken != null) {
+        await logoutXiaomiAccount(
+          loginToken: loginToken,
+        );
+      }
     }
   }
 
@@ -255,29 +269,32 @@ class DeviceRepository {
       final params = {'enableMultiDevice': 'true'};
 
       final response = await _dio
-          .getUri<String>(
-            Uri.parse(devicesUrl),
+          .get<Map<String, dynamic>>(
+            devicesUrl,
+            data: params,
             options: Options(
               headers: headers,
             ),
-            data: params,
           )
           .timeout(const Duration(seconds: 10));
 
       final statusCode = response.statusCode;
       final data = response.data;
-      log(data ?? 'no data');
-      if ((statusCode != null && statusCode >= 400) || data == null) {
+
+      log(data.toString());
+
+      if (data == null || statusCode != 200) {
         final failure = Failure('Failed getting devices');
         return (failure, null);
       }
-      final deviceRequest = json.decode(data) as Map;
-      if (!deviceRequest.containsKey('items')) {
+
+      if (!data.containsKey('items')) {
         final failure = Failure("No 'items' parameter in devices data.");
         return (failure, null);
       }
 
-      final devices = deviceRequest['items'] as List<Map>;
+      final devices =
+          (data['items'] as List<dynamic>).cast<Map<String, dynamic>>();
       final wearables = <Wearable>[];
 
       for (final wearable in devices) {
@@ -295,8 +312,12 @@ class DeviceRepository {
         final deviceInfo = json.decode(wearable['additionalInfo'] as String)
             as Map<String, dynamic>;
 
-        final keyStr = deviceInfo['auth_key'] as String? ?? '';
-        final authKey = '0x${keyStr.isNotEmpty ? keyStr : '00'}';
+        if (!deviceInfo.containsKey('auth_key')) {
+          final failure = Failure("No 'auth_key' parameter in device data.");
+          return (failure, null);
+        }
+
+        final authKey = deviceInfo['auth_key'] as String;
 
         wearables.add(
           Wearable(
@@ -314,6 +335,46 @@ class DeviceRepository {
       return (null, wearables);
     } on DioException catch (e, stackTrace) {
       final message = e.message ?? 'Failed logging in with xiaomi account';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    } catch (e, stackTrace) {
+      const message = 'Failed getting wearable';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> logoutXiaomiAccount({
+    required String loginToken,
+  }) async {
+    try {
+      final params = Payloads.logoutXiaomi;
+      params['login_token'] = loginToken;
+
+      final response = await _dio
+          .post<Map<String, dynamic>>(
+            Urls.logoutXiaomi,
+            data: params,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final statusCode = response.statusCode;
+      final data = response.data;
+
+      log(data.toString());
+
+      if (data == null || statusCode != 200) {
+        final failure = Failure('Failed getting devices');
+        return (failure, null);
+      }
+
+      if (data['result'] != 'ok') {
+        final failure = Failure('Failed logging out with xiaomi account');
+        return (failure, null);
+      }
+      return (null, null);
+    } on DioException catch (e, stackTrace) {
+      final message = e.message ?? 'Failed logging out with xiaomi account';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     } catch (e, stackTrace) {

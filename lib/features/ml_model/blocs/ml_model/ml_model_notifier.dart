@@ -144,9 +144,26 @@ class MlModelNotifier
     );
   }
 
+  // final _s = Stopwatch()..start();
+  // var _lastAverageElapsedMs = 0;
+  // var _i = 0;
+
   Future<void> _handleAccelerometer(List<int> event) async {
     final datasets =
         _recordRepository.handleRawSensorData(Uint8List.fromList(event));
+
+    // if (datasets != null) {
+    //   print('Current elapsed: ${_s.elapsed.inMilliseconds} ms');
+    //   _i++;
+
+    //   _lastAverageElapsedMs =
+    //       (_lastAverageElapsedMs * (_i - 1) + _s.elapsed.inMilliseconds) ~/ _i;
+
+    //   print('Average elapsed: $_lastAverageElapsedMs ms');
+    //   _s
+    //     ..reset()
+    //     ..start();
+    // }
 
     if (datasets == null || !_stopwatch.isRunning) return;
 

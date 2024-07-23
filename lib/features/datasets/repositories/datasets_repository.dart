@@ -51,7 +51,7 @@ class DatasetsRepository {
       final (failure, updatedDatasets) = await loadDatasetsFromDisk(
         datasets: datasets,
         isReviewedDataset: true,
-        createDirIfNotExist: true,
+        createIfNotExist: true,
       );
       if (failure != null) {
         return (failure, null);
@@ -83,7 +83,7 @@ class DatasetsRepository {
       final (failure, updatedDatasets) = await loadDatasetsFromDisk(
         datasets: datasets,
         isReviewedDataset: false,
-        createDirIfNotExist: false,
+        createIfNotExist: false,
       );
       if (failure != null) {
         return (null, datasets);
@@ -100,7 +100,7 @@ class DatasetsRepository {
   Future<(Failure?, List<Dataset>?)> loadDatasetsFromDisk({
     required List<Dataset> datasets,
     required bool isReviewedDataset,
-    required bool createDirIfNotExist,
+    required bool createIfNotExist,
   }) async {
     try {
       final dir = await getApplicationDocumentsDirectory();
@@ -113,13 +113,18 @@ class DatasetsRepository {
           final fullDir =
               dir.directory(datasetDirPath).directory(dataset.property.id);
 
-          if (createDirIfNotExist || !fullDir.existsSync()) {
+          if (!fullDir.existsSync()) {
             fullDir.createSync(recursive: true);
           }
 
           final datasetCsvFile = fullDir.file(Paths.datasetCsv);
           final datasetVideoFile = fullDir.file(Paths.datasetVideo);
           final datasetPropFile = fullDir.file(Paths.datasetProp);
+
+          if (createIfNotExist && !datasetPropFile.existsSync()) {
+            await datasetPropFile
+                .writeAsString(jsonEncode(dataset.property.toJson()));
+          }
 
           final downloaded =
               datasetCsvFile.existsSync() && datasetVideoFile.existsSync();

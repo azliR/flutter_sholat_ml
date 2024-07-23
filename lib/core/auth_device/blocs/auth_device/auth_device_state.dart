@@ -120,26 +120,25 @@ final class AuthDeviceResponseFailureState extends AuthDevicePresentationState {
   const AuthDeviceResponseFailureState();
 }
 
-final class AuthWithXiaomiAccountLoadingState
-    extends AuthDevicePresentationState {
-  const AuthWithXiaomiAccountLoadingState();
+final class LoginXiaomiAccountLoadingState extends AuthDevicePresentationState {
+  const LoginXiaomiAccountLoadingState();
 }
 
-final class AuthWithXiaomiAccountSuccessState
-    extends AuthDevicePresentationState {
-  const AuthWithXiaomiAccountSuccessState();
+final class LoginXiaomiAccountSuccessState extends AuthDevicePresentationState {
+  const LoginXiaomiAccountSuccessState(this.wearable);
+
+  final Wearable wearable;
 }
 
-final class AuthWithXiaomiAccountFailureState
-    extends AuthDevicePresentationState {
-  const AuthWithXiaomiAccountFailureState(this.failure);
+final class LoginXiaomiAccountFailureState extends AuthDevicePresentationState {
+  const LoginXiaomiAccountFailureState(this.failure);
 
   final Failure failure;
 }
 
-final class AuthWithXiaomiAccountResponseFailureState
+final class LoginXiaomiAccountResponseFailureState
     extends AuthDevicePresentationState {
-  const AuthWithXiaomiAccountResponseFailureState();
+  const LoginXiaomiAccountResponseFailureState();
 }
 
 final class DisconnectDeviceFailureState extends AuthDevicePresentationState {

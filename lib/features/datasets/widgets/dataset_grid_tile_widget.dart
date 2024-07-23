@@ -8,6 +8,7 @@ class DatasetGridTile extends StatefulWidget {
     required this.dataset,
     required this.selected,
     required this.labeled,
+    required this.lastOpened,
     required this.action,
     // required this.onInitialise,
     required this.onTap,
@@ -18,6 +19,7 @@ class DatasetGridTile extends StatefulWidget {
   final Dataset dataset;
   final bool selected;
   final bool labeled;
+  final bool lastOpened;
   final Widget? action;
   // final void Function() onInitialise;
   final void Function() onTap;
@@ -77,7 +79,9 @@ class _DatasetGridTileState extends State<DatasetGridTile> {
                 color: colorScheme.primary,
                 width: 2,
               )
-            : BorderSide.none,
+            : widget.lastOpened
+                ? BorderSide(color: colorScheme.outline)
+                : BorderSide.none,
       ),
       child: ListTile(
         isThreeLine: true,

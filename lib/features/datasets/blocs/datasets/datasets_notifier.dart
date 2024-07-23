@@ -232,6 +232,10 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
   //   );
   // }
 
+  void setLastOpenedDatasetId(String id) {
+    state = state.copyWith(lastOpenedDatasetId: id);
+  }
+
   void onSelectedDataset(int index) {
     final selectedDatasetIndexes = state.selectedDatasetIndexes;
     if (selectedDatasetIndexes.contains(index)) {

@@ -34,9 +34,12 @@ class PreprocessRepository {
       const datasetCsvPath = Paths.datasetCsv;
       const datasetPropPath = Paths.datasetProp;
 
-      // log((await Directory(path).list().toList()).toString());
+      final datasetCsvFile = File('$path/$datasetCsvPath');
+      if (!datasetCsvFile.existsSync()) {
+        return (null, null);
+      }
 
-      final datasetStrList = await File('$path/$datasetCsvPath').readAsLines();
+      final datasetStrList = datasetCsvFile.readAsLinesSync();
       final datasetPropFile = File('$path/$datasetPropPath');
       final dirName = path.split('/').last;
 
@@ -149,12 +152,24 @@ class PreprocessRepository {
                 previous.last;
 
             if (prevLabel == label) {
+              if (index == dataItems.length - 1) {
+                return previous
+                  ..last =
+                      (prevStartIndex, index, prevLabel, prevLabelCategory);
+              }
               return previous;
             }
 
             return previous
               ..last = (prevStartIndex, index - 1, prevLabel, prevLabelCategory)
-              ..add((index, null, label, labelCategory));
+              ..add(
+                (
+                  index,
+                  index == dataItems.length - 1 ? index : null,
+                  label,
+                  labelCategory,
+                ),
+              );
           });
 
           final problems =
@@ -205,45 +220,45 @@ class PreprocessRepository {
             final nextLabel = nextLabelRecord?.$3;
             final nextLabelCategory = nextLabelRecord?.$4;
 
-            if (!label.previousMovement.contains(prevLabel)) {
+            if (!label.previousMovements.contains(prevLabel)) {
               previous.add(
                 WrongPreviousMovementSequenceProblem(
                   startIndex: startIndex,
                   endIndex: endIndex!,
                   label: label,
-                  expectedLabels: label.previousMovement,
+                  expectedLabels: label.previousMovements,
                 ),
               );
             }
-            if (!label.nextMovement.contains(nextLabel)) {
+            if (!label.nextMovements.contains(nextLabel)) {
               previous.add(
                 WrongNextMovementSequenceProblem(
                   startIndex: startIndex,
                   endIndex: endIndex!,
                   label: label,
-                  expectedLabels: label.nextMovement,
+                  expectedLabels: label.nextMovements,
                 ),
               );
             }
-            if (!labelCategory.previousMovementCategory
+            if (!labelCategory.previousMovementCategories
                 .contains(prevLabelCategory)) {
               previous.add(
                 WrongPreviousMovementCategorySequenceProblem(
                   startIndex: startIndex,
                   endIndex: endIndex!,
                   label: labelCategory,
-                  expectedLabels: labelCategory.previousMovementCategory,
+                  expectedLabels: labelCategory.previousMovementCategories,
                 ),
               );
             }
-            if (!labelCategory.nextMovementCategory
+            if (!labelCategory.nextMovementCategories
                 .contains(nextLabelCategory)) {
               previous.add(
                 WrongNextMovementCategorySequenceProblem(
                   startIndex: startIndex,
                   endIndex: endIndex!,
                   label: labelCategory,
-                  expectedLabels: labelCategory.nextMovementCategory,
+                  expectedLabels: labelCategory.nextMovementCategories,
                 ),
               );
             }
@@ -349,8 +364,13 @@ class PreprocessRepository {
         return (writeDatasetPropFailure, null, null);
       }
 
+      if (path.contains(Directories.reviewedDirPath)) {
+        return (null, path, updatedDatasetProp);
+      }
+
       final dir = await getApplicationDocumentsDirectory();
-      final fullNewDir = dir.directory(Directories.reviewedDirPath);
+      final fullNewDir =
+          dir.directory(Directories.reviewedDirPath).directory(basename(path));
       final sourceDir = Directory(path);
 
       try {
@@ -721,25 +741,81 @@ class PreprocessRepository {
     }
   }
 
-  Future<(Failure?, double?)> evaluateModel({
+  double evaluateModel({
     required List<SholatMovementCategory?> categories,
     required List<SholatMovementCategory?> predictedCategories,
-  }) async {
-    try {
-      final accuracy = categories
-              .zip<SholatMovementCategory?, bool>(
-                predictedCategories,
-                (a, b) => a == b,
-              )
-              .where((positive) => positive)
-              .length /
-          categories.length;
-      return (null, accuracy);
-    } catch (e, stackTrace) {
-      const message = 'Failed to generating sections';
-      final failure = Failure(message, error: e, stackTrace: stackTrace);
-      return (failure, null);
+  }) {
+    final accuracy = categories
+            .zip<SholatMovementCategory?, bool>(
+              predictedCategories,
+              (a, b) => a == b,
+            )
+            .where((positive) => positive)
+            .length /
+        categories.length;
+    return accuracy;
+  }
+
+  List<SholatMovementCategory?> removeDuplicates(
+    List<SholatMovementCategory?> movements,
+  ) {
+    if (movements.isEmpty) return [];
+
+    final result = <SholatMovementCategory?>[movements.first];
+    for (var i = 1; i < movements.length; i++) {
+      if (movements[i] != movements[i - 1]) {
+        result.add(movements[i]);
+      }
     }
+    return result;
+  }
+
+  int levenshteinDistance(
+    List<SholatMovementCategory?> a,
+    List<SholatMovementCategory?> b,
+  ) {
+    final m = a.length;
+    final n = b.length;
+    final d = List.generate(m + 1, (_) => List.filled(n + 1, 0));
+
+    for (var i = 1; i <= m; i++) {
+      d[i][0] = i;
+    }
+    for (var j = 1; j <= n; j++) {
+      d[0][j] = j;
+    }
+
+    for (var j = 1; j <= n; j++) {
+      for (var i = 1; i <= m; i++) {
+        if (a[i - 1] == b[j - 1]) {
+          d[i][j] = d[i - 1][j - 1];
+        } else {
+          d[i][j] = math.min(
+            d[i - 1][j] + 1, // Penghapusan
+            math.min(
+              d[i][j - 1] + 1, // Penyisipan
+              d[i - 1][j - 1] + 1, // Substitusi
+            ),
+          );
+        }
+      }
+    }
+
+    return d[m][n];
+  }
+
+  double evaluateFluctuationRate({
+    required List<SholatMovementCategory?> predictedCategories,
+    required List<SholatMovementCategory?> labeledCategories,
+  }) {
+    final cleanedMovements = removeDuplicates(predictedCategories);
+    final idealSequence = removeDuplicates(labeledCategories);
+
+    final distance = levenshteinDistance(cleanedMovements, idealSequence);
+    final fluctuationRate =
+        distance / math.max(idealSequence.length, cleanedMovements.length);
+
+    return fluctuationRate;
   }
 
   void setAutoSave({required bool enable}) {

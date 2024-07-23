@@ -148,7 +148,7 @@ class _ModelPickerScreenState extends ConsumerState<ModelPickerScreen> {
       ),
       body: PagedListView(
         pagingController: _modelsPagingController,
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.fromLTRB(0, 0, 0, 128),
         builderDelegate: PagedChildBuilderDelegate<MlModel>(
           noItemsFoundIndicatorBuilder: (context) {
             return const IllustrationWidget(

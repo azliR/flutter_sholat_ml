@@ -57,6 +57,7 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                     description: Text(
                       'Just so you know, any dataset saved locally will be removed if the app is uninstalled.',
                     ),
+                    margin: EdgeInsets.fromLTRB(16, 16, 16, 0),
                   ),
                 ),
                 SliverPadding(
@@ -135,10 +136,17 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                   (state) => state.selectedDatasetIndexes.contains(index),
                 ),
               );
+              final lastOpened = ref.watch(
+                datasetsProvider.select(
+                  (state) => state.lastOpenedDatasetId == dataset.property.id,
+                ),
+              );
+
               return DatasetGridTile(
                 labeled: false,
                 dataset: dataset,
                 selected: selected,
+                lastOpened: lastOpened,
                 // onInitialise: () async {
                 // if (dataset.thumbnail == null && dataset.path != null) {
                 //   await _notifier.getThumbnailAt(
@@ -159,8 +167,12 @@ class _NeedReviewDatasetState extends ConsumerState<NeedReviewDatasetBody> {
                     _notifier.onSelectedDataset(index);
                     return;
                   }
+
+                  _notifier.setLastOpenedDatasetId(dataset.property.id);
+
                   await context.router
                       .push(PreprocessRoute(path: dataset.path!));
+
                   // await _notifier.loadDatasetFromDisk(
                   //   dataset: dataset,
                   //   isReviewedDataset: false,

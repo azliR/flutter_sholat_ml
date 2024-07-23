@@ -216,9 +216,8 @@ class _$MlModelImpl implements _MlModel {
           windowSize: 20,
           numberOfFeatures: 3,
           inputDataType: InputDataType.float32,
-          smoothings: {},
-          filterings: {},
-          temporalConsistencyEnforcements: {})});
+          temporalConsistencyEnforcements: {},
+          weightings: {})});
 
   factory _$MlModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$MlModelImplFromJson(json);

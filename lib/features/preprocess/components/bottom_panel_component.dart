@@ -99,6 +99,13 @@ class BottomPanel extends ConsumerWidget {
                 ),
                 const SizedBox(width: 4),
                 const Spacer(),
+                IconButton(
+                  onPressed: () {
+                    ref.invalidate(datasetProblemsProvider);
+                  },
+                  icon: const Icon(Symbols.refresh_rounded),
+                  tooltip: 'Refresh problem',
+                ),
                 _FilterButton(
                   filteredProblems: filteredProblems,
                   problems: problems,

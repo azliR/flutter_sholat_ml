@@ -24,11 +24,12 @@ mixin _$MlModelConfig {
   int get batchSize => throw _privateConstructorUsedError;
   int get windowSize => throw _privateConstructorUsedError;
   int get numberOfFeatures => throw _privateConstructorUsedError;
-  InputDataType get inputDataType => throw _privateConstructorUsedError;
-  Set<Smoothing> get smoothings => throw _privateConstructorUsedError;
-  Set<Filtering> get filterings => throw _privateConstructorUsedError;
+  InputDataType get inputDataType =>
+      throw _privateConstructorUsedError; // required Set<Smoothing> smoothings,
+// required Set<Filtering> filterings,
   Set<TemporalConsistencyEnforcement> get temporalConsistencyEnforcements =>
       throw _privateConstructorUsedError;
+  Set<Weighting> get weightings => throw _privateConstructorUsedError;
   int get stepSize => throw _privateConstructorUsedError;
 
   @optionalTypeArgs
@@ -65,9 +66,8 @@ abstract class $MlModelConfigCopyWith<$Res> {
       int windowSize,
       int numberOfFeatures,
       InputDataType inputDataType,
-      Set<Smoothing> smoothings,
-      Set<Filtering> filterings,
       Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements,
+      Set<Weighting> weightings,
       int stepSize});
 }
 
@@ -89,9 +89,8 @@ class _$MlModelConfigCopyWithImpl<$Res, $Val extends MlModelConfig>
     Object? windowSize = null,
     Object? numberOfFeatures = null,
     Object? inputDataType = null,
-    Object? smoothings = null,
-    Object? filterings = null,
     Object? temporalConsistencyEnforcements = null,
+    Object? weightings = null,
     Object? stepSize = null,
   }) {
     return _then(_value.copyWith(
@@ -115,18 +114,14 @@ class _$MlModelConfigCopyWithImpl<$Res, $Val extends MlModelConfig>
           ? _value.inputDataType
           : inputDataType // ignore: cast_nullable_to_non_nullable
               as InputDataType,
-      smoothings: null == smoothings
-          ? _value.smoothings
-          : smoothings // ignore: cast_nullable_to_non_nullable
-              as Set<Smoothing>,
-      filterings: null == filterings
-          ? _value.filterings
-          : filterings // ignore: cast_nullable_to_non_nullable
-              as Set<Filtering>,
       temporalConsistencyEnforcements: null == temporalConsistencyEnforcements
           ? _value.temporalConsistencyEnforcements
           : temporalConsistencyEnforcements // ignore: cast_nullable_to_non_nullable
               as Set<TemporalConsistencyEnforcement>,
+      weightings: null == weightings
+          ? _value.weightings
+          : weightings // ignore: cast_nullable_to_non_nullable
+              as Set<Weighting>,
       stepSize: null == stepSize
           ? _value.stepSize
           : stepSize // ignore: cast_nullable_to_non_nullable
@@ -149,9 +144,8 @@ abstract class _$$MlModelConfigImplCopyWith<$Res>
       int windowSize,
       int numberOfFeatures,
       InputDataType inputDataType,
-      Set<Smoothing> smoothings,
-      Set<Filtering> filterings,
       Set<TemporalConsistencyEnforcement> temporalConsistencyEnforcements,
+      Set<Weighting> weightings,
       int stepSize});
 }
 
@@ -171,9 +165,8 @@ class __$$MlModelConfigImplCopyWithImpl<$Res>
     Object? windowSize = null,
     Object? numberOfFeatures = null,
     Object? inputDataType = null,
-    Object? smoothings = null,
-    Object? filterings = null,
     Object? temporalConsistencyEnforcements = null,
+    Object? weightings = null,
     Object? stepSize = null,
   }) {
     return _then(_$MlModelConfigImpl(
@@ -197,18 +190,14 @@ class __$$MlModelConfigImplCopyWithImpl<$Res>
           ? _value.inputDataType
           : inputDataType // ignore: cast_nullable_to_non_nullable
               as InputDataType,
-      smoothings: null == smoothings
-          ? _value._smoothings
-          : smoothings // ignore: cast_nullable_to_non_nullable
-              as Set<Smoothing>,
-      filterings: null == filterings
-          ? _value._filterings
-          : filterings // ignore: cast_nullable_to_non_nullable
-              as Set<Filtering>,
       temporalConsistencyEnforcements: null == temporalConsistencyEnforcements
           ? _value._temporalConsistencyEnforcements
           : temporalConsistencyEnforcements // ignore: cast_nullable_to_non_nullable
               as Set<TemporalConsistencyEnforcement>,
+      weightings: null == weightings
+          ? _value._weightings
+          : weightings // ignore: cast_nullable_to_non_nullable
+              as Set<Weighting>,
       stepSize: null == stepSize
           ? _value.stepSize
           : stepSize // ignore: cast_nullable_to_non_nullable
@@ -226,14 +215,12 @@ class _$MlModelConfigImpl implements _MlModelConfig {
       required this.windowSize,
       required this.numberOfFeatures,
       required this.inputDataType,
-      required final Set<Smoothing> smoothings,
-      required final Set<Filtering> filterings,
       required final Set<TemporalConsistencyEnforcement>
           temporalConsistencyEnforcements,
+      final Set<Weighting> weightings = const {},
       this.stepSize = 10})
-      : _smoothings = smoothings,
-        _filterings = filterings,
-        _temporalConsistencyEnforcements = temporalConsistencyEnforcements;
+      : _temporalConsistencyEnforcements = temporalConsistencyEnforcements,
+        _weightings = weightings;
 
   factory _$MlModelConfigImpl.fromJson(Map<String, dynamic> json) =>
       _$$MlModelConfigImplFromJson(json);
@@ -248,23 +235,11 @@ class _$MlModelConfigImpl implements _MlModelConfig {
   final int numberOfFeatures;
   @override
   final InputDataType inputDataType;
-  final Set<Smoothing> _smoothings;
-  @override
-  Set<Smoothing> get smoothings {
-    if (_smoothings is EqualUnmodifiableSetView) return _smoothings;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableSetView(_smoothings);
-  }
-
-  final Set<Filtering> _filterings;
-  @override
-  Set<Filtering> get filterings {
-    if (_filterings is EqualUnmodifiableSetView) return _filterings;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableSetView(_filterings);
-  }
-
+// required Set<Smoothing> smoothings,
+// required Set<Filtering> filterings,
   final Set<TemporalConsistencyEnforcement> _temporalConsistencyEnforcements;
+// required Set<Smoothing> smoothings,
+// required Set<Filtering> filterings,
   @override
   Set<TemporalConsistencyEnforcement> get temporalConsistencyEnforcements {
     if (_temporalConsistencyEnforcements is EqualUnmodifiableSetView)
@@ -273,13 +248,22 @@ class _$MlModelConfigImpl implements _MlModelConfig {
     return EqualUnmodifiableSetView(_temporalConsistencyEnforcements);
   }
 
+  final Set<Weighting> _weightings;
+  @override
+  @JsonKey()
+  Set<Weighting> get weightings {
+    if (_weightings is EqualUnmodifiableSetView) return _weightings;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableSetView(_weightings);
+  }
+
   @override
   @JsonKey()
   final int stepSize;
 
   @override
   String toString() {
-    return 'MlModelConfig(enableTeacherForcing: $enableTeacherForcing, batchSize: $batchSize, windowSize: $windowSize, numberOfFeatures: $numberOfFeatures, inputDataType: $inputDataType, smoothings: $smoothings, filterings: $filterings, temporalConsistencyEnforcements: $temporalConsistencyEnforcements, stepSize: $stepSize)';
+    return 'MlModelConfig(enableTeacherForcing: $enableTeacherForcing, batchSize: $batchSize, windowSize: $windowSize, numberOfFeatures: $numberOfFeatures, inputDataType: $inputDataType, temporalConsistencyEnforcements: $temporalConsistencyEnforcements, weightings: $weightings, stepSize: $stepSize)';
   }
 
   @override
@@ -297,13 +281,11 @@ class _$MlModelConfigImpl implements _MlModelConfig {
                 other.numberOfFeatures == numberOfFeatures) &&
             (identical(other.inputDataType, inputDataType) ||
                 other.inputDataType == inputDataType) &&
-            const DeepCollectionEquality()
-                .equals(other._smoothings, _smoothings) &&
-            const DeepCollectionEquality()
-                .equals(other._filterings, _filterings) &&
             const DeepCollectionEquality().equals(
                 other._temporalConsistencyEnforcements,
                 _temporalConsistencyEnforcements) &&
+            const DeepCollectionEquality()
+                .equals(other._weightings, _weightings) &&
             (identical(other.stepSize, stepSize) ||
                 other.stepSize == stepSize));
   }
@@ -317,9 +299,8 @@ class _$MlModelConfigImpl implements _MlModelConfig {
       windowSize,
       numberOfFeatures,
       inputDataType,
-      const DeepCollectionEquality().hash(_smoothings),
-      const DeepCollectionEquality().hash(_filterings),
       const DeepCollectionEquality().hash(_temporalConsistencyEnforcements),
+      const DeepCollectionEquality().hash(_weightings),
       stepSize);
 
   @JsonKey(ignore: true)
@@ -371,10 +352,9 @@ abstract class _MlModelConfig implements MlModelConfig {
       required final int windowSize,
       required final int numberOfFeatures,
       required final InputDataType inputDataType,
-      required final Set<Smoothing> smoothings,
-      required final Set<Filtering> filterings,
       required final Set<TemporalConsistencyEnforcement>
           temporalConsistencyEnforcements,
+      final Set<Weighting> weightings,
       final int stepSize}) = _$MlModelConfigImpl;
 
   factory _MlModelConfig.fromJson(Map<String, dynamic> json) =
@@ -390,12 +370,11 @@ abstract class _MlModelConfig implements MlModelConfig {
   int get numberOfFeatures;
   @override
   InputDataType get inputDataType;
-  @override
-  Set<Smoothing> get smoothings;
-  @override
-  Set<Filtering> get filterings;
-  @override
+  @override // required Set<Smoothing> smoothings,
+// required Set<Filtering> filterings,
   Set<TemporalConsistencyEnforcement> get temporalConsistencyEnforcements;
+  @override
+  Set<Weighting> get weightings;
   @override
   int get stepSize;
   @override

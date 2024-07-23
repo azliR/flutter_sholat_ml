@@ -8,9 +8,8 @@ import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/weightings.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -49,6 +48,7 @@ class MlModelRepository {
     required List<SholatMovementCategory> previousLabels,
     required MlModelConfig config,
     required bool skipWhenLocked,
+    bool disposeAfterUse = false,
     void Function()? onPredicting,
   }) async {
     try {
@@ -100,35 +100,46 @@ class MlModelRepository {
         final yPred = outputs![0]!.value! as List<List<double>>;
         var postProcessedPred = yPred;
 
-        for (final smoothing in config.smoothings) {
-          switch (smoothing) {
-            case MovingAverage():
-              postProcessedPred =
-                  _movingAverageSmoothing(postProcessedPred, config.windowSize);
-            case ExponentialSmoothing():
-              postProcessedPred =
-                  _exponentialSmoothing(postProcessedPred, smoothing.alpha!);
-          }
-        }
+        // for (final smoothing in config.smoothings) {
+        //   switch (smoothing) {
+        //     case MovingAverage():
+        //       postProcessedPred =
+        //           _movingAverageSmoothing(postProcessedPred, config.windowSize);
+        //     case ExponentialSmoothing():
+        //       postProcessedPred =
+        //           _exponentialSmoothing(postProcessedPred, smoothing.alpha!);
+        //   }
+        // }
 
-        for (final filtering in config.filterings) {
-          switch (filtering) {
-            case MedianFilter():
-              postProcessedPred =
-                  _medianFilter(postProcessedPred, config.windowSize);
-            case LowPassFilter():
-              postProcessedPred =
-                  _lowPassFilter(postProcessedPred, filtering.alpha!);
-          }
-        }
+        // for (final filtering in config.filterings) {
+        //   switch (filtering) {
+        //     case MedianFilter():
+        //       postProcessedPred =
+        //           _medianFilter(postProcessedPred, config.windowSize);
+        //     case LowPassFilter():
+        //       postProcessedPred =
+        //           _lowPassFilter(postProcessedPred, filtering.alpha!);
+        //   }
+        // }
 
         for (final tce in config.temporalConsistencyEnforcements) {
           switch (tce) {
             case MajorityVoting():
               break;
-            case TransitionConstraints():
-              postProcessedPred =
-                  _transitionConstraints(postProcessedPred, tce.minDuration!);
+            // case TransitionConstraints():
+            //   postProcessedPred =
+            //       _transitionConstraints(postProcessedPred, tce.minDuration!);
+          }
+        }
+
+        for (final weighting in config.weightings) {
+          switch (weighting) {
+            case TransitionWeighting():
+              postProcessedPred = transitionWeighting(
+                rawPredictions: postProcessedPred,
+                prevPredictions: previousLabels,
+                weight: weighting.weight!,
+              );
           }
         }
 
@@ -147,15 +158,15 @@ class MlModelRepository {
             switch (tce) {
               case MajorityVoting():
                 final newPrediction = _majorityVoter.votedPrediction(
-                  prediction.name,
+                  prediction,
                   tce.minConsecutivePredictions!,
                 );
-                prediction = SholatMovementCategory.values
-                    .firstWhere((element) => element.name == newPrediction);
-              case TransitionConstraints():
-                break;
+                prediction = newPrediction;
+              // case TransitionConstraints():
+              //   break;
             }
           }
+
           return prediction;
         }).toList();
         return (null, predictions);
@@ -164,6 +175,16 @@ class MlModelRepository {
       const message = 'Failed to predict';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
+    } finally {
+      if (disposeAfterUse) {
+        _session?.release();
+        _sessionOptions?.release();
+
+        _session = null;
+        _sessionOptions = null;
+
+        _majorityVoter.reset();
+      }
     }
   }
 
@@ -259,25 +280,36 @@ class MlModelRepository {
     List<List<double>> predictions,
     int windowSize,
   ) {
-    if (windowSize.isEven) {
-      throw ArgumentError('Window size should be an odd number');
+    final numRows = predictions.length;
+    final numCols = predictions[0].length;
+    final filteredPredictions = List<List<double>>.generate(
+      numRows,
+      (_) => List.filled(numCols, 0.0),
+    );
+
+    final offset = windowSize ~/ 2;
+
+    for (var row = 0; row < numRows; row++) {
+      for (var col = 0; col < numCols; col++) {
+        final window = <double>[];
+
+        for (var i = math.max(0, row - offset);
+            i <= math.min(numRows - 1, row + offset);
+            i++) {
+          for (var j = math.max(0, col - offset);
+              j <= math.min(numCols - 1, col + offset);
+              j++) {
+            window.add(predictions[i][j]);
+          }
+        }
+
+        window.sort();
+        final median = window[window.length ~/ 2];
+        filteredPredictions[row][col] = median;
+      }
     }
 
-    final filteredData = List<List<double>>.filled(predictions.length, []);
-
-    for (var i = 0; i < predictions.length; i++) {
-      final start = math.max(0, i - (windowSize ~/ 2));
-      final end = math.min(predictions.length, i + (windowSize ~/ 2) + 1);
-      final window = predictions
-          .sublist(start, end)
-          .expand((element) => element)
-          .toList()
-        ..sort();
-      final medianValue = window[window.length ~/ 2];
-      filteredData[i] = List.filled(predictions[i].length, medianValue);
-    }
-
-    return filteredData;
+    return filteredPredictions;
   }
 
   List<List<double>> _lowPassFilter(
@@ -382,6 +414,72 @@ class MlModelRepository {
     return constrainedPredictions;
   }
 
+  List<SholatMovementCategory> _getTop2Predictions(List<double> prediction) {
+    final entries = <MapEntry<SholatMovementCategory, double>>[];
+    for (var i = 0; i < prediction.length; i++) {
+      entries.add(MapEntry(SholatMovementCategory.values[i], prediction[i]));
+    }
+    entries.sort((a, b) => b.value.compareTo(a.value));
+    if (entries.first.value < 0.5) {
+      print('[low]:${entries.first.key} $prediction');
+    }
+    return [entries[0].key, entries[1].key];
+  }
+
+  List<List<double>> transitionWeighting({
+    required List<List<double>> rawPredictions,
+    required List<SholatMovementCategory>? prevPredictions,
+    required double weight,
+  }) {
+    final lastPredictions = prevPredictions ?? [];
+
+    return rawPredictions.map(
+      (rawPrediction) {
+        final predictionIndex = _argmax(rawPrediction);
+        final currentPrediction = _labelCategories[predictionIndex]!;
+
+        if (lastPredictions.isEmpty) {
+          lastPredictions.add(currentPrediction);
+          return rawPrediction;
+        }
+
+        if (currentPrediction == lastPredictions.last) {
+          return rawPrediction;
+        }
+
+        final Iterable<SholatMovementCategory>? nextMovementCategories;
+        if (currentPrediction == SholatMovementCategory.transisi) {
+          nextMovementCategories = lastPredictions
+              .lastOrNullWhere(
+                (pred) => pred != SholatMovementCategory.transisi,
+              )
+              ?.nextMovementCategoriesBySequence;
+        } else {
+          nextMovementCategories =
+              currentPrediction.nextMovementCategoriesBySequence;
+        }
+
+        if (nextMovementCategories == null) {
+          lastPredictions.add(currentPrediction);
+          return rawPrediction;
+        }
+
+        final top2 = _getTop2Predictions(rawPrediction);
+
+        print('[before]: $rawPrediction');
+        for (final category in nextMovementCategories) {
+          final index = category.index;
+          rawPrediction[index] = rawPrediction[index] + weight;
+        }
+        print('[before1]: $rawPrediction');
+
+        lastPredictions.add(_labelCategories[_argmax(rawPrediction)]!);
+
+        return rawPrediction;
+      },
+    ).toList();
+  }
+
   int _argmax(List<double> list) => list.indexOf(list.reduce(math.max));
 
   List<int> _argmaxByAxis(List<List<double>> matrix, int axis) {
@@ -439,20 +537,27 @@ class MlModelRepository {
 class MajorityVoter {
   MajorityVoter();
 
-  final List<String> _predictionWindow = [];
+  final List<SholatMovementCategory> _predictionWindow = [];
 
-  String votedPrediction(String prediction, int threshold) {
+  SholatMovementCategory votedPrediction(
+    SholatMovementCategory prediction,
+    int threshold,
+  ) {
     _predictionWindow.add(prediction);
 
     if (_predictionWindow.length > threshold) {
       _predictionWindow.removeAt(0);
     }
 
-    final counts = <String, int>{};
+    final counts = <SholatMovementCategory, int>{};
     for (final prediction in _predictionWindow) {
       counts[prediction] = (counts[prediction] ?? 0) + 1;
     }
 
-    return counts.entries.maxBy((entry) => entry.value)?.key ?? '';
+    return counts.entries.maxBy((entry) => entry.value)?.key ?? prediction;
+  }
+
+  void reset() {
+    _predictionWindow.clear();
   }
 }

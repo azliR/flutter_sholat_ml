@@ -6,6 +6,7 @@ class Urls {
   static const loginAmazfit = 'https://account.huami.com/v2/client/login';
   static const linkedDevices =
       'https://api-mifit-us2.huami.com/users/{user_id}/devices';
+  static const logoutXiaomi = 'https://account-us2.huami.com/v1/client/logout';
 }
 
 class Payloads {
@@ -30,5 +31,9 @@ class Payloads {
 
   static final linkedDevices = {
     'apptoken': '',
+  };
+
+  static final logoutXiaomi = {
+    'login_token': '',
   };
 }

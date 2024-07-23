@@ -88,6 +88,9 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
                 onModelChanged: (model) {
                   final index = _modelsPagingController.itemList!
                       .indexWhere((e) => e.id == model.id);
+
+                  if (index == -1) return;
+
                   _modelsPagingController.itemList![index] = model;
                   // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
                   _modelsPagingController.notifyListeners();
@@ -222,7 +225,7 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
         },
         child: PagedListView(
           pagingController: _modelsPagingController,
-          padding: EdgeInsets.zero,
+          padding: EdgeInsets.fromLTRB(0, 0, 0, 128),
           builderDelegate: PagedChildBuilderDelegate<MlModel>(
             noItemsFoundIndicatorBuilder: (context) {
               return const IllustrationWidget(
@@ -237,6 +240,7 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
               return RoundedListTile(
                 leading: Text(extension(model.path).substring(1).toUpperCase()),
                 title: Text(model.name),
+                subtitle: Text('window size: ${model.config.windowSize}'),
                 trailing: _buildMenu(model),
                 onTap: () {
                   final currentBluetoothDevice =

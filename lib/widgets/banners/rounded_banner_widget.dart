@@ -9,6 +9,7 @@ class RoundedBanner extends StatelessWidget {
     this.title,
     this.description,
     this.type = BannerType.info,
+    this.margin = const EdgeInsets.all(8),
     super.key,
   });
 
@@ -16,6 +17,7 @@ class RoundedBanner extends StatelessWidget {
   final Widget? title;
   final Widget? description;
   final BannerType type;
+  final EdgeInsetsGeometry margin;
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class RoundedBanner extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(16)),
       ),
-      margin: const EdgeInsets.all(8),
+      margin: margin,
       elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(8),

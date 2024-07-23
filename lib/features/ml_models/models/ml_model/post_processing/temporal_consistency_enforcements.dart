@@ -9,7 +9,7 @@ sealed class TemporalConsistencyEnforcement extends Equatable {
   factory TemporalConsistencyEnforcement.fromJson(Map<String, dynamic> json) {
     return switch (json['name']) {
       'Majority Voting' => MajorityVoting.fromJson(json),
-      'Transition Constraints' => TransitionConstraints.fromJson(json),
+      // 'Transition Constraints' => TransitionConstraints.fromJson(json),
       _ => throw Exception('Unknown smoothing type: ${json['name']}'),
     };
   }
@@ -17,12 +17,15 @@ sealed class TemporalConsistencyEnforcement extends Equatable {
   factory TemporalConsistencyEnforcement.fromName(String name) {
     return switch (name) {
       'Majority Voting' => const MajorityVoting(),
-      'Transition Constraints' => const TransitionConstraints(),
+      // 'Transition Constraints' => const TransitionConstraints(),
       _ => throw Exception('Unknown smoothing type: $name'),
     };
   }
 
-  static List<String> values = ['Majority Voting', 'Transition Constraints'];
+  static List<String> values = [
+    'Majority Voting',
+    // 'Transition Constraints',
+  ];
 
   Map<String, dynamic> toJson();
 
@@ -49,25 +52,25 @@ final class MajorityVoting extends TemporalConsistencyEnforcement {
   Map<String, dynamic> toJson() => _$MajorityVotingToJson(this);
 }
 
-@JsonSerializable()
-final class TransitionConstraints extends TemporalConsistencyEnforcement {
-  const TransitionConstraints({this.minDuration});
+// @JsonSerializable()
+// final class TransitionConstraints extends TemporalConsistencyEnforcement {
+//   const TransitionConstraints({this.minDuration});
 
-  factory TransitionConstraints.fromJson(Map<String, dynamic> json) =>
-      _$TransitionConstraintsFromJson(json);
+//   factory TransitionConstraints.fromJson(Map<String, dynamic> json) =>
+//       _$TransitionConstraintsFromJson(json);
 
-  final int? minDuration;
+//   final int? minDuration;
 
-  @JsonKey(includeToJson: true)
-  @override
-  String get name => 'Transition Constraints';
+//   @JsonKey(includeToJson: true)
+//   @override
+//   String get name => 'Transition Constraints';
 
-  @override
-  Map<String, dynamic> toJson() => _$TransitionConstraintsToJson(this);
+//   @override
+//   Map<String, dynamic> toJson() => _$TransitionConstraintsToJson(this);
 
-  TransitionConstraints copyWith({int? minDuration}) {
-    return TransitionConstraints(
-      minDuration: minDuration ?? this.minDuration,
-    );
-  }
-}
+//   TransitionConstraints copyWith({int? minDuration}) {
+//     return TransitionConstraints(
+//       minDuration: minDuration ?? this.minDuration,
+//     );
+//   }
+// }

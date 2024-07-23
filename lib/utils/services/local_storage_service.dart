@@ -19,6 +19,8 @@ class LocalStorageService {
       'preprocess_split_view_2_weights';
   static const String kPreprocessSplitView3Weights =
       'preprocess_split_view_3_weights';
+  static const String kPreprocessOnlyPredictLabeled =
+      'preprocess_only_predict_labeled';
 
   static const String kMlModelsSortType = 'ml_models_sort_type';
   static const String kMlModelsSortDirection = 'ml_models_sort_direction';
@@ -113,6 +115,14 @@ class LocalStorageService {
   static List<double> getPreprocessSplitView3Weights() {
     return (_box.get(kPreprocessSplitView3Weights) as List? ?? [])
         .cast<double>();
+  }
+
+  static void setPreprocessOnlyPredictLabeled(bool enable) {
+    _box.put(kPreprocessOnlyPredictLabeled, enable);
+  }
+
+  static bool getPreprocessOnlyPredictLabeled() {
+    return _box.get(kPreprocessOnlyPredictLabeled) as bool? ?? false;
   }
 
   static void setMlModelsSortType(SortType value) {

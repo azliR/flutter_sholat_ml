@@ -20,9 +20,10 @@ class MlModel with _$MlModel {
         windowSize: 20,
         numberOfFeatures: 3,
         inputDataType: InputDataType.float32,
-        smoothings: {},
-        filterings: {},
+        // smoothings: {},
+        // filterings: {},
         temporalConsistencyEnforcements: {},
+        weightings: {},
       ),
     )
     MlModelConfig config,

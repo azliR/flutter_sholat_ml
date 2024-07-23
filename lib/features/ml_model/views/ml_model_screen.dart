@@ -9,9 +9,8 @@ import 'package:flutter_sholat_ml/features/ml_model/widgets/bottom_panel_widget.
 import 'package:flutter_sholat_ml/features/ml_model/widgets/filter_list_widget.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/filterings.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/smoothings.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
+import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/weightings.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -350,32 +349,32 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        Consumer(
-          builder: (context, ref, child) {
-            final enableTeacherForcing = ref.watch(
-              mlModelProviderFamily
-                  .select((value) => value.modelConfig.enableTeacherForcing),
-            );
+        // Consumer(
+        //   builder: (context, ref, child) {
+        //     final enableTeacherForcing = ref.watch(
+        //       mlModelProviderFamily
+        //           .select((value) => value.modelConfig.enableTeacherForcing),
+        //     );
 
-            return Card.filled(
-              margin: EdgeInsets.zero,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(24)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: SwitchListTile(
-                title: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('Enable Teacher Forcing'),
-                ),
-                value: enableTeacherForcing,
-                onChanged: (value) => _notifier.setModelConfig(
-                  modelConfig.copyWith(enableTeacherForcing: value),
-                ),
-              ),
-            );
-          },
-        ),
+        //     return Card.filled(
+        //       margin: EdgeInsets.zero,
+        //       shape: const RoundedRectangleBorder(
+        //         borderRadius: BorderRadius.all(Radius.circular(24)),
+        //       ),
+        //       clipBehavior: Clip.antiAlias,
+        //       child: SwitchListTile(
+        //         title: const Padding(
+        //           padding: EdgeInsets.symmetric(vertical: 16),
+        //           child: Text('Enable Teacher Forcing'),
+        //         ),
+        //         value: enableTeacherForcing,
+        //         onChanged: (value) => _notifier.setModelConfig(
+        //           modelConfig.copyWith(enableTeacherForcing: value),
+        //         ),
+        //       ),
+        //     );
+        //   },
+        // ),
         const SizedBox(height: 16),
         ExpansionTile(
           title: Consumer(
@@ -383,9 +382,10 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
               final selectedFilterLength = ref.watch(
                 mlModelProviderFamily.select(
                   (value) =>
-                      value.modelConfig.smoothings.length +
-                      value.modelConfig.filterings.length +
-                      value.modelConfig.temporalConsistencyEnforcements.length,
+                      // value.modelConfig.smoothings.length +
+                      // value.modelConfig.filterings.length +
+                      value.modelConfig.temporalConsistencyEnforcements.length +
+                      value.modelConfig.weightings.length,
                 ),
               );
               return Row(
@@ -422,155 +422,155 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
           children: [
             const Divider(height: 1),
             const SizedBox(height: 8),
-            Consumer(
-              builder: (context, ref, child) {
-                final selectedFilters = ref.watch(
-                  mlModelProviderFamily
-                      .select((value) => value.modelConfig.smoothings),
-                );
+            // Consumer(
+            //   builder: (context, ref, child) {
+            //     final selectedFilters = ref.watch(
+            //       mlModelProviderFamily
+            //           .select((value) => value.modelConfig.smoothings),
+            //     );
 
-                return FilterList<String>(
-                  title: const Text('Smoothing'),
-                  selectedFilters:
-                      selectedFilters.map((filter) => filter.name).toSet(),
-                  filters: Smoothing.values,
-                  filterNameBuilder: (filter) {
-                    final smoothing = selectedFilters.firstWhere(
-                      (e) => e.name == filter,
-                      orElse: () => Smoothing.fromName(filter),
-                    );
+            //     return FilterList<String>(
+            //       title: const Text('Smoothing'),
+            //       selectedFilters:
+            //           selectedFilters.map((filter) => filter.name).toSet(),
+            //       filters: Smoothing.values,
+            //       filterNameBuilder: (filter) {
+            //         final smoothing = selectedFilters.firstWhere(
+            //           (e) => e.name == filter,
+            //           orElse: () => Smoothing.fromName(filter),
+            //         );
 
-                    switch (smoothing) {
-                      case MovingAverage():
-                        return smoothing.name;
-                      case ExponentialSmoothing():
-                        if (smoothing.alpha == null) {
-                          return smoothing.name;
-                        }
-                        return '${smoothing.name} (${smoothing.alpha})';
-                    }
-                  },
-                  onSelected: recordState != RecordState.ready
-                      ? null
-                      : (filter, selected) async {
-                          final modelConfig = ref.read(
-                            mlModelProviderFamily
-                                .select((value) => value.modelConfig),
-                          );
+            //         switch (smoothing) {
+            //           case MovingAverage():
+            //             return smoothing.name;
+            //           // case ExponentialSmoothing():
+            //           //   if (smoothing.alpha == null) {
+            //           //     return smoothing.name;
+            //           //   }
+            //           //   return '${smoothing.name} (${smoothing.alpha})';
+            //         }
+            //       },
+            //       onSelected: recordState != RecordState.ready
+            //           ? null
+            //           : (filter, selected) async {
+            //               final modelConfig = ref.read(
+            //                 mlModelProviderFamily
+            //                     .select((value) => value.modelConfig),
+            //               );
 
-                          if (filter == 'Exponential Smoothing' && selected) {
-                            final result = await showDialog<double?>(
-                              context: context,
-                              builder: (context) {
-                                return const _SliderDialog(
-                                  title: 'Set alpha',
-                                );
-                              },
-                            );
-                            if (result == null) return;
+            //               // if (filter == 'Exponential Smoothing' && selected) {
+            //               //   final result = await showDialog<double?>(
+            //               //     context: context,
+            //               //     builder: (context) {
+            //               //       return const _SliderDialog(
+            //               //         title: 'Set alpha',
+            //               //       );
+            //               //     },
+            //               //   );
+            //               //   if (result == null) return;
 
-                            _notifier.setModelConfig(
-                              modelConfig.copyWith(
-                                smoothings: {
-                                  ...selectedFilters,
-                                  ExponentialSmoothing(alpha: result),
-                                },
-                              ),
-                            );
-                            return;
-                          }
+            //               //   _notifier.setModelConfig(
+            //               //     modelConfig.copyWith(
+            //               //       smoothings: {
+            //               //         ...selectedFilters,
+            //               //         ExponentialSmoothing(alpha: result),
+            //               //       },
+            //               //     ),
+            //               //   );
+            //               //   return;
+            //               // }
 
-                          _notifier.setModelConfig(
-                            modelConfig.copyWith(
-                              smoothings: selected
-                                  ? {
-                                      ...selectedFilters,
-                                      Smoothing.fromName(filter),
-                                    }
-                                  : selectedFilters
-                                      .where((e) => e.name != filter)
-                                      .toSet(),
-                            ),
-                          );
-                        },
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Consumer(
-              builder: (context, ref, child) {
-                final selectedFilters = ref.watch(
-                  mlModelProviderFamily
-                      .select((value) => value.modelConfig.filterings),
-                );
+            //               _notifier.setModelConfig(
+            //                 modelConfig.copyWith(
+            //                   smoothings: selected
+            //                       ? {
+            //                           ...selectedFilters,
+            //                           Smoothing.fromName(filter),
+            //                         }
+            //                       : selectedFilters
+            //                           .where((e) => e.name != filter)
+            //                           .toSet(),
+            //                 ),
+            //               );
+            //             },
+            //     );
+            //   },
+            // ),
+            // const SizedBox(height: 8),
+            // Consumer(
+            //   builder: (context, ref, child) {
+            //     final selectedFilters = ref.watch(
+            //       mlModelProviderFamily
+            //           .select((value) => value.modelConfig.filterings),
+            //     );
 
-                return FilterList<String>(
-                  title: const Text('Filtering'),
-                  selectedFilters: selectedFilters.map((e) => e.name).toSet(),
-                  filters: Filtering.values,
-                  filterNameBuilder: (filter) {
-                    final filtering = selectedFilters.firstWhere(
-                      (e) => e.name == filter,
-                      orElse: () => Filtering.fromName(filter),
-                    );
+            //     return FilterList<String>(
+            //       title: const Text('Filtering'),
+            //       selectedFilters: selectedFilters.map((e) => e.name).toSet(),
+            //       filters: Filtering.values,
+            //       filterNameBuilder: (filter) {
+            //         final filtering = selectedFilters.firstWhere(
+            //           (e) => e.name == filter,
+            //           orElse: () => Filtering.fromName(filter),
+            //         );
 
-                    switch (filtering) {
-                      case MedianFilter():
-                        return filtering.name;
-                      case LowPassFilter():
-                        if (filtering.alpha == null) {
-                          return filtering.name;
-                        }
-                        return '${filtering.name} (${filtering.alpha})';
-                    }
-                  },
-                  onSelected: recordState != RecordState.ready
-                      ? null
-                      : (filter, selected) async {
-                          final modelConfig = ref.read(
-                            mlModelProviderFamily
-                                .select((value) => value.modelConfig),
-                          );
+            //         switch (filtering) {
+            //           case MedianFilter():
+            //             return filtering.name;
+            //           // case LowPassFilter():
+            //           //   if (filtering.alpha == null) {
+            //           //     return filtering.name;
+            //           //   }
+            //           //   return '${filtering.name} (${filtering.alpha})';
+            //         }
+            //       },
+            //       onSelected: recordState != RecordState.ready
+            //           ? null
+            //           : (filter, selected) async {
+            //               final modelConfig = ref.read(
+            //                 mlModelProviderFamily
+            //                     .select((value) => value.modelConfig),
+            //               );
 
-                          if (filter == 'Low Pass Filter' && selected) {
-                            final result = await showDialog<double?>(
-                              context: context,
-                              builder: (context) {
-                                return const _SliderDialog(
-                                  title: 'Set alpha',
-                                );
-                              },
-                            );
-                            if (result == null) return;
+            //               // if (filter == 'Low Pass Filter' && selected) {
+            //               //   final result = await showDialog<double?>(
+            //               //     context: context,
+            //               //     builder: (context) {
+            //               //       return const _SliderDialog(
+            //               //         title: 'Set alpha',
+            //               //       );
+            //               //     },
+            //               //   );
+            //               //   if (result == null) return;
 
-                            _notifier.setModelConfig(
-                              modelConfig.copyWith(
-                                filterings: {
-                                  ...selectedFilters,
-                                  LowPassFilter(alpha: result),
-                                },
-                              ),
-                            );
-                            return;
-                          }
+            //               //   _notifier.setModelConfig(
+            //               //     modelConfig.copyWith(
+            //               //       filterings: {
+            //               //         ...selectedFilters,
+            //               //         LowPassFilter(alpha: result),
+            //               //       },
+            //               //     ),
+            //               //   );
+            //               //   return;
+            //               // }
 
-                          _notifier.setModelConfig(
-                            modelConfig.copyWith(
-                              filterings: selected
-                                  ? {
-                                      ...selectedFilters,
-                                      Filtering.fromName(filter),
-                                    }
-                                  : selectedFilters
-                                      .where((e) => e.name != filter)
-                                      .toSet(),
-                            ),
-                          );
-                        },
-                );
-              },
-            ),
-            const SizedBox(height: 8),
+            //               _notifier.setModelConfig(
+            //                 modelConfig.copyWith(
+            //                   filterings: selected
+            //                       ? {
+            //                           ...selectedFilters,
+            //                           Filtering.fromName(filter),
+            //                         }
+            //                       : selectedFilters
+            //                           .where((e) => e.name != filter)
+            //                           .toSet(),
+            //                 ),
+            //               );
+            //             },
+            //     );
+            //   },
+            // ),
+            // const SizedBox(height: 8),
             Consumer(
               builder: (context, ref, child) {
                 final selectedFilters = ref.watch(
@@ -597,11 +597,11 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                           return tce.name;
                         }
                         return '${tce.name} (${tce.minConsecutivePredictions})';
-                      case TransitionConstraints():
-                        if (tce.minDuration == null) {
-                          return tce.name;
-                        }
-                        return '${tce.name} (${tce.minDuration})';
+                      // case TransitionConstraints():
+                      //   if (tce.minDuration == null) {
+                      //     return tce.name;
+                      //   }
+                      //   return '${tce.name} (${tce.minDuration})';
                     }
                   },
                   onSelected: recordState != RecordState.ready
@@ -635,28 +635,28 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                               ),
                             );
                             return;
-                          } else if (filter == 'Transition Constraints' &&
-                              selected) {
-                            final result = await showDialog<int?>(
-                              context: context,
-                              builder: (context) {
-                                return const _NumberFieldDialog(
-                                  title: 'Set min duration',
-                                  initialValue: 3,
-                                );
-                              },
-                            );
-                            if (result == null) return;
+                            // } else if (filter == 'Transition Constraints' &&
+                            //     selected) {
+                            //   final result = await showDialog<int?>(
+                            //     context: context,
+                            //     builder: (context) {
+                            //       return const _NumberFieldDialog(
+                            //         title: 'Set min duration',
+                            //         initialValue: 3,
+                            //       );
+                            //     },
+                            //   );
+                            //   if (result == null) return;
 
-                            _notifier.setModelConfig(
-                              modelConfig.copyWith(
-                                temporalConsistencyEnforcements: {
-                                  ...selectedFilters,
-                                  TransitionConstraints(minDuration: result),
-                                },
-                              ),
-                            );
-                            return;
+                            //   _notifier.setModelConfig(
+                            //     modelConfig.copyWith(
+                            //       temporalConsistencyEnforcements: {
+                            //         ...selectedFilters,
+                            //         TransitionConstraints(minDuration: result),
+                            //       },
+                            //     ),
+                            //   );
+                            //   return;
                           }
 
                           _notifier.setModelConfig(
@@ -678,23 +678,110 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
               },
             ),
             const SizedBox(height: 8),
+            Consumer(
+              builder: (context, ref, child) {
+                final selectedFilters = ref.watch(
+                  mlModelProviderFamily
+                      .select((value) => value.modelConfig.weightings),
+                );
+
+                return FilterList<String>(
+                  title: const Text('Weighting'),
+                  selectedFilters:
+                      selectedFilters.map((filter) => filter.name).toSet(),
+                  filters: Weighting.values,
+                  filterNameBuilder: (filter) {
+                    final weighting = selectedFilters.firstWhere(
+                      (e) => e.name == filter,
+                      orElse: () => Weighting.fromName(filter),
+                    );
+
+                    switch (weighting) {
+                      case TransitionWeighting():
+                        if (weighting.weight == null) {
+                          return weighting.name;
+                        }
+                        return '${weighting.name} (${weighting.weight})';
+                    }
+                  },
+                  onSelected: recordState != RecordState.ready
+                      ? null
+                      : (filter, selected) async {
+                          final modelConfig = ref.read(
+                            mlModelProviderFamily
+                                .select((value) => value.modelConfig),
+                          );
+
+                          if (filter == 'Transition Weighting' && selected) {
+                            final result = await showDialog<double?>(
+                              context: context,
+                              builder: (context) {
+                                return const _SliderDialog(
+                                  title: 'Set weight',
+                                  initialValue: 0.2,
+                                );
+                              },
+                            );
+                            if (result == null) return;
+
+                            _notifier.setModelConfig(
+                              modelConfig.copyWith(
+                                weightings: selected
+                                    ? {
+                                        ...selectedFilters,
+                                        TransitionWeighting(weight: result),
+                                      }
+                                    : selectedFilters
+                                        .where((e) => e.name != filter)
+                                        .toSet(),
+                              ),
+                            );
+
+                            return;
+                          }
+
+                          _notifier.setModelConfig(
+                            modelConfig.copyWith(
+                              weightings: selected
+                                  ? {
+                                      ...selectedFilters,
+                                      Weighting.fromName(filter),
+                                    }
+                                  : selectedFilters
+                                      .where((e) => e.name != filter)
+                                      .toSet(),
+                            ),
+                          );
+                        },
+                );
+              },
+            ),
+            const SizedBox(height: 8),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Text(
-          'Predict State: ${recordState.name}',
+          'Prediction State: ${recordState.name}',
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Predict Result: ${predictedCategory?.name}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+        const SizedBox(height: 12),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Prediction:',
+              textAlign: TextAlign.center,
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${predictedCategory?.name}',
+              textAlign: TextAlign.center,
+              style: textTheme.displaySmall,
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Center(
           child: FilledButton.tonal(
             onPressed: isInitialised
@@ -713,12 +800,6 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                 RecordState.stopping => 'Stopping...',
               },
             ),
-          ),
-        ),
-        Center(
-          child: OutlinedButton(
-            onPressed: isInitialised ? () {} : null,
-            child: const Text('Use in saved dataset'),
           ),
         ),
       ],
@@ -849,16 +930,24 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
 class _SliderDialog extends StatefulWidget {
   const _SliderDialog({
     required this.title,
+    required this.initialValue,
   });
 
   final String title;
+  final double initialValue;
 
   @override
   State<_SliderDialog> createState() => _SliderDialogState();
 }
 
 class _SliderDialogState extends State<_SliderDialog> {
-  var _value = 0.5;
+  late double _value;
+
+  @override
+  void initState() {
+    _value = widget.initialValue;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -64,6 +64,9 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
       );
       return;
     }
+    state = state.copyWith(
+      datasetProp: datasetProp,
+    );
 
     final (datasetsFailure, datasets) =
         await _preprocessRepository.readDataItems(state.path);
@@ -76,7 +79,6 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
     state = state.copyWith(
       dataItems: datasets,
-      datasetProp: datasetProp,
     );
   }
 
@@ -96,6 +98,7 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   void setSelectedDataset(int index) {
+    print('pressing $index');
     final enablePredictedPreview = ref.read(enablePredictedPreviewProvider);
     if (enablePredictedPreview) return;
 

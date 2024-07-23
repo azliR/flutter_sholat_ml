@@ -22,6 +22,9 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
         android:maxSdkVersion="28" />
 
+    <!-- package:file_picker -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application android:requestLegacyExternalStorage="true"
         android:enableOnBackInvokedCallback="true"
         android:label="${appName}"

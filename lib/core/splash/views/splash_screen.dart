@@ -118,13 +118,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     AuthDeviceSuccessState() => 'Authenticated',
                     AuthDeviceFailureState() => 'Authentication failed',
                     AuthDeviceResponseFailureState() => 'Authentication failed',
-                    AuthWithXiaomiAccountLoadingState() =>
+                    LoginXiaomiAccountLoadingState() =>
                       'Authenticating with xiaomi account...',
-                    AuthWithXiaomiAccountSuccessState() =>
+                    LoginXiaomiAccountSuccessState() =>
                       'Authenticated  with xiaomi account',
-                    AuthWithXiaomiAccountFailureState() =>
+                    LoginXiaomiAccountFailureState() =>
                       'Authentication  with xiaomi account failed',
-                    AuthWithXiaomiAccountResponseFailureState() =>
+                    LoginXiaomiAccountResponseFailureState() =>
                       'Authentication  with xiaomi account failed',
                     DisconnectDeviceFailureState() =>
                       'Failed to disconnect device',

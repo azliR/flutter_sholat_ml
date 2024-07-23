@@ -1,7 +1,6 @@
-import 'package:flutter/foundation.dart';
+import 'package:equatable/equatable.dart';
 
-@immutable
-class Wearable {
+class Wearable extends Equatable {
   const Wearable({
     required this.activeStatus,
     required this.macAddress,
@@ -43,4 +42,15 @@ class Wearable {
       'productionSource': productionSource,
     };
   }
+
+  @override
+  List<Object?> get props => [
+        activeStatus,
+        macAddress,
+        authKey,
+        deviceSource,
+        firmwareVersion,
+        hardwareVersion,
+        productionSource,
+      ];
 }

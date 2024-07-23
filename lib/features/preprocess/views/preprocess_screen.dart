@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:auto_route/auto_route.dart';
@@ -46,7 +47,9 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     with TickerProviderStateMixin {
   late final PreprocessNotifier _notifier;
 
-  late final VideoPlayerController _videoPlayerController;
+  VideoPlayerController? _videoPlayerController;
+  late bool isVideoDownloaded;
+
   late final AnimationController _animationController;
 
   late final MultiSplitViewController _mainSplitController;
@@ -95,15 +98,15 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     if (!mounted) return;
 
     _notifier.setIsPlaying(
-      isPlaying: _videoPlayerController.value.isPlaying,
+      isPlaying: _videoPlayerController!.value.isPlaying,
     );
 
-    if (!_videoPlayerController.value.isPlaying) return;
+    if (!_videoPlayerController!.value.isPlaying) return;
 
     final state = ref.read(preprocessProvider);
     final dataItems = state.dataItems;
     final currentPosition =
-        _videoPlayerController.value.position.inMilliseconds;
+        _videoPlayerController!.value.position.inMilliseconds;
     var index = 0;
     for (var i = 0; i < dataItems.length; i++) {
       final dataItem = dataItems[i];
@@ -154,12 +157,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
 
   void _showTrackballAt(int index) {
     _trackballBehavior.showByIndex(index);
-
-    _trackballControlDebouncer?.cancel();
-    _trackballControlDebouncer = Timer(const Duration(seconds: 1), () async {
-      _isTrackballControlled = false;
-      _trackballControlDebouncer?.cancel();
-    });
   }
 
   void _scrollToDataItemTile(int index) {
@@ -378,17 +375,36 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
         .toList();
   }
 
+  Future<void> _initVideo(File videoFile) async {
+    isVideoDownloaded = videoFile.existsSync();
+    if (isVideoDownloaded) {
+      _videoPlayerController = VideoPlayerController.file(
+        videoFile,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
+    }
+
+    try {
+      await _videoPlayerController?.initialize();
+      _videoPlayerController?.addListener(_videoListener);
+    } catch (e) {
+      log(e.toString());
+      showErrorSnackbar(context, 'Failed loading video. Error: $e');
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
 
     final path = widget.path;
     const datasetVideoName = Paths.datasetVideo;
-
-    _videoPlayerController = VideoPlayerController.file(
-      File('$path/$datasetVideoName'),
-      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-    );
+    final videoPath = File('$path/$datasetVideoName');
+    _initVideo(videoPath);
 
     _animationController =
         AnimationController(vsync: this, duration: 2.seconds);
@@ -427,8 +443,6 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       await _notifier.initialise(path);
-      await _videoPlayerController.initialize();
-      _videoPlayerController.addListener(_videoListener);
 
       final state = ref.read(preprocessProvider);
 
@@ -450,7 +464,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     _trackballControlDebouncer?.cancel();
     _moveHighlightDebouncer?.cancel();
 
-    _videoPlayerController.dispose();
+    _videoPlayerController?.dispose();
     _mainSplitController.dispose();
     _videoChartSplitController.dispose();
     _dataItemSplitController.dispose();
@@ -506,19 +520,19 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
 
           _scrollChartAndShowTrackball(index, dataItemsLength);
 
-          if (_videoPlayerController.value.isPlaying) return;
+          if (_videoPlayerController?.value.isPlaying ?? false) return;
 
           _playVideoDebouncer?.cancel();
           _playVideoDebouncer = Timer(
               Duration(milliseconds: _isTrackballControlled ? 300 : 0), () {
             final dataItems = ref.read(preprocessProvider).dataItems;
 
-            final videoValue = _videoPlayerController.value;
+            final videoValue = _videoPlayerController!.value;
             final isInitialized = videoValue.isInitialized;
             final isPlaying = videoValue.isPlaying;
 
             if (isInitialized && !isPlaying) {
-              _videoPlayerController.seekTo(
+              _videoPlayerController!.seekTo(
                 dataItems[index].timestamp!,
               );
             }
@@ -690,6 +704,7 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                         children: [
                           VideoDataset(
                             videoPlayerController: _videoPlayerController,
+                            isVideoDownloaded: isVideoDownloaded,
                             isVerticalLayout: shouldVerticalLayout,
                           ),
                           AccelerometerChart(
@@ -701,20 +716,23 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
                             trackballBehavior: _trackballBehavior,
                             isVerticalLayout: shouldVerticalLayout,
                             onTrackballChanged: (trackballArgs) {
-                              if (_videoPlayerController.value.isPlaying) {
+                              if (_videoPlayerController?.value.isPlaying ??
+                                  false) {
                                 return;
                               }
 
-                              if (_isTrackballControlled) return;
+                              if (_isTrackballControlled) {
+                                _isTrackballControlled = false;
+                                return;
+                              }
 
-                              _moveHighlightDebouncer?.cancel();
-                              _moveHighlightDebouncer =
-                                  Timer(const Duration(milliseconds: 300), () {
-                                final index = trackballArgs
-                                        .chartPointInfo.dataPointIndex ??
-                                    0;
-                                _notifier.setCurrentHighlightedIndex(index);
-                              });
+                              // _moveHighlightDebouncer?.cancel();
+                              // _moveHighlightDebouncer = Timer(
+                              //     const Duration(milliseconds: 300), () {});
+                              final index =
+                                  trackballArgs.chartPointInfo.dataPointIndex ??
+                                      0;
+                              _notifier.setCurrentHighlightedIndex(index);
                             },
                             onActualRangeChanged: (args) {
                               final visibleMax = args.visibleMax as num;

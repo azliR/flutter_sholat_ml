@@ -14,6 +14,48 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class MlModelsRepository {
+  // final _firestore = FirebaseFirestore.instance;
+
+  // Future<(Failure?, List<MlModel>?)> getCloudMlModels(
+  //   DateTime startAfter,
+  //   int limit,
+  // ) async {
+  //   try {
+  //     final query = _firestore
+  //         .collection('models')
+  //         .orderBy('created_at', descending: true)
+  //         .startAfter([startAfter])
+  //         .limit(limit)
+  //         .withConverter(
+  //           fromFirestore: (snapshot, options) {
+  //             final property =
+  //                 DatasetProp.fromFirestoreJson(snapshot.data()!, snapshot.id);
+  //             return Dataset(
+  //               downloaded: null,
+  //               property: property,
+  //             );
+  //           },
+  //           toFirestore: (value, options) => value.property.toFirestoreJson(),
+  //         );
+  //     final snapshot = await query.get();
+  //     final datasets = snapshot.docs.map((doc) => doc.data()).toList();
+  //     final (failure, updatedDatasets) = await loadDatasetsFromDisk(
+  //       datasets: datasets,
+  //       isReviewedDataset: true,
+  //       createIfNotExist: true,
+  //     );
+  //     if (failure != null) {
+  //       return (failure, null);
+  //     }
+
+  //     return (null, updatedDatasets);
+  //   } catch (e, stackTrace) {
+  //     const message = 'Failed getting uploaded datasets';
+  //     final failure = Failure(message, error: e, stackTrace: stackTrace);
+  //     return (failure, null);
+  //   }
+  // }
+
   Future<(Failure?, List<MlModel>?)> getLocalMlModels(
     int start,
     int limit, {

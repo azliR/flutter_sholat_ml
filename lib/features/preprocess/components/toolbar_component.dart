@@ -28,7 +28,7 @@ class Toolbar extends ConsumerStatefulWidget {
     super.key,
   });
 
-  final VideoPlayerController videoPlayerController;
+  final VideoPlayerController? videoPlayerController;
   final void Function() onFollowHighlighted;
 
   @override
@@ -699,10 +699,15 @@ class _ToolbarState extends ConsumerState<Toolbar> {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             onPressed: () {
+              if (widget.videoPlayerController == null) {
+                showSnackbar(context, 'Video is not ready');
+                return;
+              }
+
               if (isPlaying) {
-                widget.videoPlayerController.pause();
+                widget.videoPlayerController!.pause();
               } else {
-                widget.videoPlayerController.play();
+                widget.videoPlayerController!.play();
               }
             },
             icon: isPlaying

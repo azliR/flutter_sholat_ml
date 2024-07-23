@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:convert/convert.dart';
+import 'package:dartx/dartx.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/device_responses.dart';
 import 'package:flutter_sholat_ml/constants/device_uuids.dart';
 import 'package:flutter_sholat_ml/core/auth_device/models/device/device.dart';
+import 'package:flutter_sholat_ml/core/auth_device/models/wearable.dart';
 import 'package:flutter_sholat_ml/core/auth_device/repository/device_repository.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 
@@ -244,22 +246,40 @@ class AuthDeviceNotifier extends Notifier<AuthDeviceState> {
     return services;
   }
 
-  Future<void> authWithXiaomiAccount(String accessToken) async {
+  Future<void> loginWithXiaomiAccount({
+    required String accessToken,
+    required BluetoothDevice device,
+  }) async {
     state = state.copyWith(
-      presentationState: const AuthWithXiaomiAccountLoadingState(),
+      presentationState: const LoginXiaomiAccountLoadingState(),
     );
 
     final (failure, wearables) =
         await _deviceRepository.loginWithXiaomiAccount(accessToken);
+
     log(wearables.toString());
+
     if (failure != null) {
       state = state.copyWith(
-        presentationState: AuthWithXiaomiAccountFailureState(failure),
+        presentationState: LoginXiaomiAccountFailureState(failure),
       );
       return;
     }
+
+    final wearable = wearables?.firstOrNullWhere(
+      (wearable) => wearable.macAddress == device.remoteId.str,
+    );
+
+    if (wearable == null) {
+      state = state.copyWith(
+        presentationState:
+            LoginXiaomiAccountFailureState(Failure('Wearable not found')),
+      );
+      return;
+    }
+
     state = state.copyWith(
-      presentationState: const AuthWithXiaomiAccountSuccessState(),
+      presentationState: LoginXiaomiAccountSuccessState(wearable),
     );
   }
 

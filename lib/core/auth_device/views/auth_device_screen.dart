@@ -1,8 +1,13 @@
+import 'dart:developer';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_sholat_ml/configs/routes/app_router.gr.dart';
+import 'package:flutter_sholat_ml/constants/custom_icons_icons.dart';
+import 'package:flutter_sholat_ml/constants/urls.dart';
 import 'package:flutter_sholat_ml/core/auth_device/blocs/auth_device/auth_device_notifier.dart';
 import 'package:flutter_sholat_ml/utils/state_handlers/auth_device_state_handler.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
@@ -73,12 +78,21 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     ref.listen(
       authDeviceProvider,
       (previous, next) => handleAuthDeviceState(
         context,
         previous,
         next,
+        onLoginXiaomiAccountSuccess: (wearable) async {
+          await _notifier.auth(
+            wearable.authKey,
+            widget.device,
+            widget.services,
+          );
+        },
         onAuthDeviceSuccess: () {
           context.router.popUntilRoot();
         },
@@ -128,46 +142,50 @@ class _AuthDeviceScreenState extends ConsumerState<AuthDeviceScreen> {
                 ),
               ),
             ),
-            // const Spacer(),
-            // Text(
-            //   'Or connect with',
-            //   style: textTheme.bodySmall,
-            // ),
-            // SizedBox(
-            //   width: double.infinity,
-            //   child: Padding(
-            //     padding: const EdgeInsets.all(16),
-            //     child: FilledButton.tonalIcon(
-            //       style: FilledButton.styleFrom(
-            //         padding: const EdgeInsets.symmetric(
-            //           horizontal: 16,
-            //           vertical: 12,
-            //         ),
-            //       ),
-            //       onPressed: () async {
-            //         await _notifier.authWithXiaomiAccount(
-            //           'ALSG_CLOUDSRV_7E295D13FCBFA43B2120F90342153C20',
-            //         );
-            //         return;
-            //         await context.router.push(
-            //           AuthWithXiaomiAccountRoute(
-            //             uri: Uri.parse(Urls.loginXiaomi),
-            //             onAuthenticated: (accessToken) async {
-            //               log(accessToken);
-            //               await _notifier.authWithXiaomiAccount(accessToken);
-            //             },
-            //           ),
-            //         );
-            //       },
-            //       icon: const Icon(
-            //         CustomIcons.xiaomi_logo,
-            //         color: Color(0xFFFF6900),
-            //       ),
-            //       label: const Text('Xiaomi Account'),
-            //     ),
-            //   ),
-            // ),
-            // SizedBox(height: MediaQuery.of(context).padding.bottom),
+            const Spacer(),
+            Text(
+              'Or connect with',
+              style: textTheme.bodySmall,
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onPressed: () async {
+                    // await _notifier.authWithXiaomiAccount(
+                    //   'ALSG_CLOUDSRV_7E295D13FCBFA43B2120F90342153C20',
+                    // );
+                    // return;
+                    await context.router.push(
+                      AuthWithXiaomiAccountRoute(
+                        uri: Uri.parse(Urls.loginXiaomi),
+                        onAuthenticated: (accessToken) async {
+                          log(accessToken);
+
+                          await _notifier.loginWithXiaomiAccount(
+                            accessToken: accessToken,
+                            device: widget.device,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  icon: const Icon(
+                    CustomIcons.xiaomi_logo,
+                    color: Color(0xFFFF6900),
+                  ),
+                  label: const Text('Xiaomi Account'),
+                ),
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],
         ),
       ),

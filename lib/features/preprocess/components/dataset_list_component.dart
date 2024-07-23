@@ -66,39 +66,46 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                       debugLabel: section.labelCategory?.name ??
                           sectionIndex.toString(),
                     );
-                    final selectedSectionIndex =
-                        ref.watch(selectedSectionIndexProvider);
                     final enablePredictedPreview =
                         ref.watch(enablePredictedPreviewProvider);
 
                     return MultiSliver(
                       pushPinnedChildren: true,
                       children: [
-                        SliverPersistentHeader(
-                          key: headerKey,
-                          floating: true,
-                          delegate: _ExpandableHeaderDelegate(
-                            index: sectionIndex,
-                            selected: selectedSectionIndex == sectionIndex,
-                            section: sections[sectionIndex],
-                            enablePredictedPreview: enablePredictedPreview,
-                            onTap: (overlapsContent) {
-                              if (overlapsContent) {
-                                Scrollable.ensureVisible(
-                                  headerKey.currentContext!,
-                                );
-                              }
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final selectedSectionIndex =
+                                ref.watch(selectedSectionIndexProvider);
 
-                              ref
-                                  .read(
-                                    generateDataItemSectionProvider.notifier,
-                                  )
-                                  .toggleSectionAt(sectionIndex);
-                              ref
-                                  .read(selectedSectionIndexProvider.notifier)
-                                  .setSectionIndex(sectionIndex);
-                            },
-                          ),
+                            return SliverPersistentHeader(
+                              key: headerKey,
+                              pinned: true,
+                              delegate: _ExpandableHeaderDelegate(
+                                index: sectionIndex,
+                                selected: selectedSectionIndex == sectionIndex,
+                                section: sections[sectionIndex],
+                                enablePredictedPreview: enablePredictedPreview,
+                                onTap: (overlapsContent) {
+                                  if (overlapsContent) {
+                                    Scrollable.ensureVisible(
+                                      headerKey.currentContext!,
+                                    );
+                                  }
+
+                                  ref
+                                      .read(
+                                        generateDataItemSectionProvider
+                                            .notifier,
+                                      )
+                                      .toggleSectionAt(sectionIndex);
+                                  ref
+                                      .read(
+                                          selectedSectionIndexProvider.notifier)
+                                      .setSectionIndex(sectionIndex);
+                                },
+                              ),
+                            );
+                          },
                         ),
                         if (sections[sectionIndex].expanded)
                           SliverFixedExtentList(

@@ -1,9 +1,12 @@
+import 'package:dartx/dartx_io.dart';
 import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
+import 'package:flutter_sholat_ml/features/datasets/models/dataset/data_item.dart';
 import 'package:flutter_sholat_ml/features/ml_model/repositories/ml_model_repository.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/dataset/dataset_provider.dart';
 import 'package:flutter_sholat_ml/features/preprocess/providers/preprocess/preprocess_notifier.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
+import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'ml_model_provider.g.dart';
@@ -14,6 +17,19 @@ class SelectedMlModel extends _$SelectedMlModel {
   MlModel? build() => null;
 
   void setModel(MlModel? model) => state = model;
+}
+
+@riverpod
+class OnlyPredictLabeled extends _$OnlyPredictLabeled {
+  @override
+  bool build() {
+    return LocalStorageService.getPreprocessOnlyPredictLabeled();
+  }
+
+  void setEnable(bool onlyPredictLabeled) {
+    state = onlyPredictLabeled;
+    LocalStorageService.setPreprocessOnlyPredictLabeled(onlyPredictLabeled);
+  }
 }
 
 @riverpod
@@ -41,8 +57,16 @@ class PredictedCategories extends _$PredictedCategories {
       return;
     }
 
-    final dataItems =
+    final originalDataItems =
         ref.read(preprocessProvider.select((value) => value.dataItems));
+
+    final dataItems = List<DataItem>.from(originalDataItems);
+
+    final onlyPredictLabeled = ref.read(onlyPredictLabeledProvider);
+    if (onlyPredictLabeled) {
+      dataItems.removeWhere((dataItem) => !dataItem.isLabeled);
+    }
+
     const windowStep = 10;
 
     final (extractingFailure, X, _) =
@@ -72,6 +96,7 @@ class PredictedCategories extends _$PredictedCategories {
         batchSize: batchSize,
       ),
       skipWhenLocked: false,
+      disposeAfterUse: true,
     );
 
     if (failure != null) {
@@ -86,22 +111,38 @@ class PredictedCategories extends _$PredictedCategories {
       return;
     }
 
-    var firstTakbirFound = false;
-    final expandedPredictions = predictions.expand((category) {
-      if (!firstTakbirFound && category == SholatMovementCategory.takbir) {
-        firstTakbirFound = true;
-      }
-
-      return List.filled(windowStep, firstTakbirFound ? category : null);
+    final expandedPredictions =
+        predictions.expand<SholatMovementCategory?>((category) {
+      return List.filled(windowStep, category);
     }).toList();
 
-    if (expandedPredictions.length < dataItems.length) {
+    if (onlyPredictLabeled) {
+      final firstUnlabeled =
+          originalDataItems.firstWhile((dataItem) => !dataItem.isLabeled);
+      final lastUnlabeled =
+          originalDataItems.lastWhile((dataItem) => !dataItem.isLabeled);
+
+      print(firstUnlabeled.length);
+
+      expandedPredictions
+        ..insertAll(
+          0,
+          List.filled(firstUnlabeled.length, null),
+        )
+        ..insertAll(
+          expandedPredictions.length,
+          List.filled(lastUnlabeled.length, null),
+        );
+    }
+
+    if (expandedPredictions.length < originalDataItems.length) {
       expandedPredictions.addAll(
-        List.filled(dataItems.length - expandedPredictions.length, null),
+        List.filled(
+            originalDataItems.length - expandedPredictions.length, null),
       );
-    } else if (expandedPredictions.length > dataItems.length) {
+    } else if (expandedPredictions.length > originalDataItems.length) {
       expandedPredictions.removeRange(
-        dataItems.length,
+        originalDataItems.length,
         expandedPredictions.length,
       );
     }
@@ -111,7 +152,7 @@ class PredictedCategories extends _$PredictedCategories {
 }
 
 @riverpod
-Future<double?> modelEvaluation(ModelEvaluationRef ref) async {
+Future<double?> modelAccuracy(ModelAccuracyRef ref) async {
   final preprocessRepository = PreprocessRepository();
 
   final predictedCategoriesAsync = ref.watch(predictedCategoriesProvider);
@@ -125,16 +166,46 @@ Future<double?> modelEvaluation(ModelEvaluationRef ref) async {
       final dataItems =
           ref.read(preprocessProvider.select((value) => value.dataItems));
 
-      final (failure, evaluation) = await preprocessRepository.evaluateModel(
+      final accuracy = preprocessRepository.evaluateModel(
         categories: dataItems.map((e) => e.labelCategory).toList(),
         predictedCategories: predictedCategories,
       );
 
-      if (failure != null) {
-        throw Exception(failure.message);
+      return accuracy;
+    },
+    loading: () => null,
+    error: (error, stackTrace) {
+      throw Exception(error.toString());
+    },
+  );
+}
+
+@riverpod
+Future<double?> modelFluctuationRate(
+  ModelFluctuationRateRef ref,
+) async {
+  final preprocessRepository = PreprocessRepository();
+
+  final predictedCategoriesAsync = ref.watch(predictedCategoriesProvider);
+
+  return predictedCategoriesAsync.when(
+    data: (predictedCategories) async {
+      if (predictedCategories == null) {
+        return null;
       }
 
-      return evaluation;
+      final accuracy = preprocessRepository.evaluateFluctuationRate(
+        predictedCategories: predictedCategories,
+        labeledCategories: ref
+            .read(preprocessProvider)
+            .dataItems
+            .map(
+              (e) => e.labelCategory,
+            )
+            .toList(),
+      );
+
+      return accuracy;
     },
     loading: () => null,
     error: (error, stackTrace) {

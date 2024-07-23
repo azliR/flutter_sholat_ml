@@ -20,7 +20,7 @@ class PreprocessShortcuts extends ConsumerStatefulWidget {
   });
 
   final ScrollController scrollController;
-  final VideoPlayerController videoPlayerController;
+  final VideoPlayerController? videoPlayerController;
   // ignore: avoid_positional_boolean_parameters
   final void Function(bool isControlPressed) onRightKeyPressed;
   // ignore: avoid_positional_boolean_parameters
@@ -75,7 +75,12 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
       };
 
   void _playVideo() {
-    final videoValue = widget.videoPlayerController.value;
+    if (widget.videoPlayerController == null) {
+      showSnackbar(context, 'Video is not ready');
+      return;
+    }
+
+    final videoValue = widget.videoPlayerController!.value;
     final isInitialized = videoValue.isInitialized;
     final isPlaying = videoValue.isPlaying;
 
@@ -85,9 +90,9 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
     }
 
     if (isPlaying) {
-      widget.videoPlayerController.pause();
+      widget.videoPlayerController!.pause();
     } else {
-      widget.videoPlayerController.play();
+      widget.videoPlayerController!.play();
     }
     _notifier.setIsPlaying(isPlaying: !isPlaying);
   }
@@ -101,21 +106,31 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
   }
 
   void _increasePlaybackSpeed() {
+    if (widget.videoPlayerController == null) {
+      showSnackbar(context, 'Video is not ready');
+      return;
+    }
+
     final currentPlaybackSpeed = ref.read(videoPlaybackSpeedProvider);
     final updatedPlaybackSpeed = min<double>(currentPlaybackSpeed + 0.1, 5);
     ref
         .read(videoPlaybackSpeedProvider.notifier)
         .setSpeed(updatedPlaybackSpeed);
-    widget.videoPlayerController.setPlaybackSpeed(updatedPlaybackSpeed);
+    widget.videoPlayerController!.setPlaybackSpeed(updatedPlaybackSpeed);
   }
 
   void _decreasePlaybackSpeed() {
+    if (widget.videoPlayerController == null) {
+      showSnackbar(context, 'Video is not ready');
+      return;
+    }
+
     final currentPlaybackSpeed = ref.read(videoPlaybackSpeedProvider);
     final updatedPlaybackSpeed = max<double>(currentPlaybackSpeed - 0.1, 0.1);
     ref
         .read(videoPlaybackSpeedProvider.notifier)
         .setSpeed(updatedPlaybackSpeed);
-    widget.videoPlayerController.setPlaybackSpeed(updatedPlaybackSpeed);
+    widget.videoPlayerController!.setPlaybackSpeed(updatedPlaybackSpeed);
   }
 
   void _moveHighlightUp({
@@ -136,12 +151,12 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         _notifier.setSelectedDataset(currentHighlightedIndex);
       }
       if (isControlPressed) {
+        final startIndex =
+            min(currentHighlightedIndex, updatedHighlightedIndex);
+        final endIndex = max(currentHighlightedIndex, updatedHighlightedIndex);
         final updatedDataItemIndexes = List.generate(
-          1 +
-              max<int>(currentHighlightedIndex - 1, updatedHighlightedIndex) -
-              min<int>(currentHighlightedIndex - 1, updatedHighlightedIndex),
-          (index) =>
-              min(currentHighlightedIndex - 1, updatedHighlightedIndex) + index,
+          endIndex - startIndex + 1,
+          (index) => startIndex + index,
         );
 
         if (selectedDataItemIndexes.containsAll(updatedDataItemIndexes)) {
@@ -220,7 +235,7 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         ref.read(preprocessProvider).currentHighlightedIndex;
     final updatedHighlightedIndex = min(
       currentHighlightedIndex + (isControlPressed ? 10 : 1),
-      dataItemsLength,
+      dataItemsLength - 1,
     );
 
     if (isShiftPressed) {
@@ -228,23 +243,23 @@ class _PreprocessShortcutsState extends ConsumerState<PreprocessShortcuts> {
         _notifier.setSelectedDataset(currentHighlightedIndex);
       }
       if (isControlPressed) {
+        final startIndex =
+            min(currentHighlightedIndex, updatedHighlightedIndex);
+        final endIndex = max(currentHighlightedIndex, updatedHighlightedIndex);
         final updatedDataItemIndexes = List.generate(
-          1 +
-              max<int>(currentHighlightedIndex + 1, updatedHighlightedIndex) -
-              min<int>(currentHighlightedIndex + 1, updatedHighlightedIndex),
-          (index) =>
-              min(currentHighlightedIndex + 1, updatedHighlightedIndex) + index,
+          endIndex - startIndex + 1,
+          (index) => startIndex + index,
         );
 
         if (selectedDataItemIndexes.containsAll(updatedDataItemIndexes)) {
           _notifier.jumpRemove(
             currentHighlightedIndex,
-            updatedHighlightedIndex - 1,
+            updatedHighlightedIndex + 1,
           );
         } else {
           _notifier.jumpSelect(
-            updatedHighlightedIndex,
             currentHighlightedIndex,
+            updatedHighlightedIndex,
           );
         }
       } else {

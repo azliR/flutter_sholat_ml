@@ -56,8 +56,8 @@ class AccelerometerChart extends StatelessWidget {
           plotAreaBorderWidth: 0,
           primaryYAxis: const NumericAxis(
             axisLine: AxisLine(width: 0),
-            maximum: 8000,
-            minimum: -8000,
+            maximum: 6000,
+            minimum: -6000,
             majorTickLines: MajorTickLines(width: 0),
             majorGridLines: MajorGridLines(
               width: 0.4,
