@@ -9,9 +9,9 @@ class DatasetGridTile extends StatefulWidget {
     required this.selected,
     required this.labeled,
     required this.lastOpened,
-    required this.action,
     // required this.onInitialise,
     required this.onTap,
+    this.action,
     this.onLongPress,
     super.key,
   });

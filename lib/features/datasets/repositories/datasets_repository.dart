@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:async/async.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartx/dartx_io.dart';
 import 'package:file_picker/file_picker.dart';
@@ -205,48 +204,6 @@ class DatasetsRepository {
       final updatedDataset = dataset.copyWith(downloaded: downloaded);
 
       return (null, updatedDataset);
-    } catch (e, stackTrace) {
-      const message = 'Failed getting saved datasets';
-      final failure = Failure(message, error: e, stackTrace: stackTrace);
-      return (failure, null);
-    }
-  }
-
-  Future<(Failure?, Stream<TaskSnapshot>?)> downloadDataset(
-    Dataset dataset, {
-    bool forceDownload = false,
-  }) async {
-    try {
-      final baseDir = await getApplicationDocumentsDirectory();
-      final fullDir = baseDir
-          .directory(Directories.reviewedDirPath)
-          .directory(dataset.property.id);
-
-      if (!fullDir.existsSync()) {
-        await fullDir.create(recursive: true);
-      }
-
-      final datasetPropStr = jsonEncode(dataset.property.toJson());
-      await fullDir.file(Paths.datasetProp).writeAsString(datasetPropStr);
-
-      final streams = <Stream<TaskSnapshot>>[];
-
-      final csvUrl = dataset.property.csvUrl;
-      final csvFile = fullDir.file(Paths.datasetCsv);
-      if (csvUrl != null && (!csvFile.existsSync() || forceDownload)) {
-        final ref = _storage.refFromURL(csvUrl);
-        final snapshotStream = ref.writeToFile(csvFile).snapshotEvents;
-        streams.add(snapshotStream);
-      }
-      final videoUrl = dataset.property.videoUrl;
-      final videoFile = fullDir.file(Paths.datasetVideo);
-      if (videoUrl != null && (!videoFile.existsSync() || forceDownload)) {
-        final ref = _storage.refFromURL(videoUrl);
-        final snapshotStream = ref.writeToFile(videoFile).snapshotEvents;
-        streams.add(snapshotStream);
-      }
-      final streamGroup = StreamGroup.merge(streams);
-      return (null, streamGroup);
     } catch (e, stackTrace) {
       const message = 'Failed getting saved datasets';
       final failure = Failure(message, error: e, stackTrace: stackTrace);

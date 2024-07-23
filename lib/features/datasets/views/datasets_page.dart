@@ -84,77 +84,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
     );
   }
 
-  void _showDownloadProgressDialog(double? csvProgress, double? videoProgress) {
-    if (context.loaderOverlay.visible) {
-      context.loaderOverlay.progress((csvProgress, videoProgress));
-      return;
-    }
-
-    final textTheme = Theme.of(context).textTheme;
-
-    context.loaderOverlay.show(
-      widgetBuilder: (value) {
-        final (csvProgress, videoProgress) =
-            value as (double?, double?)? ?? (null, null);
-
-        return Center(
-          child: SizedBox(
-            width: 240,
-            child: Card(
-              elevation: 8,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(16)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Downloading dataset',
-                      style: textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    if (csvProgress == null && videoProgress == null) ...[
-                      LinearProgressIndicator(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text('Preparing...'),
-                    ] else ...[
-                      if (csvProgress != null) ...[
-                        LinearProgressIndicator(
-                          value: csvProgress,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Downloading csv at ${(csvProgress * 100).toStringAsFixed(0)}%',
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      if (videoProgress != null) ...[
-                        LinearProgressIndicator(
-                          value: videoProgress,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Downloading video at ${(videoProgress * 100).toStringAsFixed(0)}%',
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _showExportProgressDialog(double progress) {
     if (context.loaderOverlay.visible) {
       context.loaderOverlay.progress(progress);
@@ -311,20 +240,6 @@ class _DatasetsPageState extends ConsumerState<DatasetsPage>
           case DeleteDatasetFailureState():
             context.loaderOverlay.hide();
             showErrorSnackbar(context, 'Failed to delete dataset');
-          case DownloadDatasetProgressState():
-            final csvProgress = presentationState.csvProgress;
-            final videoProgress = presentationState.videoProgress;
-            _showDownloadProgressDialog(csvProgress, videoProgress);
-          case DownloadDatasetSuccessState():
-            context.loaderOverlay.hide();
-            _notifier.refreshDatasetStatusAt(
-              presentationState.index,
-              isReviewedDataset: true,
-            );
-            showSnackbar(context, 'Dataset downloaded succesfully!');
-          case DownloadDatasetFailureState():
-            context.loaderOverlay.hide();
-            showErrorSnackbar(context, 'Failed to download dataset!');
           case ExportDatasetProgressState():
             _showExportProgressDialog(presentationState.progress);
           case ExportDatasetSuccessState():

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:equatable/equatable.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_sholat_ml/constants/paths.dart';
@@ -27,8 +29,14 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
   final PreprocessRepository _preprocessRepository;
 
+  StreamSubscription<TaskSnapshot>? _downloadSubscription;
+
   @override
   PreprocessState build() {
+    ref.onDispose(() {
+      _downloadSubscription?.cancel();
+    });
+
     return PreprocessState.initial();
   }
 
@@ -69,7 +77,10 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
     );
 
     final (datasetsFailure, datasets) =
-        await _preprocessRepository.readDataItems(state.path);
+        await _preprocessRepository.readDataItems(
+      path: state.path,
+      csvUrl: datasetProp?.csvUrl,
+    );
     if (datasetsFailure != null) {
       state = state.copyWith(
         presentationState: ReadDatasetsFailureState(datasetsFailure),
@@ -79,6 +90,119 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
 
     state = state.copyWith(
       dataItems: datasets,
+    );
+  }
+
+  Future<void> downloadDataset() async {
+    state = state.copyWith(
+      presentationState: const DownloadVideoProgressState(),
+    );
+
+    final (failure, stream) =
+        await _preprocessRepository.downloadVideoDataset(state.datasetProp!);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: DownloadVideoFailureState(failure),
+      );
+      return;
+    }
+
+    double? lastCsvProgress;
+    double? lastVideoProgress;
+
+    await _downloadSubscription?.cancel();
+    _downloadSubscription = stream!.listen(
+      (taskSnapshot) {
+        final fileName = taskSnapshot.ref.name;
+        if (fileName == Paths.datasetCsv && lastCsvProgress == null) {
+          lastCsvProgress = 0;
+        } else if (fileName == Paths.datasetVideo &&
+            lastVideoProgress == null) {
+          lastVideoProgress = 0;
+        }
+
+        switch (taskSnapshot.state) {
+          case TaskState.success:
+            if (fileName == Paths.datasetCsv) {
+              lastCsvProgress = 1;
+            } else if (fileName == Paths.datasetVideo) {
+              lastVideoProgress = 1;
+            }
+          case TaskState.canceled:
+            break;
+          case TaskState.error:
+            state = state.copyWith(
+              presentationState: const DownloadVideoFailureState(),
+            );
+          case TaskState.paused:
+            break;
+          case TaskState.running:
+            final double progress;
+            if (taskSnapshot.totalBytes > 0 &&
+                taskSnapshot.bytesTransferred > 0) {
+              progress = taskSnapshot.bytesTransferred /
+                  (taskSnapshot.metadata?.size ?? taskSnapshot.totalBytes);
+            } else {
+              progress = 0;
+            }
+
+            if (fileName == Paths.datasetCsv) {
+              lastCsvProgress = progress;
+            } else if (fileName == Paths.datasetVideo) {
+              lastVideoProgress = progress;
+            }
+        }
+
+        state = state.copyWith(
+          presentationState: DownloadVideoProgressState(
+            csvProgress: lastCsvProgress,
+            videoProgress: lastVideoProgress,
+          ),
+        );
+
+        final isTrueWhenBoth =
+            (lastCsvProgress != null && lastVideoProgress != null) &&
+                (lastCsvProgress == 1 && lastVideoProgress == 1);
+        final isTrueWhenCsv = lastCsvProgress != null && lastCsvProgress == 1;
+        final isTrueWhenVideo =
+            lastVideoProgress != null && lastVideoProgress == 1;
+
+        if (isTrueWhenBoth || isTrueWhenCsv || isTrueWhenVideo) {
+          _downloadSubscription?.cancel();
+          state = state.copyWith(
+            presentationState: const DownloadVideoSuccessState(),
+          );
+        }
+      },
+      cancelOnError: true,
+      onDone: () {
+        _downloadSubscription?.cancel();
+      },
+      onError: (e, stackTrace) {
+        if (e is FirebaseException) {
+          if (e.code == 'canceled') {
+            return;
+          }
+        }
+        state = state.copyWith(
+          presentationState: const DownloadVideoFailureState(),
+        );
+      },
+    );
+  }
+
+  Future<void> cancelDownloadVideo() async {
+    final (failure, _) =
+        await _preprocessRepository.cancelDownloadVideoDataset(state.path);
+    if (failure != null) {
+      state = state.copyWith(
+        presentationState: CancelDownloadVideoFailureState(failure),
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      presentationState: const CancelDownloadVideoSuccessState(),
     );
   }
 

@@ -397,6 +397,83 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
     }
   }
 
+  void _showDownloadProgressDialog(double? csvProgress, double? videoProgress) {
+    if (context.loaderOverlay.visible) {
+      context.loaderOverlay.progress((csvProgress, videoProgress));
+      return;
+    }
+
+    final textTheme = Theme.of(context).textTheme;
+
+    context.loaderOverlay.show(
+      widgetBuilder: (value) {
+        final (csvProgress, videoProgress) =
+            value as (double?, double?)? ?? (null, null);
+
+        return Center(
+          child: SizedBox(
+            width: 240,
+            child: Card(
+              elevation: 8,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Downloading dataset',
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    if (csvProgress == null && videoProgress == null) ...[
+                      LinearProgressIndicator(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('Preparing...'),
+                    ] else ...[
+                      if (csvProgress != null) ...[
+                        LinearProgressIndicator(
+                          value: csvProgress,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Downloading csv at ${(csvProgress * 100).toStringAsFixed(0)}%',
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      if (videoProgress != null) ...[
+                        LinearProgressIndicator(
+                          value: videoProgress,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Downloading video at ${(videoProgress * 100).toStringAsFixed(0)}%',
+                        ),
+                        const SizedBox(height: 16),
+                        OutlinedButton(
+                          onPressed: () {
+                            _notifier.cancelDownloadVideo();
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     _notifier = ref.read(preprocessProvider.notifier);
@@ -492,6 +569,20 @@ class _PreprocessScreenState extends ConsumerState<PreprocessScreen>
             showErrorSnackbar(context, 'Failed getting dataset info');
           case ReadDatasetsFailureState():
             showErrorSnackbar(context, 'Failed reading datasets');
+          case DownloadVideoProgressState():
+            final csvProgress = state.csvProgress;
+            final videoProgress = state.videoProgress;
+            _showDownloadProgressDialog(csvProgress, videoProgress);
+          case DownloadVideoSuccessState():
+            context.loaderOverlay.hide();
+            showSnackbar(context, 'Dataset downloaded succesfully!');
+          case DownloadVideoFailureState():
+            context.loaderOverlay.hide();
+            showErrorSnackbar(context, 'Failed to download dataset!');
+          case CancelDownloadVideoFailureState():
+            showErrorSnackbar(context, 'Failed to canceling download!');
+          case CancelDownloadVideoSuccessState():
+            context.loaderOverlay.hide();
           case CompressVideoLoadingState():
             context.loaderOverlay.show();
           case CompressVideoSuccessState():

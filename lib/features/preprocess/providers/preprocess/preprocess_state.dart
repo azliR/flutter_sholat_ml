@@ -123,6 +123,35 @@ final class ReadDatasetsFailureState extends PreprocessPresentationState {
   final Failure failure;
 }
 
+final class DownloadVideoProgressState extends PreprocessPresentationState {
+  const DownloadVideoProgressState({this.csvProgress, this.videoProgress});
+
+  final double? csvProgress;
+  final double? videoProgress;
+}
+
+final class DownloadVideoSuccessState extends PreprocessPresentationState {
+  const DownloadVideoSuccessState();
+}
+
+final class DownloadVideoFailureState extends PreprocessPresentationState {
+  const DownloadVideoFailureState([this.failure]);
+
+  final Failure? failure;
+}
+
+final class CancelDownloadVideoSuccessState
+    extends PreprocessPresentationState {
+  const CancelDownloadVideoSuccessState();
+}
+
+final class CancelDownloadVideoFailureState
+    extends PreprocessPresentationState {
+  const CancelDownloadVideoFailureState([this.failure]);
+
+  final Failure? failure;
+}
+
 final class CompressVideoLoadingState extends PreprocessPresentationState {
   const CompressVideoLoadingState();
 }

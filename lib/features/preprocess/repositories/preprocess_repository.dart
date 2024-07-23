@@ -29,14 +29,28 @@ class PreprocessRepository {
   final _firestore = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
 
-  Future<(Failure?, List<DataItem>?)> readDataItems(String path) async {
+  DownloadTask? _downloadTask;
+
+  Future<(Failure?, List<DataItem>?)> readDataItems({
+    required String path,
+    required String? csvUrl,
+  }) async {
     try {
       const datasetCsvPath = Paths.datasetCsv;
       const datasetPropPath = Paths.datasetProp;
 
       final datasetCsvFile = File('$path/$datasetCsvPath');
       if (!datasetCsvFile.existsSync()) {
-        return (null, null);
+        if (csvUrl == null) {
+          return (Failure('Dataset not found'), null);
+        }
+
+        final ref = _storage.refFromURL(csvUrl);
+        final snapshot = await ref.writeToFile(datasetCsvFile);
+
+        if (snapshot.state != TaskState.success) {
+          return (Failure('Failed to download dataset'), null);
+        }
       }
 
       final datasetStrList = datasetCsvFile.readAsLinesSync();
@@ -121,6 +135,56 @@ class PreprocessRepository {
       return (null, null);
     } catch (e, stackTrace) {
       const message = 'Failed getting dataset file paths';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, Stream<TaskSnapshot>?)> downloadVideoDataset(
+    DatasetProp datasetProp,
+  ) async {
+    try {
+      final baseDir = await getApplicationDocumentsDirectory();
+      final fullDir = baseDir
+          .directory(Directories.reviewedDirPath)
+          .directory(datasetProp.id);
+
+      if (!fullDir.existsSync()) {
+        await fullDir.create(recursive: true);
+      }
+
+      final datasetPropStr = jsonEncode(datasetProp.toJson());
+      await fullDir.file(Paths.datasetProp).writeAsString(datasetPropStr);
+
+      final videoUrl = datasetProp.videoUrl;
+      final videoFile = fullDir.file(Paths.datasetVideo);
+      if (videoUrl != null && !videoFile.existsSync()) {
+        final ref = _storage.refFromURL(videoUrl);
+
+        _downloadTask = ref.writeToFile(videoFile);
+
+        return (null, _downloadTask!.snapshotEvents);
+      }
+      return (null, const Stream<TaskSnapshot>.empty());
+    } catch (e, stackTrace) {
+      const message = 'Failed downloading video dataset!';
+      final failure = Failure(message, error: e, stackTrace: stackTrace);
+      return (failure, null);
+    }
+  }
+
+  Future<(Failure?, void)> cancelDownloadVideoDataset(String path) async {
+    try {
+      final success = await _downloadTask?.cancel() ?? false;
+      if (!success) {
+        return (Failure('Failed canceling download!'), null);
+      }
+
+      await Directory(path).file(Paths.datasetVideo).delete();
+
+      return (null, success);
+    } catch (e, stackTrace) {
+      const message = 'Failed canceling download!';
       final failure = Failure(message, error: e, stackTrace: stackTrace);
       return (failure, null);
     }

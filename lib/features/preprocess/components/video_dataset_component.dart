@@ -27,7 +27,7 @@ class VideoDataset extends ConsumerStatefulWidget {
 }
 
 class _VideoDatasetState extends ConsumerState<VideoDataset> {
-  // late final PreprocessNotifier _notifier;
+  late final PreprocessNotifier _notifier;
 
   Future<void> _showSpeedMenu(BuildContext context) async {
     if (widget.videoPlayerController == null) {
@@ -97,7 +97,7 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
 
   @override
   void initState() {
-    // _notifier = ref.read(preprocessProvider.notifier);
+    _notifier = ref.read(preprocessProvider.notifier);
 
     super.initState();
   }
@@ -254,7 +254,7 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
             (false, false) => videoUrl != null
                 ? Center(
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () => _notifier.downloadDataset(),
                       child: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -275,7 +275,10 @@ class _VideoDatasetState extends ConsumerState<VideoDataset> {
                           weight: 300,
                         ),
                         SizedBox(height: 8),
-                        Text('Video not available'),
+                        Text(
+                          'Video not available',
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   ),

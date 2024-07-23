@@ -141,7 +141,7 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
                           //   dataset: dataset,
                           // );
                         },
-                        action: _buildMenu(index, dataset),
+                        // action: _buildMenu(index, dataset),
                       );
                     },
                   );
@@ -154,64 +154,64 @@ class _ReviewedDatasetState extends ConsumerState<ReviewedDatasetBody> {
     );
   }
 
-  MenuAnchor _buildMenu(int index, Dataset dataset) {
-    final datasetPath = dataset.path;
+  // MenuAnchor _buildMenu(int index, Dataset dataset) {
+  //   final datasetPath = dataset.path;
 
-    return MenuAnchor(
-      builder: (context, controller, child) {
-        return IconButton(
-          style: IconButton.styleFrom(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          iconSize: 20,
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          icon: child!,
-        );
-      },
-      menuChildren: [
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.download_rounded),
-          onPressed: () async {
-            await _notifier.downloadDatasetAt(
-              index,
-              dataset: dataset,
-              forceDownload: true,
-            );
-          },
-          child: const Text('Force download dataset'),
-        ),
-        if (datasetPath != null && (dataset.downloaded ?? false)) ...[
-          MenuItemButton(
-            leadingIcon: const Icon(Symbols.share_rounded),
-            onPressed: () async {
-              await _notifier.exportAndShareDatasets([datasetPath]);
-            },
-            child: const Text('Export & share'),
-          ),
-          MenuItemButton(
-            leadingIcon: const Icon(Symbols.delete_rounded),
-            onPressed: () async {
-              await _notifier.deleteDatasetAt(
-                index,
-                isReviewedDatasets: true,
-              );
-            },
-            child: const Text('Delete from device'),
-          ),
-        ],
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.delete_forever_rounded),
-          onPressed: () => _notifier.deleteDatasetFromCloud(index, dataset),
-          child: const Text('Delete permanently'),
-        ),
-      ],
-      child: const Icon(Symbols.more_vert_rounded),
-    );
-  }
+  //   return MenuAnchor(
+  //     builder: (context, controller, child) {
+  //       return IconButton(
+  //         style: IconButton.styleFrom(
+  //           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  //         ),
+  //         iconSize: 20,
+  //         onPressed: () {
+  //           if (controller.isOpen) {
+  //             controller.close();
+  //           } else {
+  //             controller.open();
+  //           }
+  //         },
+  //         icon: child!,
+  //       );
+  //     },
+  //     menuChildren: [
+  //       MenuItemButton(
+  //         leadingIcon: const Icon(Symbols.download_rounded),
+  //         onPressed: () async {
+  //           await _notifier.downloadDatasetAt(
+  //             index,
+  //             dataset: dataset,
+  //             forceDownload: true,
+  //           );
+  //         },
+  //         child: const Text('Force download dataset'),
+  //       ),
+  //       if (datasetPath != null && (dataset.downloaded ?? false)) ...[
+  //         MenuItemButton(
+  //           leadingIcon: const Icon(Symbols.share_rounded),
+  //           onPressed: () async {
+  //             await _notifier.exportAndShareDatasets([datasetPath]);
+  //           },
+  //           child: const Text('Export & share'),
+  //         ),
+  //         MenuItemButton(
+  //           leadingIcon: const Icon(Symbols.delete_rounded),
+  //           onPressed: () async {
+  //             await _notifier.deleteDatasetAt(
+  //               index,
+  //               isReviewedDatasets: true,
+  //             );
+  //           },
+  //           child: const Text('Delete from device'),
+  //         ),
+  //       ],
+  //       MenuItemButton(
+  //         leadingIcon: const Icon(Symbols.delete_forever_rounded),
+  //         onPressed: () => _notifier.deleteDatasetFromCloud(index, dataset),
+  //         child: const Text('Delete permanently'),
+  //       ),
+  //     ],
+  //     child: const Icon(Symbols.more_vert_rounded),
+  //   );
+  // }
 }

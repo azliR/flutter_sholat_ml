@@ -1,10 +1,8 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_sholat_ml/constants/paths.dart';
 import 'package:flutter_sholat_ml/features/datasets/models/dataset/dataset.dart';
 import 'package:flutter_sholat_ml/features/datasets/repositories/datasets_repository.dart';
 import 'package:flutter_sholat_ml/features/preprocess/repositories/preprocess_repository.dart';
@@ -25,13 +23,11 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
   final DatasetsRepository _homeRepository;
   final PreprocessRepository _preprocessRepository;
 
-  StreamSubscription<TaskSnapshot>? _downloadSubscription;
   StreamSubscription<double>? _exportSubscription;
 
   @override
   DatasetsState build() {
     ref.onDispose(() {
-      _downloadSubscription?.cancel();
       _exportSubscription?.cancel();
     });
 
@@ -110,87 +106,6 @@ class DatasetsNotifier extends AutoDisposeNotifier<DatasetsState> {
     state = state.copyWith(
       needReviewDatasets: !isReviewed ? datasets : null,
       reviewedDatasets: isReviewed ? datasets : null,
-    );
-  }
-
-  Future<void> downloadDatasetAt(
-    int index, {
-    required Dataset dataset,
-    bool forceDownload = false,
-  }) async {
-    state = state.copyWith(
-      presentationState: const DownloadDatasetProgressState(),
-    );
-    final (failure, stream) = await _homeRepository.downloadDataset(
-      dataset,
-      forceDownload: forceDownload,
-    );
-    if (failure != null) {
-      state = state.copyWith(
-        presentationState: DownloadDatasetFailureState(failure),
-      );
-      return;
-    }
-    var lastCsvProgress = 0.0;
-    var lastVideoProgress = 0.0;
-
-    await _downloadSubscription?.cancel();
-    _downloadSubscription = stream!.listen(
-      (taskSnapshot) {
-        final fileName = taskSnapshot.ref.name;
-        switch (taskSnapshot.state) {
-          case TaskState.success:
-            if (fileName == Paths.datasetCsv) {
-              lastCsvProgress = 1;
-            } else if (fileName == Paths.datasetVideo) {
-              lastVideoProgress = 1;
-            }
-          case TaskState.canceled:
-          case TaskState.error:
-            state = state.copyWith(
-              presentationState: const DownloadDatasetFailureState(),
-            );
-          case TaskState.paused:
-            break;
-          case TaskState.running:
-            final double progress;
-            if (taskSnapshot.totalBytes > 0 &&
-                taskSnapshot.bytesTransferred > 0) {
-              progress = taskSnapshot.bytesTransferred /
-                  (taskSnapshot.metadata?.size ?? taskSnapshot.totalBytes);
-            } else {
-              progress = 0;
-            }
-
-            if (fileName == Paths.datasetCsv) {
-              lastCsvProgress = progress;
-            } else if (fileName == Paths.datasetVideo) {
-              lastVideoProgress = progress;
-            }
-        }
-
-        state = state.copyWith(
-          presentationState: DownloadDatasetProgressState(
-            csvProgress: lastCsvProgress,
-            videoProgress: lastVideoProgress,
-          ),
-        );
-        if (lastCsvProgress == 1 && lastVideoProgress == 1) {
-          _downloadSubscription?.cancel();
-          state = state.copyWith(
-            presentationState: DownloadDatasetSuccessState(index: index),
-          );
-        }
-      },
-      cancelOnError: true,
-      onDone: () {
-        _downloadSubscription?.cancel();
-      },
-      onError: (e, stackTrace) {
-        state = state.copyWith(
-          presentationState: const DownloadDatasetFailureState(),
-        );
-      },
     );
   }
 
