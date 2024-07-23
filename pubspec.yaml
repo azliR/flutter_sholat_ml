@@ -1,7 +1,7 @@
 name: flutter_sholat_ml
 description: A Flutter App for collecting and processing sholat dataset.
 homepage: https://github.com/azliR/flutter_sholat_ml
-version: 1.2.0-beta1+1
+version: 1.2.0+1
 publish_to: none
 
 environment:
