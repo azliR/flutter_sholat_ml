@@ -284,7 +284,7 @@ class MlModelRepository {
     final numCols = predictions[0].length;
     final filteredPredictions = List<List<double>>.generate(
       numRows,
-      (_) => List.filled(numCols, 0.0),
+      (_) => List.filled(numCols, 0),
     );
 
     final offset = windowSize ~/ 2;

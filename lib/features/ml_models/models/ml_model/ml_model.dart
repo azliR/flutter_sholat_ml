@@ -23,7 +23,6 @@ class MlModel with _$MlModel {
         // smoothings: {},
         // filterings: {},
         temporalConsistencyEnforcements: {},
-        weightings: {},
       ),
     )
     MlModelConfig config,

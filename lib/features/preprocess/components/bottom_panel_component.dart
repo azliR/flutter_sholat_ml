@@ -195,7 +195,6 @@ class _FilterButton extends StatelessWidget {
   const _FilterButton({
     required this.filteredProblems,
     required this.problems,
-    super.key,
   });
 
   final List<Problem> filteredProblems;

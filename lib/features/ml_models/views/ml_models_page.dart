@@ -225,7 +225,7 @@ class _MlModelsPageState extends ConsumerState<MlModelsPage> {
         },
         child: PagedListView(
           pagingController: _modelsPagingController,
-          padding: EdgeInsets.fromLTRB(0, 0, 0, 128),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 128),
           builderDelegate: PagedChildBuilderDelegate<MlModel>(
             noItemsFoundIndicatorBuilder: (context) {
               return const IllustrationWidget(

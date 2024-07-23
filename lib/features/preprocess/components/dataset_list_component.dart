@@ -100,7 +100,8 @@ class _DatasetListState extends ConsumerState<DatasetList> {
                                       .toggleSectionAt(sectionIndex);
                                   ref
                                       .read(
-                                          selectedSectionIndexProvider.notifier)
+                                        selectedSectionIndexProvider.notifier,
+                                      )
                                       .setSectionIndex(sectionIndex);
                                 },
                               ),

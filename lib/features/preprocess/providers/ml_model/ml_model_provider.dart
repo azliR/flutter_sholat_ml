@@ -138,7 +138,9 @@ class PredictedCategories extends _$PredictedCategories {
     if (expandedPredictions.length < originalDataItems.length) {
       expandedPredictions.addAll(
         List.filled(
-            originalDataItems.length - expandedPredictions.length, null),
+          originalDataItems.length - expandedPredictions.length,
+          null,
+        ),
       );
     } else if (expandedPredictions.length > originalDataItems.length) {
       expandedPredictions.removeRange(

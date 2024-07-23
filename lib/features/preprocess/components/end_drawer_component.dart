@@ -198,7 +198,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
                     style: textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
-                  Divider(),
+                  const Divider(),
                 ],
               ),
             );
@@ -231,7 +231,7 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
           ),
         ),
         if (predictedCategories.valueOrNull != null) ...[
-          Divider(),
+          const Divider(),
           OutlinedButton.icon(
             onPressed: () {
               ref
