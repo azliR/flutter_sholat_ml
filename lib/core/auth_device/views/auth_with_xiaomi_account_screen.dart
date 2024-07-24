@@ -41,7 +41,7 @@ class _AuthWithXiaomiAccountScreenState
             final uri = Uri.parse(request.url);
             if (uri.host == 'hm.xiaomi.com' &&
                 uri.queryParameters.containsKey('code')) {
-              await context.router.pop();
+              await context.router.maybePop();
               widget.onAuthenticated(uri.queryParameters['code']!);
               return NavigationDecision.prevent;
             }

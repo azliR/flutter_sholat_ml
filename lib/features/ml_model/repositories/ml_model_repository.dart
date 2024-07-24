@@ -464,14 +464,10 @@ class MlModelRepository {
           return rawPrediction;
         }
 
-        final top2 = _getTop2Predictions(rawPrediction);
-
-        print('[before]: $rawPrediction');
         for (final category in nextMovementCategories) {
           final index = category.index;
           rawPrediction[index] = rawPrediction[index] + weight;
         }
-        print('[before1]: $rawPrediction');
 
         lastPredictions.add(_labelCategories[_argmax(rawPrediction)]!);
 

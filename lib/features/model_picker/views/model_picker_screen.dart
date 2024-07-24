@@ -164,7 +164,7 @@ class _ModelPickerScreenState extends ConsumerState<ModelPickerScreen> {
               leading: Text(extension(model.path).substring(1).toUpperCase()),
               title: Text(model.name),
               onTap: () {
-                context.router.pop(model);
+                context.router.maybePop(model);
               },
             );
           },

@@ -222,7 +222,6 @@ class PreprocessNotifier extends AutoDisposeNotifier<PreprocessState> {
   }
 
   void setSelectedDataset(int index) {
-    print('pressing $index');
     final enablePredictedPreview = ref.read(enablePredictedPreviewProvider);
     if (enablePredictedPreview) return;
 

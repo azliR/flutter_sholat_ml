@@ -391,7 +391,7 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
               return Row(
                 children: [
                   const Flexible(
-                    child: Text('Advanced options'),
+                    child: Text('Post Processing'),
                   ),
                   if (selectedFilterLength > 0)
                     Container(

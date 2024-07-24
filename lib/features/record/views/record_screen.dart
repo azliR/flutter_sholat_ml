@@ -47,7 +47,7 @@ class _RecordScreenState extends ConsumerState<RecordScreen>
           if (didPop) return;
 
           Navigator.pop(context);
-          context.router.pop();
+          context.router.maybePop();
         },
         child: AlertDialog(
           title: const Text('Device location'),

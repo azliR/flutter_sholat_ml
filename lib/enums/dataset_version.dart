@@ -1,27 +1,27 @@
 enum DatasetVersion {
   /// Format dataset csv in v1:
-  /// ```
+  /// ```csv
   /// {timestamp},{x},{y},{z},{heartRate},{deviceLocation},{labelCategory},
   /// {label},
   /// ```
   v1,
 
   /// Format dataset csv in v2:
-  /// ```
+  /// ```csv
   /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},
   /// {note},{labelCategory},{label},
   /// ```
   v2,
 
   /// Format dataset csv in v3:
-  /// ```
+  /// ```csv
   /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{deviceLocation},
   /// {note},{labelCategory},{label},{noise},
   /// ```
   v3,
 
   /// Format dataset csv in v4:
-  /// ```
+  /// ```csv
   /// {timestamp},{x},{y},{z},{heartRate},{movementSetId},{note},
   /// {labelCategory},{label},{noise},
   /// ```
