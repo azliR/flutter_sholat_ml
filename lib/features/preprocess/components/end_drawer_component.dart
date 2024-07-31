@@ -87,8 +87,8 @@ class _EndDrawerState extends ConsumerState<EndDrawer> {
     final selectedFilterLength =
         // selectedModel.config.smoothings.length +
         // selectedModel.config.filterings.length +
-        selectedModel.config.temporalConsistencyEnforcements.length +
-            selectedModel.config.weightings.length;
+        selectedModel.config.temporalConsistencyEnforcements.length;
+    // selectedModel.config.weightings.length;
     final onlyPredictLabeled = ref.watch(onlyPredictLabeledProvider);
 
     return ListView(

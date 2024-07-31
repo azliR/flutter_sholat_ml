@@ -97,6 +97,11 @@ class _AppState extends ConsumerState<App> {
     return themeData.copyWith(
       colorScheme: colorScheme,
       scaffoldBackgroundColor: colorScheme.surface,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+        },
+      ),
       menuButtonTheme: MenuButtonThemeData(
         style: MenuItemButton.styleFrom(
           minimumSize: const Size(160, 56),

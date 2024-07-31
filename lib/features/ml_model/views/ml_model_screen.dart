@@ -10,7 +10,6 @@ import 'package:flutter_sholat_ml/features/ml_model/widgets/filter_list_widget.d
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/weightings.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
 import 'package:flutter_sholat_ml/utils/ui/snackbars.dart';
 import 'package:flutter_sholat_ml/widgets/banners/rounded_banner_widget.dart';
@@ -384,8 +383,8 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
                   (value) =>
                       // value.modelConfig.smoothings.length +
                       // value.modelConfig.filterings.length +
-                      value.modelConfig.temporalConsistencyEnforcements.length +
-                      value.modelConfig.weightings.length,
+                      value.modelConfig.temporalConsistencyEnforcements.length,
+                  // value.modelConfig.weightings.length,
                 ),
               );
               return Row(
@@ -678,84 +677,84 @@ class _MlModelScreenState extends ConsumerState<MlModelScreen> {
               },
             ),
             const SizedBox(height: 8),
-            Consumer(
-              builder: (context, ref, child) {
-                final selectedFilters = ref.watch(
-                  mlModelProviderFamily
-                      .select((value) => value.modelConfig.weightings),
-                );
+            // Consumer(
+            //   builder: (context, ref, child) {
+            //     final selectedFilters = ref.watch(
+            //       mlModelProviderFamily
+            //           .select((value) => value.modelConfig.weightings),
+            //     );
 
-                return FilterList<String>(
-                  title: const Text('Weighting'),
-                  selectedFilters:
-                      selectedFilters.map((filter) => filter.name).toSet(),
-                  filters: Weighting.values,
-                  filterNameBuilder: (filter) {
-                    final weighting = selectedFilters.firstWhere(
-                      (e) => e.name == filter,
-                      orElse: () => Weighting.fromName(filter),
-                    );
+            //     return FilterList<String>(
+            //       title: const Text('Weighting'),
+            //       selectedFilters:
+            //           selectedFilters.map((filter) => filter.name).toSet(),
+            //       filters: Weighting.values,
+            //       filterNameBuilder: (filter) {
+            //         final weighting = selectedFilters.firstWhere(
+            //           (e) => e.name == filter,
+            //           orElse: () => Weighting.fromName(filter),
+            //         );
 
-                    switch (weighting) {
-                      case TransitionWeighting():
-                        if (weighting.weight == null) {
-                          return weighting.name;
-                        }
-                        return '${weighting.name} (${weighting.weight})';
-                    }
-                  },
-                  onSelected: recordState != RecordState.ready
-                      ? null
-                      : (filter, selected) async {
-                          final modelConfig = ref.read(
-                            mlModelProviderFamily
-                                .select((value) => value.modelConfig),
-                          );
+            //         switch (weighting) {
+            //           case TransitionWeighting():
+            //             if (weighting.weight == null) {
+            //               return weighting.name;
+            //             }
+            //             return '${weighting.name} (${weighting.weight})';
+            //         }
+            //       },
+            //       onSelected: recordState != RecordState.ready
+            //           ? null
+            //           : (filter, selected) async {
+            //               final modelConfig = ref.read(
+            //                 mlModelProviderFamily
+            //                     .select((value) => value.modelConfig),
+            //               );
 
-                          if (filter == 'Transition Weighting' && selected) {
-                            final result = await showDialog<double?>(
-                              context: context,
-                              builder: (context) {
-                                return const _SliderDialog(
-                                  title: 'Set weight',
-                                  initialValue: 0.2,
-                                );
-                              },
-                            );
-                            if (result == null) return;
+            //               if (filter == 'Transition Weighting' && selected) {
+            //                 final result = await showDialog<double?>(
+            //                   context: context,
+            //                   builder: (context) {
+            //                     return const _SliderDialog(
+            //                       title: 'Set weight',
+            //                       initialValue: 0.2,
+            //                     );
+            //                   },
+            //                 );
+            //                 if (result == null) return;
 
-                            _notifier.setModelConfig(
-                              modelConfig.copyWith(
-                                weightings: selected
-                                    ? {
-                                        ...selectedFilters,
-                                        TransitionWeighting(weight: result),
-                                      }
-                                    : selectedFilters
-                                        .where((e) => e.name != filter)
-                                        .toSet(),
-                              ),
-                            );
+            //                 _notifier.setModelConfig(
+            //                   modelConfig.copyWith(
+            //                     weightings: selected
+            //                         ? {
+            //                             ...selectedFilters,
+            //                             TransitionWeighting(weight: result),
+            //                           }
+            //                         : selectedFilters
+            //                             .where((e) => e.name != filter)
+            //                             .toSet(),
+            //                   ),
+            //                 );
 
-                            return;
-                          }
+            //                 return;
+            //               }
 
-                          _notifier.setModelConfig(
-                            modelConfig.copyWith(
-                              weightings: selected
-                                  ? {
-                                      ...selectedFilters,
-                                      Weighting.fromName(filter),
-                                    }
-                                  : selectedFilters
-                                      .where((e) => e.name != filter)
-                                      .toSet(),
-                            ),
-                          );
-                        },
-                );
-              },
-            ),
+            //               _notifier.setModelConfig(
+            //                 modelConfig.copyWith(
+            //                   weightings: selected
+            //                       ? {
+            //                           ...selectedFilters,
+            //                           Weighting.fromName(filter),
+            //                         }
+            //                       : selectedFilters
+            //                           .where((e) => e.name != filter)
+            //                           .toSet(),
+            //                 ),
+            //               );
+            //             },
+            //     );
+            //   },
+            // ),
             const SizedBox(height: 8),
           ],
         ),

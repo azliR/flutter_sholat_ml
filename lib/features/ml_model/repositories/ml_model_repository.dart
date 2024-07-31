@@ -9,7 +9,6 @@ import 'package:flutter_sholat_ml/enums/sholat_movement_category.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model_config.dart';
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/temporal_consistency_enforcements.dart';
-import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/post_processing/weightings.dart';
 import 'package:flutter_sholat_ml/utils/failures/failure.dart';
 import 'package:flutter_sholat_ml/utils/services/local_ml_model_storage_service%20.dart';
 import 'package:flutter_sholat_ml/utils/services/local_storage_service.dart';
@@ -132,16 +131,16 @@ class MlModelRepository {
           }
         }
 
-        for (final weighting in config.weightings) {
-          switch (weighting) {
-            case TransitionWeighting():
-              postProcessedPred = transitionWeighting(
-                rawPredictions: postProcessedPred,
-                prevPredictions: previousLabels,
-                weight: weighting.weight!,
-              );
-          }
-        }
+        // for (final weighting in config.weightings) {
+        //   switch (weighting) {
+        //     case TransitionWeighting():
+        //       postProcessedPred = transitionWeighting(
+        //         rawPredictions: postProcessedPred,
+        //         prevPredictions: previousLabels,
+        //         weight: weighting.weight!,
+        //       );
+        //   }
+        // }
 
         final indexes = _argmaxByAxis(postProcessedPred, 1);
 
