@@ -44,8 +44,13 @@ mixin _$MlModel {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
+
+  /// Serializes this MlModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of MlModel
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $MlModelCopyWith<MlModel> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -76,6 +81,8 @@ class _$MlModelCopyWithImpl<$Res, $Val extends MlModel>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of MlModel
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -119,6 +126,8 @@ class _$MlModelCopyWithImpl<$Res, $Val extends MlModel>
     ) as $Val);
   }
 
+  /// Create a copy of MlModel
+  /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $MlModelConfigCopyWith<$Res> get config {
@@ -156,6 +165,8 @@ class __$$MlModelImplCopyWithImpl<$Res>
       _$MlModelImpl _value, $Res Function(_$MlModelImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of MlModel
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -259,12 +270,14 @@ class _$MlModelImpl implements _MlModel {
             (identical(other.config, config) || other.config == config));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType, id, name, path, description, createdAt, updatedAt, config);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of MlModel
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$MlModelImplCopyWith<_$MlModelImpl> get copyWith =>
@@ -332,8 +345,11 @@ abstract class _MlModel implements MlModel {
   DateTime get updatedAt;
   @override
   MlModelConfig get config;
+
+  /// Create a copy of MlModel
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$MlModelImplCopyWith<_$MlModelImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

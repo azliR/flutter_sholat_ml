@@ -10,8 +10,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auto_route/auto_route.dart' as _i15;
 import 'package:flutter/foundation.dart' as _i19;
-import 'package:flutter/material.dart' as _i18;
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i17;
+import 'package:flutter/material.dart' as _i17;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as _i16;
 import 'package:flutter_sholat_ml/core/auth_device/views/auth_device_screen.dart'
     as _i1;
 import 'package:flutter_sholat_ml/core/auth_device/views/auth_with_xiaomi_account_screen.dart'
@@ -29,7 +29,7 @@ import 'package:flutter_sholat_ml/features/manual_device_connect/views/manual_de
 import 'package:flutter_sholat_ml/features/ml_model/views/ml_model_screen.dart'
     as _i7;
 import 'package:flutter_sholat_ml/features/ml_models/models/ml_model/ml_model.dart'
-    as _i16;
+    as _i18;
 import 'package:flutter_sholat_ml/features/ml_models/views/ml_models_page.dart'
     as _i8;
 import 'package:flutter_sholat_ml/features/model_picker/views/model_picker_screen.dart'
@@ -41,142 +41,13 @@ import 'package:flutter_sholat_ml/features/record/views/record_screen.dart'
 import 'package:flutter_sholat_ml/features/saved_devices/views/saved_devices_page.dart'
     as _i12;
 
-abstract class $AppRouter extends _i15.RootStackRouter {
-  $AppRouter({super.navigatorKey});
-
-  @override
-  final Map<String, _i15.PageFactory> pagesMap = {
-    AuthDeviceRoute.name: (routeData) {
-      final args = routeData.argsAs<AuthDeviceRouteArgs>();
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i1.AuthDeviceScreen(
-          device: args.device,
-          services: args.services,
-          key: args.key,
-        ),
-      );
-    },
-    AuthWithXiaomiAccountRoute.name: (routeData) {
-      final args = routeData.argsAs<AuthWithXiaomiAccountRouteArgs>();
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i2.AuthWithXiaomiAccountScreen(
-          uri: args.uri,
-          onAuthenticated: args.onAuthenticated,
-          key: args.key,
-        ),
-      );
-    },
-    DatasetsPage.name: (routeData) {
-      final args = routeData.argsAs<DatasetsPageArgs>(
-          orElse: () => const DatasetsPageArgs());
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i3.DatasetsPage(
-          onInitialised: args.onInitialised,
-          key: args.key,
-        ),
-      );
-    },
-    DiscoverDeviceRoute.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i4.DiscoverDeviceScreen(),
-      );
-    },
-    HomeRoute.name: (routeData) {
-      final args =
-          routeData.argsAs<HomeRouteArgs>(orElse: () => const HomeRouteArgs());
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i5.HomeScreen(
-          initialNavigation: args.initialNavigation,
-          key: args.key,
-        ),
-      );
-    },
-    ManualDeviceConnectRoute.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i6.ManualDeviceConnectScreen(),
-      );
-    },
-    MlModelRoute.name: (routeData) {
-      final args = routeData.argsAs<MlModelRouteArgs>();
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i7.MlModelScreen(
-          model: args.model,
-          device: args.device,
-          services: args.services,
-          onModelChanged: args.onModelChanged,
-          key: args.key,
-        ),
-      );
-    },
-    MlModelsPage.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i8.MlModelsPage(),
-      );
-    },
-    ModelPickerRoute.name: (routeData) {
-      return _i15.AutoRoutePage<_i16.MlModel>(
-        routeData: routeData,
-        child: const _i9.ModelPickerScreen(),
-      );
-    },
-    PreprocessRoute.name: (routeData) {
-      final args = routeData.argsAs<PreprocessRouteArgs>();
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i10.PreprocessScreen(
-          path: args.path,
-          key: args.key,
-        ),
-      );
-    },
-    RecordRoute.name: (routeData) {
-      final args = routeData.argsAs<RecordRouteArgs>();
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: _i11.RecordScreen(
-          device: args.device,
-          services: args.services,
-          onRecordSuccess: args.onRecordSuccess,
-          key: args.key,
-        ),
-      );
-    },
-    SavedDevicesPage.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i12.SavedDevicesPage(),
-      );
-    },
-    SettingsRoute.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i13.SettingsScreen(),
-      );
-    },
-    SplashRoute.name: (routeData) {
-      return _i15.AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const _i14.SplashScreen(),
-      );
-    },
-  };
-}
-
 /// generated route for
 /// [_i1.AuthDeviceScreen]
 class AuthDeviceRoute extends _i15.PageRouteInfo<AuthDeviceRouteArgs> {
   AuthDeviceRoute({
-    required _i17.BluetoothDevice device,
-    required List<_i17.BluetoothService> services,
-    _i18.Key? key,
+    required _i16.BluetoothDevice device,
+    required List<_i16.BluetoothService> services,
+    _i17.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
           AuthDeviceRoute.name,
@@ -190,8 +61,17 @@ class AuthDeviceRoute extends _i15.PageRouteInfo<AuthDeviceRouteArgs> {
 
   static const String name = 'AuthDeviceRoute';
 
-  static const _i15.PageInfo<AuthDeviceRouteArgs> page =
-      _i15.PageInfo<AuthDeviceRouteArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<AuthDeviceRouteArgs>();
+      return _i1.AuthDeviceScreen(
+        device: args.device,
+        services: args.services,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class AuthDeviceRouteArgs {
@@ -201,11 +81,11 @@ class AuthDeviceRouteArgs {
     this.key,
   });
 
-  final _i17.BluetoothDevice device;
+  final _i16.BluetoothDevice device;
 
-  final List<_i17.BluetoothService> services;
+  final List<_i16.BluetoothService> services;
 
-  final _i18.Key? key;
+  final _i17.Key? key;
 
   @override
   String toString() {
@@ -220,7 +100,7 @@ class AuthWithXiaomiAccountRoute
   AuthWithXiaomiAccountRoute({
     required Uri uri,
     required void Function(String) onAuthenticated,
-    _i18.Key? key,
+    _i17.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
           AuthWithXiaomiAccountRoute.name,
@@ -234,8 +114,17 @@ class AuthWithXiaomiAccountRoute
 
   static const String name = 'AuthWithXiaomiAccountRoute';
 
-  static const _i15.PageInfo<AuthWithXiaomiAccountRouteArgs> page =
-      _i15.PageInfo<AuthWithXiaomiAccountRouteArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<AuthWithXiaomiAccountRouteArgs>();
+      return _i2.AuthWithXiaomiAccountScreen(
+        uri: args.uri,
+        onAuthenticated: args.onAuthenticated,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class AuthWithXiaomiAccountRouteArgs {
@@ -249,7 +138,7 @@ class AuthWithXiaomiAccountRouteArgs {
 
   final void Function(String) onAuthenticated;
 
-  final _i18.Key? key;
+  final _i17.Key? key;
 
   @override
   String toString() {
@@ -262,10 +151,10 @@ class AuthWithXiaomiAccountRouteArgs {
 class DatasetsPage extends _i15.PageRouteInfo<DatasetsPageArgs> {
   DatasetsPage({
     void Function(
-      _i18.GlobalKey<_i18.RefreshIndicatorState>,
-      _i18.GlobalKey<_i18.RefreshIndicatorState>,
+      _i17.GlobalKey<_i17.RefreshIndicatorState>,
+      _i17.GlobalKey<_i17.RefreshIndicatorState>,
     )? onInitialised,
-    _i18.Key? key,
+    _i17.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
           DatasetsPage.name,
@@ -278,8 +167,17 @@ class DatasetsPage extends _i15.PageRouteInfo<DatasetsPageArgs> {
 
   static const String name = 'DatasetsPage';
 
-  static const _i15.PageInfo<DatasetsPageArgs> page =
-      _i15.PageInfo<DatasetsPageArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args =
+          data.argsAs<DatasetsPageArgs>(orElse: () => const DatasetsPageArgs());
+      return _i3.DatasetsPage(
+        onInitialised: args.onInitialised,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class DatasetsPageArgs {
@@ -289,11 +187,11 @@ class DatasetsPageArgs {
   });
 
   final void Function(
-    _i18.GlobalKey<_i18.RefreshIndicatorState>,
-    _i18.GlobalKey<_i18.RefreshIndicatorState>,
+    _i17.GlobalKey<_i17.RefreshIndicatorState>,
+    _i17.GlobalKey<_i17.RefreshIndicatorState>,
   )? onInitialised;
 
-  final _i18.Key? key;
+  final _i17.Key? key;
 
   @override
   String toString() {
@@ -312,7 +210,12 @@ class DiscoverDeviceRoute extends _i15.PageRouteInfo<void> {
 
   static const String name = 'DiscoverDeviceRoute';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i4.DiscoverDeviceScreen();
+    },
+  );
 }
 
 /// generated route for
@@ -321,7 +224,7 @@ class HomeRoute extends _i15.PageRouteInfo<HomeRouteArgs> {
   HomeRoute({
     _i5.HomeScreenNavigationTab initialNavigation =
         _i5.HomeScreenNavigationTab.savedDevice,
-    _i18.Key? key,
+    _i17.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
           HomeRoute.name,
@@ -334,8 +237,17 @@ class HomeRoute extends _i15.PageRouteInfo<HomeRouteArgs> {
 
   static const String name = 'HomeRoute';
 
-  static const _i15.PageInfo<HomeRouteArgs> page =
-      _i15.PageInfo<HomeRouteArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args =
+          data.argsAs<HomeRouteArgs>(orElse: () => const HomeRouteArgs());
+      return _i5.HomeScreen(
+        initialNavigation: args.initialNavigation,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class HomeRouteArgs {
@@ -346,7 +258,7 @@ class HomeRouteArgs {
 
   final _i5.HomeScreenNavigationTab initialNavigation;
 
-  final _i18.Key? key;
+  final _i17.Key? key;
 
   @override
   String toString() {
@@ -365,18 +277,23 @@ class ManualDeviceConnectRoute extends _i15.PageRouteInfo<void> {
 
   static const String name = 'ManualDeviceConnectRoute';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i6.ManualDeviceConnectScreen();
+    },
+  );
 }
 
 /// generated route for
 /// [_i7.MlModelScreen]
 class MlModelRoute extends _i15.PageRouteInfo<MlModelRouteArgs> {
   MlModelRoute({
-    required _i16.MlModel model,
-    required _i17.BluetoothDevice? device,
-    required List<_i17.BluetoothService>? services,
-    required void Function(_i16.MlModel)? onModelChanged,
-    _i18.Key? key,
+    required _i18.MlModel model,
+    required _i16.BluetoothDevice? device,
+    required List<_i16.BluetoothService>? services,
+    required void Function(_i18.MlModel)? onModelChanged,
+    _i17.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
           MlModelRoute.name,
@@ -392,8 +309,19 @@ class MlModelRoute extends _i15.PageRouteInfo<MlModelRouteArgs> {
 
   static const String name = 'MlModelRoute';
 
-  static const _i15.PageInfo<MlModelRouteArgs> page =
-      _i15.PageInfo<MlModelRouteArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<MlModelRouteArgs>();
+      return _i7.MlModelScreen(
+        model: args.model,
+        device: args.device,
+        services: args.services,
+        onModelChanged: args.onModelChanged,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class MlModelRouteArgs {
@@ -405,15 +333,15 @@ class MlModelRouteArgs {
     this.key,
   });
 
-  final _i16.MlModel model;
+  final _i18.MlModel model;
 
-  final _i17.BluetoothDevice? device;
+  final _i16.BluetoothDevice? device;
 
-  final List<_i17.BluetoothService>? services;
+  final List<_i16.BluetoothService>? services;
 
-  final void Function(_i16.MlModel)? onModelChanged;
+  final void Function(_i18.MlModel)? onModelChanged;
 
-  final _i18.Key? key;
+  final _i17.Key? key;
 
   @override
   String toString() {
@@ -432,7 +360,12 @@ class MlModelsPage extends _i15.PageRouteInfo<void> {
 
   static const String name = 'MlModelsPage';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i8.MlModelsPage();
+    },
+  );
 }
 
 /// generated route for
@@ -446,7 +379,12 @@ class ModelPickerRoute extends _i15.PageRouteInfo<void> {
 
   static const String name = 'ModelPickerRoute';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i9.ModelPickerScreen();
+    },
+  );
 }
 
 /// generated route for
@@ -467,8 +405,16 @@ class PreprocessRoute extends _i15.PageRouteInfo<PreprocessRouteArgs> {
 
   static const String name = 'PreprocessRoute';
 
-  static const _i15.PageInfo<PreprocessRouteArgs> page =
-      _i15.PageInfo<PreprocessRouteArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<PreprocessRouteArgs>();
+      return _i10.PreprocessScreen(
+        path: args.path,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class PreprocessRouteArgs {
@@ -491,10 +437,10 @@ class PreprocessRouteArgs {
 /// [_i11.RecordScreen]
 class RecordRoute extends _i15.PageRouteInfo<RecordRouteArgs> {
   RecordRoute({
-    required _i17.BluetoothDevice device,
-    required List<_i17.BluetoothService> services,
+    required _i16.BluetoothDevice device,
+    required List<_i16.BluetoothService> services,
     required void Function() onRecordSuccess,
-    _i18.Key? key,
+    _i17.Key? key,
     List<_i15.PageRouteInfo>? children,
   }) : super(
           RecordRoute.name,
@@ -509,8 +455,18 @@ class RecordRoute extends _i15.PageRouteInfo<RecordRouteArgs> {
 
   static const String name = 'RecordRoute';
 
-  static const _i15.PageInfo<RecordRouteArgs> page =
-      _i15.PageInfo<RecordRouteArgs>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      final args = data.argsAs<RecordRouteArgs>();
+      return _i11.RecordScreen(
+        device: args.device,
+        services: args.services,
+        onRecordSuccess: args.onRecordSuccess,
+        key: args.key,
+      );
+    },
+  );
 }
 
 class RecordRouteArgs {
@@ -521,13 +477,13 @@ class RecordRouteArgs {
     this.key,
   });
 
-  final _i17.BluetoothDevice device;
+  final _i16.BluetoothDevice device;
 
-  final List<_i17.BluetoothService> services;
+  final List<_i16.BluetoothService> services;
 
   final void Function() onRecordSuccess;
 
-  final _i18.Key? key;
+  final _i17.Key? key;
 
   @override
   String toString() {
@@ -546,7 +502,12 @@ class SavedDevicesPage extends _i15.PageRouteInfo<void> {
 
   static const String name = 'SavedDevicesPage';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i12.SavedDevicesPage();
+    },
+  );
 }
 
 /// generated route for
@@ -560,7 +521,12 @@ class SettingsRoute extends _i15.PageRouteInfo<void> {
 
   static const String name = 'SettingsRoute';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i13.SettingsScreen();
+    },
+  );
 }
 
 /// generated route for
@@ -574,5 +540,10 @@ class SplashRoute extends _i15.PageRouteInfo<void> {
 
   static const String name = 'SplashRoute';
 
-  static const _i15.PageInfo<void> page = _i15.PageInfo<void>(name);
+  static _i15.PageInfo page = _i15.PageInfo(
+    name,
+    builder: (data) {
+      return const _i14.SplashScreen();
+    },
+  );
 }

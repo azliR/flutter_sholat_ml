@@ -9,7 +9,7 @@ import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart';
 
-@RoutePage<MlModel>()
+@RoutePage()
 class ModelPickerScreen extends ConsumerStatefulWidget {
   const ModelPickerScreen({super.key});
 

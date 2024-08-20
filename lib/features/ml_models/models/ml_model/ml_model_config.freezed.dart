@@ -47,8 +47,13 @@ mixin _$MlModelConfig {
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
+
+  /// Serializes this MlModelConfig to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of MlModelConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $MlModelConfigCopyWith<MlModelConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -79,6 +84,8 @@ class _$MlModelConfigCopyWithImpl<$Res, $Val extends MlModelConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of MlModelConfig
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -149,6 +156,8 @@ class __$$MlModelConfigImplCopyWithImpl<$Res>
       _$MlModelConfigImpl _value, $Res Function(_$MlModelConfigImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of MlModelConfig
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -265,7 +274,7 @@ class _$MlModelConfigImpl implements _MlModelConfig {
                 other.stepSize == stepSize));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
       runtimeType,
@@ -277,7 +286,9 @@ class _$MlModelConfigImpl implements _MlModelConfig {
       const DeepCollectionEquality().hash(_temporalConsistencyEnforcements),
       stepSize);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of MlModelConfig
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$MlModelConfigImplCopyWith<_$MlModelConfigImpl> get copyWith =>
@@ -342,14 +353,16 @@ abstract class _MlModelConfig implements MlModelConfig {
   @override
   int get numberOfFeatures;
   @override
-  InputDataType get inputDataType;
-  @override // required Set<Smoothing> smoothings,
+  InputDataType get inputDataType; // required Set<Smoothing> smoothings,
 // required Set<Filtering> filterings,
   Set<TemporalConsistencyEnforcement> get temporalConsistencyEnforcements;
   @override // @Default({}) Set<Weighting> weightings,
   int get stepSize;
+
+  /// Create a copy of MlModelConfig
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$MlModelConfigImplCopyWith<_$MlModelConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

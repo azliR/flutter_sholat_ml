@@ -88,6 +88,31 @@ class AuthDeviceNotifier extends Notifier<AuthDeviceState> {
   ) async {
     state = state.copyWith(presentationState: const AuthDeviceLoadingState());
 
+    if (!device.isConnected) {
+      final success = await connectDevice(device);
+      if (!success) {
+        state = state.copyWith(
+          presentationState: AuthDeviceFailureState(
+            Failure(
+              'Device is not connected, please try again!',
+            ),
+          ),
+        );
+        return;
+      }
+      final services = await selectDevice(device);
+      if (services == null) {
+        state = state.copyWith(
+          presentationState: AuthDeviceFailureState(
+            Failure(
+              'Device is not connected, please try again!',
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
     await initialiseAuth(authKey, device, services);
 
     final (failure, _) =
@@ -272,8 +297,9 @@ class AuthDeviceNotifier extends Notifier<AuthDeviceState> {
 
     if (wearable == null) {
       state = state.copyWith(
-        presentationState:
-            LoginXiaomiAccountFailureState(Failure('Wearable not found')),
+        presentationState: LoginXiaomiAccountFailureState(
+          Failure('Wearable not found in this account!'),
+        ),
       );
       return;
     }
