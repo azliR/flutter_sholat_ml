@@ -35,13 +35,11 @@ $ flutter run --flavor production --target lib/main_production.dart
 ```
 
 ## Demo
-
-## Demo
-![alt text](docs/assets/flutter_sholat_ml-0.webp)
-|![alt text](docs/assets/flutter_sholat_ml-1.webp)|![alt text](docs/assets/flutter_sholat_ml-2.webp)
+![](docs/assets/flutter_sholat_ml-0.webp)
+|![](docs/assets/flutter_sholat_ml-1.webp)|![](docs/assets/flutter_sholat_ml-2.webp)
 |--|--|
-|![alt text](docs/assets/flutter_sholat_ml-3.webp)|![alt text](docs/assets/flutter_sholat_ml-4.webp)|
-|![alt text](docs/assets/flutter_sholat_ml-5.webp)|![alt text](docs/assets/flutter_sholat_ml-6.webp)|
+|![](docs/assets/flutter_sholat_ml-3.webp)|![](docs/assets/flutter_sholat_ml-4.webp)|
+|![](docs/assets/flutter_sholat_ml-5.webp)|![](docs/assets/flutter_sholat_ml-6.webp)|
 
 
 ---
